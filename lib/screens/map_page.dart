@@ -49,11 +49,7 @@ class _MapPageState extends State<MapPage> {
           ),
 
           // --- FLOATING VERTICAL ACTION BUTTONS ---
-          const Positioned(
-            right: 16,
-            top: 200,
-            child: ActionButtons(),
-          ),
+          const Positioned(right: 16, top: 200, child: ActionButtons()),
         ],
       ),
       bottomNavigationBar: BottomNavBar(
