@@ -13,35 +13,70 @@ class BottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      currentIndex: currentIndex,
-      onTap: onTap,
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: AppColors.grey,
-      showSelectedLabels: false,
-      showUnselectedLabels: false,
-      elevation: 8,
-      items: const [
-        BottomNavigationBarItem(
-          icon: Icon(Icons.wifi_tethering),
-          label: 'Nearby',
+    return Container(
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(
+            icon: Icons.wifi_tethering,
+            index: 0,
+            label: 'Nearby',
+          ),
+          _buildNavItem(
+            icon: Icons.confirmation_number,
+            index: 1,
+            label: 'Tickets',
+          ),
+          _buildNavItem(
+            icon: currentIndex == 2 ? Icons.favorite : Icons.favorite_border,
+            index: 2,
+            label: 'Favorites',
+          ),
+          _buildNavItem(
+            icon: currentIndex == 3 ? Icons.person : Icons.person_outline,
+            index: 3,
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required IconData icon,
+    required int index,
+    required String label,
+  }) {
+    final isSelected = currentIndex == index;
+    
+    return GestureDetector(
+      onTap: () => onTap(index),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.confirmation_number),
-          label: 'Tickets',
+        child: Icon(
+          icon,
+          color: isSelected ? Colors.white : AppColors.grey,
+          size: 24,
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.favorite_border),
-          activeIcon: Icon(Icons.favorite),
-          label: 'Favorites',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.person_outline),
-          activeIcon: Icon(Icons.person),
-          label: 'Profile',
-        ),
-      ],
+      ),
     );
   }
 }
