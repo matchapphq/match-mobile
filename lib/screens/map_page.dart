@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mapbox;
 import '../widgets/map_widget.dart';
 import '../widgets/search_bar.dart';
 import '../widgets/action_buttons.dart';
 import '../widgets/bottom_nav_bar.dart';
-import '../constants/app_colors.dart';
 import 'tickets_page.dart';
 import 'favorites_page.dart';
 import 'profile_page.dart';
@@ -18,8 +16,20 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  final MapController _mapController = MapController();
+  final String accessToken = const String.fromEnvironment('MAPBOX_ACCESS_TOKEN');
   int _currentIndex = 0;
+  final mapbox.CameraOptions cameraOptions = mapbox.CameraOptions(
+    center: mapbox.Point(coordinates: mapbox.Position(2.3553, 48.8809)), // Near Gare du Nord (lng, lat)
+    zoom: 14.0,
+    bearing: 0,
+    pitch: 0,
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    mapbox.MapboxOptions.setAccessToken(accessToken);
+  }
 
   void _onItemTapped(int index) {
     setState(() {
@@ -32,8 +42,7 @@ class _MapPageState extends State<MapPage> {
       children: [
         // --- MAP BACKGROUND ---
         MapWidget(
-          controller: _mapController,
-          initialPosition: const LatLng(48.8809, 2.3553), // Near Gare du Nord
+          cameraOptions: cameraOptions,
         ),
 
         // --- SEARCH BAR & "DANS LE COIN" BUTTON ---

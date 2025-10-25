@@ -1,53 +1,40 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
-import '../constants/app_colors.dart';
+import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mapbox;
 
-class MapWidget extends StatelessWidget {
-  final MapController controller;
-  final LatLng initialPosition;
-  final double initialZoom;
-  final List<Marker> markers;
-  
+class MapWidget extends StatefulWidget {
+  final mapbox.CameraOptions? cameraOptions;
+  final String styleUri;
+
   const MapWidget({
     Key? key,
-    required this.controller,
-    this.initialPosition = const LatLng(48.8809, 2.3553), // Near Gare du Nord
-    this.initialZoom = 14.0,
-    this.markers = const [],
+    this.cameraOptions,
+    this.styleUri = mapbox.MapboxStyles.MAPBOX_STREETS,
   }) : super(key: key);
 
   @override
+  State<MapWidget> createState() => _MapWidgetState();
+}
+
+class _MapWidgetState extends State<MapWidget> {
+  @override
   Widget build(BuildContext context) {
-    return FlutterMap(
-      mapController: controller,
-      options: MapOptions(
-        initialCenter: initialPosition,
-        initialZoom: initialZoom,
+    return mapbox.MapWidget(
+      cameraOptions:
+          widget.cameraOptions ??
+          mapbox.CameraOptions(
+            center: mapbox.Point(
+              coordinates: mapbox.Position(2.3553, 48.8809),
+            ), // Near Gare du Nord (lng, lat)
+            zoom: 14.0,
+            bearing: 0,
+            pitch: 0,
+          ),
+      styleUri: widget.styleUri,
+      mapOptions: mapbox.MapOptions(
+        pixelRatio: MediaQuery.of(context).devicePixelRatio,
+        // Gesture configuration is now handled by the GesturesPlugin
+        // The default gesture settings are already enabled by default
       ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
-          userAgentPackageName: 'com.example.matchapp',
-        ),
-        MarkerLayer(
-          markers: markers.isNotEmpty 
-              ? markers 
-              : [
-                  Marker(
-                    point: initialPosition,
-                    width: 40,
-                    height: 40,
-                    child: const Icon(
-                      Icons.location_on,
-                      color: AppColors.secondary,
-                      size: 40,
-                    ),
-                  ),
-                ],
-        ),
-      ],
     );
   }
 }
