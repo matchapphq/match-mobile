@@ -1,24 +1,16 @@
 import 'package:flutter/material.dart';
-import 'screens/map_page.dart';
+import 'core/core.dart';
 
 class MatchApp extends StatelessWidget {
-  const MatchApp({Key? key}) : super(key: key);
+  const MatchApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Match App',
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        appBarTheme: const AppBarTheme(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          iconTheme: IconThemeData(color: Colors.black),
-        ),
-      ),
-      home: const MapPage(),
+      title: 'Match',
+      theme: AppTheme.lightTheme,
+      routerConfig: AppRouter.router,
     );
   }
 }
