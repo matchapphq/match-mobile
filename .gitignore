@@ -118,3 +118,4 @@ lcov.info
 !**/ios/Flutter/Generated.xcconfig
 !**/ios/.gitkeep
 !**/android/.gitkeep
+app-designs/
