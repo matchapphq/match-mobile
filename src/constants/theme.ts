@@ -1,11 +1,11 @@
 export const theme = {
   colors: {
-    primary: '#7B2FFE', // Purple
-    secondary: '#A3FF00', // Neon green
-    background: '#000000',
-    surface: '#1A1A2E',
+    primary: '#7B2FFE', // Purple (Brand Color)
+    secondary: '#A3FF00', // Neon green (Accents)
+    background: '#161622', // Rich Dark (Not Pure Black)
+    surface: '#1E1E2D', // Slightly lighter dark for cards
     text: '#FFFFFF',
-    textSecondary: '#B8B8B8',
+    textSecondary: '#CDCDE0', // Lighter gray for secondary text
     error: '#FF3333',
     success: '#4CAF50',
     warning: '#FFC107',

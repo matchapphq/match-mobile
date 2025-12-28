@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../constants/theme';
@@ -219,7 +220,7 @@ const OnboardingScreen = () => {
         <View style={styles.logoContainer}>
           <Text style={styles.logo}>⚡</Text>
         </View>
-        
+
         <ScrollView contentContainerStyle={styles.content}>
           {currentStep === 'sports' && renderSportsStep()}
           {currentStep === 'ambiance' && renderAmbianceStep()}

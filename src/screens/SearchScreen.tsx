@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
@@ -69,7 +70,7 @@ const SearchScreen = () => {
             <Ionicons name="time-outline" size={20} color={theme.colors.primary} />
             <Text style={styles.tabText}>Historique</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.tab, activeTab === 'trending' && styles.activeTab]}
             onPress={() => setActiveTab('trending')}
@@ -93,7 +94,7 @@ const SearchScreen = () => {
               ))}
             </>
           )}
-          
+
           {activeTab === 'trending' && (
             <>
               {trendingSearches.map((item, index) => (
@@ -114,7 +115,7 @@ const SearchScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.closeButton}
         onPress={() => navigation.goBack()}
       >

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
@@ -44,13 +45,13 @@ const MapScreen = () => {
     setSelectedFilters(prev => {
       const updated = { ...prev };
       const categoryArray = updated[category as keyof typeof updated] as string[];
-      
+
       if (categoryArray.includes(value)) {
         updated[category as keyof typeof updated] = categoryArray.filter(v => v !== value) as any;
       } else {
         updated[category as keyof typeof updated] = [...categoryArray, value] as any;
       }
-      
+
       return updated;
     });
   };
@@ -211,7 +212,7 @@ const MapScreen = () => {
             <Text style={styles.validateButtonText}>VALIDER</Text>
           </TouchableOpacity>
         </View>
-        
+
         <TouchableOpacity
           style={styles.closeModalButton}
           onPress={() => setShowFilters(false)}
@@ -256,7 +257,7 @@ const MapScreen = () => {
       </MapView>
 
       <SafeAreaView style={styles.headerOverlay}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.profileButton}
           onPress={() => navigation.navigate('Profile')}
         >

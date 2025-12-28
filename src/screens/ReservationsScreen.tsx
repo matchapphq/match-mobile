@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
@@ -53,9 +54,9 @@ const ReservationsScreen = () => {
           <View style={styles.cardIcon}>
             <Text style={styles.cardIconText}>📋</Text>
           </View>
-          
+
           <Text style={styles.cardTitle}>Vous avez {mockReservations.length} réservations</Text>
-          
+
           {mockReservations.map(reservation => (
             <View key={reservation.id} style={styles.reservationCard}>
               <View style={styles.reservationHeader}>
@@ -63,18 +64,18 @@ const ReservationsScreen = () => {
                   {reservation.venueName} - {reservation.date}
                 </Text>
               </View>
-              
+
               <Text style={styles.reservationDetails}>{reservation.details}</Text>
-              
+
               <View style={styles.buttonGroup}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.cancelButton}
                   onPress={() => handleCancelReservation(reservation.id)}
                 >
                   <Text style={styles.cancelButtonText}>Annuler la réservation</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
+
+                <TouchableOpacity
                   style={styles.contactButton}
                   onPress={() => handleContactVenue(reservation.venueName)}
                 >
@@ -86,7 +87,7 @@ const ReservationsScreen = () => {
         </View>
       </ScrollView>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.closeButton}
         onPress={() => navigation.goBack()}
       >

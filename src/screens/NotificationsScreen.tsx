@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../constants/theme';
@@ -70,7 +71,7 @@ const NotificationsScreen = () => {
           <View style={styles.cardIcon}>
             <Ionicons name="notifications" size={48} color={theme.colors.primary} />
           </View>
-          
+
           <View style={styles.notificationsList}>
             {mockNotifications.map(notification => (
               <View key={notification.id} style={styles.notificationItem}>
@@ -96,7 +97,7 @@ const NotificationsScreen = () => {
         </View>
       </ScrollView>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.closeButton}
         onPress={() => navigation.goBack()}
       >

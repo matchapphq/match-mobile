@@ -34,7 +34,7 @@ const MatchDetailsScreen = () => {
       <ScrollView style={styles.content}>
         <View style={styles.card}>
           <Text style={styles.title}>L'affiche</Text>
-          
+
           <View style={styles.matchCard}>
             <Image
               source={{ uri: match.thumbnail || 'https://via.placeholder.com/400x200' }}
@@ -43,7 +43,7 @@ const MatchDetailsScreen = () => {
             <View style={styles.matchOverlay}>
               <Text style={styles.matchTeams}>{match.homeTeam} / {match.awayTeam}</Text>
             </View>
-            
+
             <View style={styles.matchInfo}>
               <Text style={styles.matchDate}>
                 {match.date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} - {match.time}
@@ -52,7 +52,7 @@ const MatchDetailsScreen = () => {
             </View>
 
             {recommendedVenues.map(venue => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={venue.id}
                 style={styles.venueCard}
                 onPress={() => handleVenuePress(venue)}
@@ -63,7 +63,7 @@ const MatchDetailsScreen = () => {
                     <Ionicons name="eye" size={20} color={theme.colors.text} />
                   </TouchableOpacity>
                 </View>
-                
+
                 <View style={styles.venueTags}>
                   {venue.tags.map((tag, index) => (
                     <View key={index} style={styles.tag}>
@@ -78,7 +78,7 @@ const MatchDetailsScreen = () => {
               <Text style={styles.moreButtonText}>Voir plus</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.followButton}
               onPress={() => setFollowing(!following)}
             >
@@ -90,7 +90,7 @@ const MatchDetailsScreen = () => {
         </View>
       </ScrollView>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.closeButton}
         onPress={() => navigation.goBack()}
       >
@@ -103,7 +103,7 @@ const MatchDetailsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.lg,
   },
   matchCard: {
-    backgroundColor: theme.colors.text,
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
     overflow: 'hidden',
     padding: theme.spacing.lg,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
   },
   venueCard: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.background,
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.md,
     marginBottom: theme.spacing.sm,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: theme.colors.background,
+    backgroundColor: theme.colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
