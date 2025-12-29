@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,6 +17,16 @@ const MapScreen = () => {
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [selectedFilters, setSelectedFilters] = useState(filters);
   const mapRef = useRef<MapView>(null);
+  const [isMapMoving, setIsMapMoving] = useState(false);
+  const buttonOpacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    Animated.timing(buttonOpacity, {
+      toValue: isMapMoving ? 0 : 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [isMapMoving]);
 
   const centerOnUser = () => {
     if (userLocation && mapRef.current) {
@@ -67,6 +77,14 @@ const MapScreen = () => {
     });
   };
 
+  const handleSortSelection = (sortOption: 'distance' | 'rating' | null, sortDirection: 'asc' | 'desc') => {
+    setSelectedFilters(prev => ({
+      ...prev,
+      sortOption,
+      sortDirection,
+    }));
+  };
+
   const applyFilterChanges = () => {
     applyFilters(selectedFilters);
     setShowFilters(false);
@@ -78,6 +96,8 @@ const MapScreen = () => {
       ambiance: [],
       foodTypes: [],
       priceRange: [],
+      sortOption: null,
+      sortDirection: 'asc',
     };
     setSelectedFilters(cleared);
     applyFilters(cleared);
@@ -100,6 +120,41 @@ const MapScreen = () => {
           </View>
 
           <ScrollView style={styles.filtersList}>
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>• Trier par</Text>
+              <View style={styles.filterOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    selectedFilters.sortOption === 'distance' && styles.filterChipSelected
+                  ]}
+                  onPress={() => handleSortSelection('distance', 'asc')}
+                >
+                  <Text style={[
+                    styles.filterChipText,
+                    selectedFilters.sortOption === 'distance' && styles.filterChipTextSelected
+                  ]}>
+                    Distance
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.filterChip,
+                    selectedFilters.sortOption === 'rating' && styles.filterChipSelected
+                  ]}
+                  onPress={() => handleSortSelection('rating', 'desc')}
+                >
+                  <Text style={[
+                    styles.filterChipText,
+                    selectedFilters.sortOption === 'rating' && styles.filterChipTextSelected
+                  ]}>
+                    Note
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             <View style={styles.filterSection}>
               <Text style={styles.filterSectionTitle}>• Lieux</Text>
               <View style={styles.filterOptions}>
@@ -234,6 +289,7 @@ const MapScreen = () => {
     </Modal>
   );
 
+
   return (
     <View style={styles.container}>
       <MapView
@@ -248,6 +304,8 @@ const MapScreen = () => {
         }}
         showsUserLocation={true}
         showsMyLocationButton={false}
+        onRegionChange={() => setIsMapMoving(true)}
+        onRegionChangeComplete={() => setIsMapMoving(false)}
       >
         {filteredVenues.map(venue => (
           <Marker
@@ -270,9 +328,11 @@ const MapScreen = () => {
       <SafeAreaView style={styles.headerOverlay}>
         {/* Empty view for spacing, to balance the profile button */}
         <View style={{ width: 48, height: 48 }} />
-        <TouchableOpacity onPress={centerOnUser}>
-          <Text style={styles.headerTitle}>AUTOUR DE MOI</Text>
-        </TouchableOpacity>
+        <Animated.View style={{ opacity: buttonOpacity }}>
+          <TouchableOpacity onPress={centerOnUser}>
+            <Text style={styles.headerTitle}>AUTOUR DE MOI</Text>
+          </TouchableOpacity>
+        </Animated.View>
         <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
           <View style={styles.profileIcon}>
             <Text style={styles.profileEmoji}>👤</Text>
@@ -294,143 +354,144 @@ const MapScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
   map: {
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
   headerOverlay: {
     position: 'absolute',
-    top: 50,
+    top: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: theme.spacing.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    zIndex: 10,
   },
   headerTitle: {
+    fontSize: 16,
+    fontFamily: theme.fonts.bold,
     color: theme.colors.primary,
-    fontSize: theme.fonts.sizes.md,
-    fontWeight: 'bold',
-    fontStyle: 'italic',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.full,
+    backgroundColor: 'white',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
     overflow: 'hidden',
   },
   profileIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.colors.secondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: theme.colors.secondary,
-  },
-  profileEmoji: {
-    fontSize: 24,
-  },
-  markerContainer: {
-    alignItems: 'center',
-  },
-  marker: {
-    backgroundColor: theme.colors.secondary,
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: theme.colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  profileEmoji: {
+    fontSize: 20,
+  },
+  markerContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  marker: {
+    backgroundColor: theme.colors.primary,
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   markerText: {
-    fontSize: 20,
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: theme.colors.primary,
-    borderTopLeftRadius: theme.borderRadius.lg,
-    borderTopRightRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingBottom: 30,
     maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surface,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   modalTitle: {
-    fontSize: theme.fonts.sizes.xl,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontFamily: theme.fonts.bold,
     color: theme.colors.text,
   },
   filtersList: {
-    padding: theme.spacing.lg,
+    padding: 20,
   },
   filterSection: {
-    marginBottom: theme.spacing.lg,
+    marginBottom: 24,
   },
   filterSectionTitle: {
-    fontSize: theme.fonts.sizes.md,
-    fontWeight: 'bold',
+    fontSize: 16,
+    fontFamily: theme.fonts.regular,
     color: theme.colors.text,
-    marginBottom: theme.spacing.sm,
+    marginBottom: 12,
   },
   filterOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: theme.spacing.sm,
+    gap: 10,
   },
   filterChip: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: theme.colors.text,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.full,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   filterChipSelected: {
-    backgroundColor: theme.colors.text,
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary,
   },
   filterChipText: {
+    fontSize: 14,
+    fontFamily: theme.fonts.regular,
     color: theme.colors.text,
-    fontSize: theme.fonts.sizes.sm,
   },
   filterChipTextSelected: {
-    color: theme.colors.primary,
+    color: '#fff',
   },
   validateButton: {
-    backgroundColor: theme.colors.secondary,
-    marginHorizontal: theme.spacing.lg,
-    marginVertical: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.full,
+    margin: 20,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
   },
   validateButtonText: {
-    color: theme.colors.background,
-    fontSize: theme.fonts.sizes.lg,
-    fontWeight: 'bold',
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: theme.fonts.bold,
   },
   closeModalButton: {
-    alignSelf: 'center',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: theme.colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: theme.spacing.md,
-    marginBottom: theme.spacing.lg,
-    borderWidth: 2,
-    borderColor: theme.colors.text,
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    padding: 8,
   },
 });
 

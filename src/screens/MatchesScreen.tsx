@@ -10,15 +10,17 @@ import { Match } from '../types';
 
 const MatchesScreen = () => {
   const navigation = useNavigation<any>();
-  const { matches, setMatches } = useStore();
-  const [filter, setFilter] = useState<'sports' | 'date' | 'proximity'>('proximity');
+  const { matches, setMatches, matchFilters, applyMatchSorting } = useStore();
 
   useEffect(() => {
     loadMatches();
   }, []);
 
   const loadMatches = () => {
+    // Load mock matches for now
     setMatches(mockData.matches);
+    // Apply initial sorting based on default matchFilters
+    applyMatchSorting(matchFilters.sortBy, matchFilters.sortDirection);
   };
 
   const renderMatchCard = (match: Match) => (
@@ -64,26 +66,26 @@ const MatchesScreen = () => {
 
       <View style={styles.filterContainer}>
         <TouchableOpacity
-          style={[styles.filterChip, filter === 'sports' && styles.filterChipActive]}
-          onPress={() => setFilter('sports')}
+          style={[styles.filterChip, matchFilters.sortBy === 'sport' && styles.filterChipActive]}
+          onPress={() => applyMatchSorting('sport', 'asc')} // Assuming alphabetical for sports
         >
-          <Text style={[styles.filterChipText, filter === 'sports' && styles.filterChipTextActive]}>
+          <Text style={[styles.filterChipText, matchFilters.sortBy === 'sport' && styles.filterChipTextActive]}>
             Sports
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, filter === 'date' && styles.filterChipActive]}
-          onPress={() => setFilter('date')}
+          style={[styles.filterChip, matchFilters.sortBy === 'date' && styles.filterChipActive]}
+          onPress={() => applyMatchSorting('date', 'asc')} // Assuming ascending date for now
         >
-          <Text style={[styles.filterChipText, filter === 'date' && styles.filterChipTextActive]}>
+          <Text style={[styles.filterChipText, matchFilters.sortBy === 'date' && styles.filterChipTextActive]}>
             Date
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, filter === 'proximity' && styles.filterChipActive]}
-          onPress={() => setFilter('proximity')}
+          style={[styles.filterChip, matchFilters.sortBy === 'proximity' && styles.filterChipActive]}
+          onPress={() => applyMatchSorting('proximity', 'asc')} // Proximity sorting will be a placeholder for now
         >
-          <Text style={[styles.filterChipText, filter === 'proximity' && styles.filterChipTextActive]}>
+          <Text style={[styles.filterChipText, matchFilters.sortBy === 'proximity' && styles.filterChipTextActive]}>
             À proximité
           </Text>
         </TouchableOpacity>

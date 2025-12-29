@@ -35,7 +35,7 @@ const NotificationsScreen = () => {
     {
       id: '4',
       type: 'venue' as const,
-      title: 'Nouveaux bars ajoutés\nautour de moi',
+      title: 'Nouveaux bars ajoutés autour de moi',
       message: '',
       badge: 'ON/OFF' as const,
     },
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   toggleButton: {
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: theme.colors.primary,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xs,
     borderRadius: theme.borderRadius.sm,
@@ -178,7 +178,7 @@ const styles = StyleSheet.create({
   toggleText: {
     fontSize: theme.fonts.sizes.xs,
     fontWeight: 'bold',
-    color: theme.colors.background,
+    color: theme.colors.text,
   },
   validateButton: {
     backgroundColor: theme.colors.secondary,
