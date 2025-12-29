@@ -18,6 +18,17 @@ const MapScreen = () => {
   const [selectedFilters, setSelectedFilters] = useState(filters);
   const mapRef = useRef<MapView>(null);
 
+  const centerOnUser = () => {
+    if (userLocation && mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    }
+  };
+
   useEffect(() => {
     loadVenues();
     getUserLocation();
@@ -257,17 +268,16 @@ const MapScreen = () => {
       </MapView>
 
       <SafeAreaView style={styles.headerOverlay}>
-        <TouchableOpacity
-          style={styles.profileButton}
-          onPress={() => navigation.navigate('Profile')}
-        >
+        {/* Empty view for spacing, to balance the profile button */}
+        <View style={{ width: 48, height: 48 }} />
+        <TouchableOpacity onPress={centerOnUser}>
+          <Text style={styles.headerTitle}>AUTOUR DE MOI</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
           <View style={styles.profileIcon}>
             <Text style={styles.profileEmoji}>👤</Text>
           </View>
         </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>AUTOUR DE MOI</Text>
-        </View>
       </SafeAreaView>
 
       <FloatingNavBar
@@ -298,11 +308,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  headerTitleContainer: {
-    flex: 1,
-    alignItems: 'center',
-    marginRight: 48,
-  },
   headerTitle: {
     color: theme.colors.primary,
     fontSize: theme.fonts.sizes.md,
@@ -313,11 +318,6 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.full,
     overflow: 'hidden',
-  },
-  profileButton: {
-    position: 'absolute',
-    right: theme.spacing.lg,
-    zIndex: 10,
   },
   profileIcon: {
     width: 48,
