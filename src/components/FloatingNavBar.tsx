@@ -59,29 +59,31 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 50,
     left: 0,
     right: 0,
     alignItems: 'center',
   },
   pill: {
     flexDirection: 'row',
-    backgroundColor: theme.colors.text,
-    borderRadius: 50,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    gap: 32,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 40,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    gap: 40,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 6,
     },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(123, 47, 254, 0.15)',
   },
   iconButton: {
-    padding: 8,
+    padding: 6,
   },
 });
 
