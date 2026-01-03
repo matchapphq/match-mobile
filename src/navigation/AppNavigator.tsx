@@ -25,7 +25,7 @@ export const AppNavigator = () => {
   
   useEffect(() => {
     // Simulate loading
-    setTimeout(() => setIsLoading(false), 2000);
+    setTimeout(() => setIsLoading(false), 2000); 
   }, []);
   
   if (isLoading) {

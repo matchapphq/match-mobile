@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Image, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
-import { theme } from '../constants/theme';
+import { theme, images } from '../constants/theme';
 import { useStore } from '../store/useStore';
 
 type OnboardingStep = 'sports' | 'ambiance' | 'food' | 'budget';
@@ -212,16 +211,21 @@ const OnboardingScreen = () => {
   };
 
   return (
-    <LinearGradient
-      colors={[theme.colors.gradient.start, theme.colors.gradient.end]}
+    <ImageBackground
+      source={images.background}
       style={styles.container}
+      resizeMode="cover"
     >
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>⚡</Text>
+          <Image
+            source={images.logo}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
         </View>
 
-        <ScrollView contentContainerStyle={styles.content}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           {currentStep === 'sports' && renderSportsStep()}
           {currentStep === 'ambiance' && renderAmbianceStep()}
           {currentStep === 'food' && renderFoodStep()}
@@ -235,28 +239,30 @@ const OnboardingScreen = () => {
           ]}
           onPress={handleContinue}
           disabled={!isStepValid()}
+          activeOpacity={0.8}
         >
           <Text style={styles.continueButtonText}>Continuer</Text>
         </TouchableOpacity>
       </SafeAreaView>
-    </LinearGradient>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: theme.colors.background,
   },
   safeArea: {
     flex: 1,
   },
   logoContainer: {
     alignItems: 'center',
-    paddingTop: theme.spacing.lg,
+    paddingTop: theme.spacing.md,
   },
-  logo: {
-    fontSize: 60,
-    color: theme.colors.secondary,
+  logoImage: {
+    width: 100,
+    height: 100,
   },
   content: {
     flex: 1,

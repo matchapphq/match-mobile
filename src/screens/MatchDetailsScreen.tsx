@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ImageBackground } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import { theme, images } from '../constants/theme';
 import { Match } from '../types';
 import { mockData } from '../services/api';
 
 const MatchDetailsScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const match: Match = route.params?.match;
+  const rawMatch = route.params?.match;
+  // Parse date string back to Date object
+  const match: Match = useMemo(() => ({
+    ...rawMatch,
+    date: typeof rawMatch?.date === 'string' ? new Date(rawMatch.date) : rawMatch?.date
+  }), [rawMatch]);
   const [following, setFollowing] = useState(false);
 
   const recommendedVenues = mockData.venues.slice(0, 3);
@@ -19,10 +24,11 @@ const MatchDetailsScreen = () => {
   };
 
   return (
+    <ImageBackground source={images.background} style={styles.backgroundContainer} resizeMode="cover">
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="globe-outline" size={28} color={theme.colors.secondary} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.globeButton}>
+          <Ionicons name="globe-outline" size={24} color={theme.colors.secondary} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
           <View style={styles.profileIcon}>
@@ -97,13 +103,16 @@ const MatchDetailsScreen = () => {
         <Ionicons name="close" size={24} color={theme.colors.text} />
       </TouchableOpacity>
     </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -112,6 +121,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingTop: 50,
     paddingBottom: theme.spacing.md,
+  },
+  globeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileIcon: {
     width: 32,

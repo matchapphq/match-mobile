@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, ImageBackground, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { theme, images } from '../constants/theme';
 import { useStore } from '../store/useStore';
-import { mockData } from '../services/api';
 import { Match } from '../types';
+
+const { width } = Dimensions.get('window');
 
 const MatchesScreen = () => {
   const navigation = useNavigation<any>();
@@ -16,45 +18,61 @@ const MatchesScreen = () => {
     loadMatches();
   }, []);
 
-  const loadMatches = () => {
-    // Load mock matches for now
-    setMatches(mockData.matches);
-    // Apply initial sorting based on default matchFilters
+  const loadMatches = async () => {
+    const { fetchUpcomingMatches } = useStore.getState();
+    await fetchUpcomingMatches();
     applyMatchSorting(matchFilters.sortBy, matchFilters.sortDirection);
   };
 
+  const getSportIcon = (sport: string) => {
+    switch (sport?.toLowerCase()) {
+      case 'football': return '⚽';
+      case 'basketball': return '🏀';
+      case 'rugby': return '🏉';
+      case 'tennis': return '🎾';
+      default: return '⚽';
+    }
+  };
+
   const renderMatchCard = (match: Match) => (
-    <TouchableOpacity
-      key={match.id}
-      style={styles.matchCard}
-      onPress={() => navigation.navigate('MatchDetails', { match })}
-    >
-      <Image
-        source={{ uri: match.thumbnail || 'https://via.placeholder.com/400x200' }}
+    <View key={match.id} style={styles.matchCard}>
+      <ImageBackground
+        source={{ uri: match.thumbnail || 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=800' }}
         style={styles.matchThumbnail}
-      />
-      <View style={styles.matchOverlay}>
-        <View style={styles.matchHeader}>
-          <Text style={styles.matchTeams}>{match.homeTeam} / {match.awayTeam}</Text>
-          <TouchableOpacity style={styles.sportBadge}>
-            <Text style={styles.sportBadgeText}>{match.sport === 'Football' ? '⚽' : '🏀'}</Text>
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.matchDateTime}>
-          {match.date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} - {match.time}
-        </Text>
+        imageStyle={styles.matchThumbnailImage}
+      >
+        <LinearGradient
+          colors={['transparent', 'rgba(123, 47, 254, 0.95)']}
+          style={styles.matchGradient}
+        >
+          <View style={styles.matchContent}>
+            <View style={styles.matchInfo}>
+              <Text style={styles.matchTeams}>{match.homeTeam} / {match.awayTeam}</Text>
+              <Text style={styles.matchDateTime}>
+                {match.date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })} - {match.time}
+              </Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.watchButton}
+              onPress={() => navigation.navigate('MatchDetails', { match: { ...match, date: match.date.toISOString() } })}
+            >
+              <Text style={styles.watchButtonText}>Voir le match</Text>
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
+      </ImageBackground>
+      <View style={styles.sportBadge}>
+        <Text style={styles.sportBadgeText}>{getSportIcon(match.sport)}</Text>
       </View>
-      <TouchableOpacity style={styles.watchButton}>
-        <Text style={styles.watchButtonText}>Voir le match</Text>
-      </TouchableOpacity>
-    </TouchableOpacity>
+    </View>
   );
 
   return (
+    <ImageBackground source={images.background} style={styles.backgroundContainer} resizeMode="cover">
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="globe-outline" size={28} color={theme.colors.secondary} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.globeButton}>
+          <Ionicons name="globe-outline" size={24} color={theme.colors.secondary} />
         </TouchableOpacity>
         <Text style={styles.title}>Prochains Matchs</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
@@ -95,13 +113,16 @@ const MatchesScreen = () => {
         {matches.map(renderMatchCard)}
       </ScrollView>
     </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -110,15 +131,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
   },
+  globeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   title: {
     fontSize: theme.fonts.sizes.xl,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: theme.colors.textDark,
   },
   profileIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -127,90 +157,93 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: theme.spacing.lg,
     gap: theme.spacing.sm,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+    justifyContent: 'center',
   },
   filterChip: {
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.xs,
-    backgroundColor: theme.colors.primary,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.secondary,
     borderRadius: theme.borderRadius.full,
   },
   filterChipActive: {
-    backgroundColor: theme.colors.secondary,
+    backgroundColor: theme.colors.primary,
   },
   filterChipText: {
-    color: theme.colors.text,
+    color: theme.colors.primary,
     fontSize: theme.fonts.sizes.sm,
+    fontWeight: '600',
   },
   filterChipTextActive: {
-    color: theme.colors.primary,
-    fontWeight: 'bold',
+    color: theme.colors.text,
   },
   matchesList: {
     flex: 1,
     paddingHorizontal: theme.spacing.lg,
   },
   matchCard: {
-    backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.lg,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
     overflow: 'hidden',
+    position: 'relative',
   },
   matchThumbnail: {
     width: '100%',
-    height: 180,
+    height: 200,
   },
-  matchOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    padding: theme.spacing.md,
+  matchThumbnailImage: {
+    borderRadius: theme.borderRadius.lg,
   },
-  matchHeader: {
+  matchGradient: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  matchContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
+    alignItems: 'flex-end',
+    padding: theme.spacing.md,
+  },
+  matchInfo: {
+    flex: 1,
   },
   matchTeams: {
     fontSize: theme.fonts.sizes.xl,
     fontWeight: 'bold',
     color: theme.colors.text,
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
+    marginBottom: 4,
   },
   sportBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.colors.background,
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: theme.colors.cardBackground,
     justifyContent: 'center',
     alignItems: 'center',
+    ...theme.shadows.small,
   },
   sportBadgeText: {
     fontSize: 18,
   },
   matchDateTime: {
-    fontSize: theme.fonts.sizes.md,
+    fontSize: theme.fonts.sizes.sm,
     color: theme.colors.text,
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
-    alignSelf: 'flex-start',
+    opacity: 0.9,
   },
   watchButton: {
     backgroundColor: theme.colors.secondary,
+    paddingHorizontal: theme.spacing.md,
     paddingVertical: theme.spacing.sm,
-    alignItems: 'center',
+    borderRadius: theme.borderRadius.full,
   },
   watchButtonText: {
-    fontSize: theme.fonts.sizes.md,
+    fontSize: theme.fonts.sizes.sm,
     fontWeight: 'bold',
-    color: theme.colors.background,
+    fontStyle: 'italic',
+    color: theme.colors.primary,
   },
 });
 

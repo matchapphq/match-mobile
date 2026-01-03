@@ -1,9 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import { theme, images } from '../constants/theme';
 import { useStore } from '../store/useStore';
 
 const NotificationsScreen = () => {
@@ -52,65 +52,83 @@ const NotificationsScreen = () => {
     // Toggle notification on/off
   };
 
+  const [toggleStates, setToggleStates] = useState<Record<string, boolean>>({
+    '1': true,
+    '2': true,
+    '3': false,
+    '4': true,
+    '5': false,
+  });
+
+  const toggleNotification = (id: string) => {
+    setToggleStates(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="globe-outline" size={28} color={theme.colors.secondary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Notifications</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <View style={styles.profileIcon}>
-            <Text>👤</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
-        <View style={styles.card}>
-          <View style={styles.cardIcon}>
-            <Ionicons name="notifications" size={48} color={theme.colors.primary} />
-          </View>
-
-          <View style={styles.notificationsList}>
-            {mockNotifications.map(notification => (
-              <View key={notification.id} style={styles.notificationItem}>
-                <View style={styles.notificationContent}>
-                  <Text style={styles.notificationTitle}>• {notification.title}</Text>
-                  {notification.message && (
-                    <Text style={styles.notificationMessage}>{notification.message}</Text>
-                  )}
-                </View>
-                <TouchableOpacity
-                  style={styles.toggleButton}
-                  onPress={() => handleToggleNotification(notification.id)}
-                >
-                  <Text style={styles.toggleText}>{notification.badge}</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-
-          <TouchableOpacity style={styles.validateButton}>
-            <Text style={styles.validateButtonText}>VALIDER</Text>
+    <ImageBackground source={images.background} style={styles.backgroundContainer} resizeMode="cover">
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.globeButton}>
+            <Ionicons name="globe-outline" size={24} color={theme.colors.secondary} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Notifications</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <View style={styles.profileIcon}>
+              <Text style={styles.profileEmoji}>👤</Text>
+            </View>
           </TouchableOpacity>
         </View>
-      </ScrollView>
 
-      <TouchableOpacity
-        style={styles.closeButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="close" size={24} color={theme.colors.text} />
-      </TouchableOpacity>
-    </SafeAreaView>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          <View style={styles.card}>
+            <View style={styles.cardIcon}>
+              <Ionicons name="notifications-outline" size={48} color={theme.colors.primary} />
+            </View>
+
+            <View style={styles.notificationsList}>
+              {mockNotifications.map(notification => (
+                <View key={notification.id} style={styles.notificationItem}>
+                  <View style={styles.notificationContent}>
+                    <Text style={styles.notificationTitle}>• {notification.title}</Text>
+                    {notification.message && (
+                      <Text style={styles.notificationMessage}>{notification.message}</Text>
+                    )}
+                  </View>
+                  <View style={styles.toggleContainer}>
+                    <Text style={[styles.toggleLabel, toggleStates[notification.id] && styles.toggleLabelActive]}>
+                      {toggleStates[notification.id] ? 'ON' : 'OFF'}
+                    </Text>
+                    <Switch
+                      value={toggleStates[notification.id]}
+                      onValueChange={() => toggleNotification(notification.id)}
+                      trackColor={{ false: '#767577', true: theme.colors.secondary }}
+                      thumbColor={toggleStates[notification.id] ? theme.colors.text : '#f4f3f4'}
+                    />
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            <TouchableOpacity style={styles.validateButton} onPress={() => navigation.goBack()}>
+              <Text style={styles.validateButtonText}>VALIDER</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+          <Ionicons name="close" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.primary,
   },
   header: {
     flexDirection: 'row',
@@ -119,18 +137,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
   },
+  globeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   title: {
     fontSize: theme.fonts.sizes.xl,
     fontWeight: 'bold',
     color: theme.colors.text,
   },
   profileIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  profileEmoji: {
+    fontSize: 18,
   },
   content: {
     flex: 1,
@@ -169,16 +199,18 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     lineHeight: 18,
   },
-  toggleButton: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
+  toggleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
-  toggleText: {
+  toggleLabel: {
     fontSize: theme.fonts.sizes.xs,
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: theme.colors.textSecondary,
+  },
+  toggleLabelActive: {
+    color: theme.colors.secondary,
   },
   validateButton: {
     backgroundColor: theme.colors.secondary,

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserPreferences, Venue, Match, Reservation, Notification } from '../types';
+import { apiService, mockData } from '../services/api';
 
 interface AppState {
   // User
@@ -60,6 +61,20 @@ interface AppState {
   markNotificationAsRead: (id: string) => void;
   clearNotifications: () => void;
 
+  // API Actions
+  fetchVenues: (filters?: any) => Promise<void>;
+  fetchNearbyVenues: (lat: number, lng: number, radius?: number) => Promise<void>;
+  fetchMatches: (filters?: any) => Promise<void>;
+  fetchUpcomingMatches: () => Promise<void>;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (data: any) => Promise<boolean>;
+
+  // Loading states
+  isLoading: boolean;
+  error: string | null;
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+
   logout: () => void;
 }
 
@@ -87,6 +102,83 @@ export const useStore = create<AppState>((set, get) => ({
     priceRange: [],
     sortOption: null,
     sortDirection: 'asc',
+  },
+  isLoading: false,
+  error: null,
+
+  // Loading state actions
+  setLoading: (loading) => set({ isLoading: loading }),
+  setError: (error) => set({ error }),
+
+  // API Actions
+  fetchVenues: async (filters) => {
+    set({ isLoading: true, error: null });
+    try {
+      const venues = await apiService.getVenues(filters);
+      set({ venues, filteredVenues: venues, isLoading: false });
+    } catch (error) {
+      console.log('API error, using mock data:', error);
+      set({ venues: mockData.venues, filteredVenues: mockData.venues, isLoading: false });
+    }
+  },
+
+  fetchNearbyVenues: async (lat, lng, radius = 5000) => {
+    set({ isLoading: true, error: null });
+    try {
+      const venues = await apiService.getNearbyVenues(lat, lng, radius);
+      set({ venues, filteredVenues: venues, isLoading: false });
+    } catch (error) {
+      console.log('API error, using mock data:', error);
+      set({ venues: mockData.venues, filteredVenues: mockData.venues, isLoading: false });
+    }
+  },
+
+  fetchMatches: async (filters) => {
+    set({ isLoading: true, error: null });
+    try {
+      const matches = await apiService.getMatches(filters);
+      set({ matches, isLoading: false });
+    } catch (error) {
+      console.log('API error, using mock data:', error);
+      set({ matches: mockData.matches, isLoading: false });
+    }
+  },
+
+  fetchUpcomingMatches: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const matches = await apiService.getUpcomingMatches();
+      set({ matches, isLoading: false });
+    } catch (error) {
+      console.log('API error, using mock data:', error);
+      set({ matches: mockData.matches, isLoading: false });
+    }
+  },
+
+  login: async (email, password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await apiService.login(email, password);
+      await AsyncStorage.setItem('authToken', response.token);
+      set({ user: response.user, isAuthenticated: true, isLoading: false });
+      return true;
+    } catch (error: any) {
+      set({ error: error.message || 'Login failed', isLoading: false });
+      return false;
+    }
+  },
+
+  signup: async (data) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await apiService.signup(data);
+      await AsyncStorage.setItem('authToken', response.token);
+      set({ user: response.user, isAuthenticated: true, isLoading: false });
+      return true;
+    } catch (error: any) {
+      set({ error: error.message || 'Signup failed', isLoading: false });
+      return false;
+    }
   },
 
   // Actions

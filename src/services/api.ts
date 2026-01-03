@@ -1,7 +1,8 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Venue, Match, User, Reservation, VenueType, SportType } from '../types';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8008/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,14 +13,44 @@ const api = axios.create({
 });
 
 // Add auth token to requests
-api.interceptors.request.use((config) => {
-  // TODO: Get token from AsyncStorage
-  // const token = await AsyncStorage.getItem('authToken');
-  // if (token) {
-  //   config.headers.Authorization = `Bearer ${token}`;
-  // }
+api.interceptors.request.use(async (config) => {
+  try {
+    const token = await AsyncStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  } catch (error) {
+    console.log('Error getting auth token:', error);
+  }
   return config;
 });
+
+// Handle response errors
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      await AsyncStorage.removeItem('authToken');
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Transform API match response to mobile Match type
+const transformMatches = (rawMatches: any[]): Match[] => {
+  return rawMatches.map((m: any) => ({
+    id: m.id,
+    homeTeam: m.homeTeam?.name || m.home_team?.name || m.homeTeam || 'TBD',
+    awayTeam: m.awayTeam?.name || m.away_team?.name || m.awayTeam || 'TBD',
+    sport: m.league?.sport?.name || m.sport || 'Football',
+    date: new Date(m.scheduled_at || m.date),
+    time: m.scheduled_at 
+      ? new Date(m.scheduled_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      : m.time || '',
+    competition: m.league?.name || m.competition || '',
+    thumbnail: m.thumbnail || m.image_url || undefined,
+  }));
+};
 
 export const apiService = {
   // Auth
@@ -36,30 +67,34 @@ export const apiService = {
   // Venues
   getVenues: async (filters?: any): Promise<Venue[]> => {
     const response = await api.get('/venues', { params: filters });
-    return response.data;
+    // Handle both array and { data: [] } response formats
+    return Array.isArray(response.data) ? response.data : (response.data?.data || []);
   },
   
   getVenueById: async (id: string): Promise<Venue> => {
     const response = await api.get(`/venues/${id}`);
-    return response.data;
+    return response.data?.data || response.data;
   },
   
   getNearbyVenues: async (lat: number, lng: number, radius: number = 5000): Promise<Venue[]> => {
     const response = await api.get('/venues/nearby', {
       params: { lat, lng, radius }
     });
-    return response.data;
+    // Handle both array and { data: [] } response formats
+    return Array.isArray(response.data) ? response.data : (response.data?.data || []);
   },
   
   // Matches
   getMatches: async (filters?: any): Promise<Match[]> => {
     const response = await api.get('/matches', { params: filters });
-    return response.data;
+    const rawMatches = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+    return transformMatches(rawMatches);
   },
   
   getUpcomingMatches: async (): Promise<Match[]> => {
     const response = await api.get('/matches/upcoming');
-    return response.data;
+    const rawMatches = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+    return transformMatches(rawMatches);
   },
   
   getMatchesByVenue: async (venueId: string): Promise<Match[]> => {

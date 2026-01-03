@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import { theme, images } from '../constants/theme';
 import { useStore } from '../store/useStore';
 
 const ReservationsScreen = () => {
@@ -36,18 +36,19 @@ const ReservationsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="globe-outline" size={28} color={theme.colors.secondary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Mes réservations</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <View style={styles.profileIcon}>
-            <Text>👤</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+    <ImageBackground source={images.background} style={styles.backgroundContainer} resizeMode="cover">
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.globeButton}>
+            <Ionicons name="globe-outline" size={24} color={theme.colors.secondary} />
+          </TouchableOpacity>
+          <Text style={styles.title}>Mes réservations</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <View style={styles.profileIcon}>
+              <Text style={styles.profileEmoji}>👤</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
       <ScrollView style={styles.content}>
         <View style={styles.card}>
@@ -88,19 +89,22 @@ const ReservationsScreen = () => {
       </ScrollView>
 
       <TouchableOpacity
-        style={styles.closeButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="close" size={24} color={theme.colors.text} />
-      </TouchableOpacity>
-    </SafeAreaView>
+          style={styles.closeButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="close" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+      </SafeAreaView>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.primary,
   },
   header: {
     flexDirection: 'row',
@@ -109,18 +113,30 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
   },
+  globeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   title: {
     fontSize: theme.fonts.sizes.xl,
     fontWeight: 'bold',
     color: theme.colors.text,
   },
   profileIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  profileEmoji: {
+    fontSize: 18,
   },
   content: {
     flex: 1,

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, Linking, ImageBackground } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import { theme, images } from '../constants/theme';
 import { Venue } from '../types';
 
 const VenueDetailsScreen = () => {
@@ -29,20 +29,23 @@ const VenueDetailsScreen = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="close" size={28} color={theme.colors.text} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
-          <View style={styles.profileIcon}>
-            <Text>👤</Text>
-          </View>
-        </TouchableOpacity>
-      </View>
+    <ImageBackground
+      source={images.background}
+      style={styles.backgroundContainer}
+      resizeMode="cover"
+    >
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
+            <Ionicons name="globe-outline" size={28} color={theme.colors.secondary} />
+          </TouchableOpacity>
+          <Text style={styles.screenTitle}>Le lieu</Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+            <View style={styles.profileIcon}>
+              <Text style={styles.profileEmoji}>👤</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
       <View style={styles.card}>
         <Text style={styles.title}>{venue.name}</Text>
@@ -129,38 +132,69 @@ const VenueDetailsScreen = () => {
           <Text style={styles.reserveButtonText}>Réserver</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+      </ScrollView>
+
+      <TouchableOpacity style={styles.closeButton} onPress={() => navigation.goBack()}>
+        <Ionicons name="close" size={24} color={theme.colors.text} />
+      </TouchableOpacity>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
+  backgroundContainer: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.primary,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: 50,
+    paddingTop: 60,
     paddingBottom: theme.spacing.md,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.primary,
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  screenTitle: {
+    fontSize: theme.fonts.sizes.xl,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
   profileIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+  },
+  profileEmoji: {
+    fontSize: 18,
+  },
+  closeButton: {
+    position: 'absolute',
+    bottom: 40,
+    alignSelf: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.text,
   },
   card: {
     backgroundColor: theme.colors.text,
