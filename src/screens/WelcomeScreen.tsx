@@ -41,14 +41,22 @@ const WelcomeScreen = () => {
             Trouve en 30 secondes{'\n'}les meilleurs spots{'\n'}pour regarder tes matchs
           </Text>
         </Animated.View>
-        
-        <Animated.View style={{ opacity: fadeAnim }}>
+
+        <Animated.View style={{ opacity: fadeAnim, width: '100%', alignItems: 'center' }}>
           <TouchableOpacity
             style={styles.button}
             onPress={() => navigation.navigate('Onboarding')}
             activeOpacity={0.8}
           >
             <Text style={styles.buttonText}>Commencer</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.loginLink}
+            onPress={() => navigation.navigate('Login')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.loginLinkText}>J'ai déjà un compte</Text>
           </TouchableOpacity>
         </Animated.View>
       </View>
@@ -94,6 +102,7 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.full,
     minWidth: 220,
     ...theme.shadows.medium,
+    marginBottom: theme.spacing.lg,
   },
   buttonText: {
     color: theme.colors.primary,
@@ -101,6 +110,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontStyle: 'italic',
     textAlign: 'center',
+  },
+  loginLink: {
+    paddingVertical: theme.spacing.sm,
+  },
+  loginLinkText: {
+    color: theme.colors.text,
+    fontSize: theme.fonts.sizes.md,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
 });
 

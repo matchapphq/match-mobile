@@ -8,6 +8,7 @@ import { useStore } from '../store/useStore';
 import SplashScreen from '../screens/SplashScreen';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import LoginScreen from '../screens/LoginScreen';
 import MapScreen from '../screens/MapScreen';
 import MatchesScreen from '../screens/MatchesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -20,18 +21,18 @@ import SearchScreen from '../screens/SearchScreen';
 const Stack = createStackNavigator();
 
 export const AppNavigator = () => {
-  const { onboardingCompleted } = useStore();
+  const { onboardingCompleted, isAuthenticated } = useStore();
   const [isLoading, setIsLoading] = React.useState(true);
-  
+
   useEffect(() => {
     // Simulate loading
-    setTimeout(() => setIsLoading(false), 2000); 
+    setTimeout(() => setIsLoading(false), 2000);
   }, []);
-  
+
   if (isLoading) {
     return <SplashScreen />;
   }
-  
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -40,9 +41,10 @@ export const AppNavigator = () => {
           cardStyle: { backgroundColor: theme.colors.background },
         }}
       >
-        {!onboardingCompleted ? (
+        {!isAuthenticated ? (
           <>
             <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           </>
         ) : (
