@@ -10,6 +10,7 @@ import {
     Image,
     Dimensions,
     TextInput,
+    ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MapView, { Marker } from "react-native-maps";
@@ -22,6 +23,7 @@ import FloatingNavBar from "../components/FloatingNavBar";
 
 // Default user avatar
 const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/adventurer/png?seed=Match";
+const BACKGROUND_IMAGE = require("../../assets/background.png");
 
 const { width } = Dimensions.get("window");
 
@@ -63,16 +65,7 @@ const MapScreen = () => {
             useNativeDriver: true,
         }).start();
     }, [isMapMoving]);
-    
-    const fetchMapVisible = () => {
-        if (mapRef.current) {
-            mapRef.current.fitToSuppliedMarkers(["userLocation"], {
-                edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-                animated: true,
-            });
-        }
-    }
-    
+
     const centerOnUser = () => {
         if (userLocation && mapRef.current) {
             mapRef.current.animateToRegion({
@@ -336,8 +329,10 @@ const MapScreen = () => {
                 activeOpacity={1}
                 onPressOut={() => setShowFilters(false)}
             >
-                <View
+                <ImageBackground
+                    source={BACKGROUND_IMAGE}
                     style={styles.modalContent}
+                    imageStyle={{ borderRadius: 28 }}
                     onStartShouldSetResponder={() => true}
                 >
                     <View style={styles.modalHeader}>
@@ -359,8 +354,8 @@ const MapScreen = () => {
                                     style={[
                                         styles.filterChip,
                                         selectedFilters.sortOption ===
-                                            "distance" &&
-                                            styles.filterChipSelected,
+                                        "distance" &&
+                                        styles.filterChipSelected,
                                     ]}
                                     onPress={() =>
                                         handleSortSelection("distance", "asc")
@@ -370,8 +365,8 @@ const MapScreen = () => {
                                         style={[
                                             styles.filterChipText,
                                             selectedFilters.sortOption ===
-                                                "distance" &&
-                                                styles.filterChipTextSelected,
+                                            "distance" &&
+                                            styles.filterChipTextSelected,
                                         ]}
                                     >
                                         Distance
@@ -382,8 +377,8 @@ const MapScreen = () => {
                                     style={[
                                         styles.filterChip,
                                         selectedFilters.sortOption ===
-                                            "rating" &&
-                                            styles.filterChipSelected,
+                                        "rating" &&
+                                        styles.filterChipSelected,
                                     ]}
                                     onPress={() =>
                                         handleSortSelection("rating", "desc")
@@ -393,8 +388,8 @@ const MapScreen = () => {
                                         style={[
                                             styles.filterChipText,
                                             selectedFilters.sortOption ===
-                                                "rating" &&
-                                                styles.filterChipTextSelected,
+                                            "rating" &&
+                                            styles.filterChipTextSelected,
                                         ]}
                                     >
                                         Note
@@ -431,7 +426,7 @@ const MapScreen = () => {
                                                     selectedFilters.foodTypes.includes(
                                                         option,
                                                     ) &&
-                                                        styles.filterChipTextSelected,
+                                                    styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -470,7 +465,7 @@ const MapScreen = () => {
                                                     selectedFilters.priceRange.includes(
                                                         option,
                                                     ) &&
-                                                        styles.filterChipTextSelected,
+                                                    styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -506,7 +501,7 @@ const MapScreen = () => {
                                                     selectedFilters.sports.includes(
                                                         option,
                                                     ) &&
-                                                        styles.filterChipTextSelected,
+                                                    styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -542,7 +537,7 @@ const MapScreen = () => {
                                                     selectedFilters.ambiance.includes(
                                                         option,
                                                     ) &&
-                                                        styles.filterChipTextSelected,
+                                                    styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -581,7 +576,7 @@ const MapScreen = () => {
                                                     selectedFilters.foodTypes.includes(
                                                         option,
                                                     ) &&
-                                                        styles.filterChipTextSelected,
+                                                    styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -599,7 +594,8 @@ const MapScreen = () => {
                     >
                         <Text style={styles.validateButtonText}>VALIDER</Text>
                     </TouchableOpacity>
-                </View>
+
+                </ImageBackground>
 
                 <TouchableOpacity
                     style={styles.closeModalButton}
@@ -611,8 +607,8 @@ const MapScreen = () => {
                         color={theme.colors.primary}
                     />
                 </TouchableOpacity>
-            </TouchableOpacity>
-        </Modal>
+            </TouchableOpacity >
+        </Modal >
     );
 
     const renderSearchModal = () => (
@@ -627,8 +623,10 @@ const MapScreen = () => {
                 activeOpacity={1}
                 onPressOut={() => setShowSearch(false)}
             >
-                <View
+                <ImageBackground
+                    source={BACKGROUND_IMAGE}
                     style={styles.searchModalContent}
+                    imageStyle={{ borderRadius: 28 }}
                     onStartShouldSetResponder={() => true}
                 >
                     <View style={styles.searchModalHeader}>
@@ -710,7 +708,8 @@ const MapScreen = () => {
                             VALIDER
                         </Text>
                     </TouchableOpacity>
-                </View>
+
+                </ImageBackground>
 
                 <TouchableOpacity
                     style={styles.closeModalButton}
@@ -722,8 +721,8 @@ const MapScreen = () => {
                         color={theme.colors.primary}
                     />
                 </TouchableOpacity>
-            </TouchableOpacity>
-        </Modal>
+            </TouchableOpacity >
+        </Modal >
     );
 
     return (
@@ -776,7 +775,7 @@ const MapScreen = () => {
 
                 <Animated.View style={{ opacity: buttonOpacity }}>
                     <TouchableOpacity
-                        onPress={fetchMapVisible}
+                        onPress={centerOnUser}
                         style={styles.locationBadge}
                     >
                         <Text style={styles.headerTitle}>AUTOUR DE MOI</Text>
@@ -910,12 +909,12 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         width: width - 48,
-        backgroundColor: "#FFFFFF",
         borderRadius: 28,
         padding: 24,
         maxHeight: "70%",
         borderWidth: 3,
         borderColor: theme.colors.primary,
+        overflow: "hidden",
     },
     modalHeader: {
         flexDirection: "row",
@@ -1141,12 +1140,12 @@ const styles = StyleSheet.create({
     },
     searchModalContent: {
         width: width - 48,
-        backgroundColor: theme.colors.primary,
         borderRadius: 28,
         padding: 24,
         maxHeight: "65%",
         borderWidth: 3,
         borderColor: theme.colors.secondary,
+        overflow: "hidden",
     },
     searchModalHeader: {
         flexDirection: "row",
@@ -1160,12 +1159,15 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
     },
     searchInputContainer: {
+        flexDirection: "row",
+        alignItems: "center",
         borderBottomWidth: 2,
         borderBottomColor: "rgba(255,255,255,0.5)",
         marginBottom: 20,
         paddingBottom: 8,
     },
     searchInput: {
+        flex: 1,
         fontSize: 18,
         color: theme.colors.text,
         paddingVertical: 4,
