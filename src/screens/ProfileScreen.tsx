@@ -48,7 +48,7 @@ const ProfileScreen = () => {
           <Ionicons name="globe-outline" size={24} color={theme.colors.secondary} />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>Bonjour _______</Text>
+          <Text style={styles.title}>Bonjour Test User</Text>
           <View style={styles.titleUnderline} />
         </View>
         <View style={styles.headerProfileIcon}>

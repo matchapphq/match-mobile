@@ -333,7 +333,7 @@ const MapScreen = () => {
                     source={BACKGROUND_IMAGE}
                     style={styles.modalContent}
                     imageStyle={{ borderRadius: 28 }}
-                    onStartShouldSetResponder={() => true}
+                    // onStartShouldSetResponder={() => true}
                 >
                     <View style={styles.modalHeader}>
                         <Text style={styles.modalTitle}>Filtres</Text>
@@ -597,7 +597,7 @@ const MapScreen = () => {
 
                 </ImageBackground>
 
-                <TouchableOpacity
+                {/*<TouchableOpacity
                     style={styles.closeModalButton}
                     onPress={() => setShowFilters(false)}
                 >
@@ -606,7 +606,7 @@ const MapScreen = () => {
                         size={24}
                         color={theme.colors.primary}
                     />
-                </TouchableOpacity>
+                </TouchableOpacity>*/}
             </TouchableOpacity >
         </Modal >
     );
@@ -627,7 +627,7 @@ const MapScreen = () => {
                     source={BACKGROUND_IMAGE}
                     style={styles.searchModalContent}
                     imageStyle={{ borderRadius: 28 }}
-                    onStartShouldSetResponder={() => true}
+                    // onStartShouldSetResponder={() => true}
                 >
                     <View style={styles.searchModalHeader}>
                         <Text style={styles.searchModalTitle}>Recherche</Text>
