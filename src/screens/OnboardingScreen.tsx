@@ -1,334 +1,363 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Image, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { theme, images } from '../constants/theme';
-import { useStore } from '../store/useStore';
+import React, { useState, useRef, useEffect } from "react";
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    ImageBackground,
+    Image,
+    Animated,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useNavigation } from "@react-navigation/native";
+import { theme, images } from "../constants/theme";
+import { useStore } from "../store/useStore";
 
-type OnboardingStep = 'sports' | 'ambiance' | 'food' | 'budget';
+type OnboardingStep = "sports" | "ambiance" | "food" | "budget";
 
 const OnboardingScreen = () => {
-  const navigation = useNavigation<any>();
-  const { updateUserPreferences, setOnboardingCompleted } = useStore();
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('sports');
-  const [selections, setSelections] = useState({
-    sports: [] as string[],
-    ambiance: [] as string[],
-    foodTypes: [] as string[],
-    budget: '' as string,
-  });
-
-  const sportsOptions = [
-    { id: 'foot', label: 'Foot', icon: '⚽' },
-    { id: 'rugby', label: 'Rugby', icon: '🏉' },
-    { id: 'basket', label: 'Basket', icon: '🏀' },
-    { id: 'tennis', label: 'Tennis', icon: '🎾' },
-  ];
-
-  const ambianceOptions = [
-    { id: 'posee', label: 'Posée', icon: '😌' },
-    { id: 'chaude', label: 'Ultra / Ambiance chaude', icon: '🔥' },
-    { id: 'conviviale', label: 'Conviviale', icon: '🤗' },
-  ];
-
-  const foodOptions = [
-    { id: 'restaurant', label: 'Restaurant', icon: '🍴' },
-    { id: 'bar', label: 'Bars / Pubs', icon: '🍺' },
-    { id: 'fastfood', label: 'Fast-foods', icon: '🍔' },
-  ];
-
-  const budgetOptions = [
-    { id: '5-10', label: '5-10 €' },
-    { id: '10-20', label: '10-20 €' },
-    { id: '+20', label: '+20 €' },
-  ];
-
-  const toggleSelection = (category: 'sports' | 'ambiance' | 'foodTypes', item: string) => {
-    setSelections(prev => ({
-      ...prev,
-      [category]: prev[category].includes(item)
-        ? prev[category].filter(i => i !== item)
-        : [...prev[category], item]
-    }));
-  };
-
-  const selectBudget = (budget: string) => {
-    setSelections(prev => ({ ...prev, budget }));
-  };
-
-  const handleContinue = () => {
-    switch (currentStep) {
-      case 'sports':
-        setCurrentStep('ambiance');
-        break;
-      case 'ambiance':
-        setCurrentStep('food');
-        break;
-      case 'food':
-        setCurrentStep('budget');
-        break;
-      case 'budget':
-        completeOnboarding();
-        break;
-    }
-  };
-
-  const completeOnboarding = async () => {
-    updateUserPreferences({
-      sports: selections.sports,
-      ambiance: selections.ambiance,
-      foodTypes: selections.foodTypes,
-      budget: selections.budget,
+    const navigation = useNavigation<any>();
+    const { updateUserPreferences, setOnboardingCompleted } = useStore();
+    const [currentStep, setCurrentStep] = useState<OnboardingStep>("sports");
+    const [selections, setSelections] = useState({
+        sports: [] as string[],
+        ambiance: [] as string[],
+        foodTypes: [] as string[],
+        budget: "" as string,
     });
-    await setOnboardingCompleted(true);
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Main' }],
-    });
-  };
 
-  const renderSportsStep = () => (
-    <>
-      <Text style={styles.title}>Quels sports t'intéressent ?</Text>
-      <Text style={styles.subtitle}>Sélectionne 1 ou plusieurs</Text>
-      <View style={styles.optionsContainer}>
-        {sportsOptions.map(option => (
-          <TouchableOpacity
-            key={option.id}
-            style={[
-              styles.optionButton,
-              selections.sports.includes(option.id) && styles.optionButtonSelected
-            ]}
-            onPress={() => toggleSelection('sports', option.id)}
-          >
-            <Text style={styles.optionIcon}>{option.icon}</Text>
-            <Text style={[
-              styles.optionLabel,
-              selections.sports.includes(option.id) && styles.optionLabelSelected
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-        <TouchableOpacity style={styles.optionButton}>
-          <Text style={styles.optionLabel}>Ajouter</Text>
-        </TouchableOpacity>
-      </View>
-    </>
-  );
+    const sportsOptions = [
+        { id: "foot", label: "Foot", icon: "⚽" },
+        { id: "rugby", label: "Rugby", icon: "🏉" },
+        { id: "basket", label: "Basket", icon: "🏀" },
+        { id: "tennis", label: "Tennis", icon: "🎾" },
+    ];
 
-  const renderAmbianceStep = () => (
-    <>
-      <Text style={styles.title}>Quelle ambiance préfères-tu</Text>
-      <Text style={styles.subtitle}>Sélectionne 1 ou plusieurs</Text>
-      <View style={styles.optionsContainer}>
-        {ambianceOptions.map(option => (
-          <TouchableOpacity
-            key={option.id}
-            style={[
-              styles.optionButton,
-              selections.ambiance.includes(option.id) && styles.optionButtonSelected
-            ]}
-            onPress={() => toggleSelection('ambiance', option.id)}
-          >
-            <Text style={styles.optionIcon}>{option.icon}</Text>
-            <Text style={[
-              styles.optionLabel,
-              selections.ambiance.includes(option.id) && styles.optionLabelSelected
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </>
-  );
+    const ambianceOptions = [
+        { id: "posee", label: "Posée", icon: "😌" },
+        { id: "chaude", label: "Ultra / Ambiance chaude", icon: "🔥" },
+        { id: "conviviale", label: "Conviviale", icon: "🤗" },
+    ];
 
-  const renderFoodStep = () => (
-    <>
-      <Text style={styles.title}>Plutôt bar ou fast-food ?</Text>
-      <View style={styles.optionsContainer}>
-        {foodOptions.map(option => (
-          <TouchableOpacity
-            key={option.id}
-            style={[
-              styles.optionButton,
-              selections.foodTypes.includes(option.id) && styles.optionButtonSelected
-            ]}
-            onPress={() => toggleSelection('foodTypes', option.id)}
-          >
-            <Text style={styles.optionIcon}>{option.icon}</Text>
-            <Text style={[
-              styles.optionLabel,
-              selections.foodTypes.includes(option.id) && styles.optionLabelSelected
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </>
-  );
+    const foodOptions = [
+        { id: "restaurant", label: "Restaurant", icon: "🍴" },
+        { id: "bar", label: "Bars / Pubs", icon: "🍺" },
+        { id: "fastfood", label: "Fast-foods", icon: "🍔" },
+    ];
 
-  const renderBudgetStep = () => (
-    <>
-      <Text style={styles.title}>Ton budget habituel ?</Text>
-      <View style={styles.optionsContainer}>
-        {budgetOptions.map(option => (
-          <TouchableOpacity
-            key={option.id}
-            style={[
-              styles.optionButton,
-              selections.budget === option.id && styles.optionButtonSelected
-            ]}
-            onPress={() => selectBudget(option.id)}
-          >
-            <Text style={[
-              styles.optionLabel,
-              selections.budget === option.id && styles.optionLabelSelected
-            ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </>
-  );
+    const budgetOptions = [
+        { id: "5-10", label: "5-10 €" },
+        { id: "10-20", label: "10-20 €" },
+        { id: "+20", label: "+20 €" },
+    ];
 
-  const isStepValid = () => {
-    switch (currentStep) {
-      case 'sports':
-        return selections.sports.length > 0;
-      case 'ambiance':
-        return selections.ambiance.length > 0;
-      case 'food':
-        return selections.foodTypes.length > 0;
-      case 'budget':
-        return selections.budget !== '';
-      default:
-        return false;
-    }
-  };
+    const toggleSelection = (
+        category: "sports" | "ambiance" | "foodTypes",
+        item: string,
+    ) => {
+        setSelections((prev) => ({
+            ...prev,
+            [category]: prev[category].includes(item)
+                ? prev[category].filter((i) => i !== item)
+                : [...prev[category], item],
+        }));
+    };
 
-  return (
-    <ImageBackground
-      source={images.background}
-      style={styles.container}
-      resizeMode="cover"
-    >
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={images.logo}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-        </View>
+    const selectBudget = (budget: string) => {
+        setSelections((prev) => ({ ...prev, budget }));
+    };
 
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          {currentStep === 'sports' && renderSportsStep()}
-          {currentStep === 'ambiance' && renderAmbianceStep()}
-          {currentStep === 'food' && renderFoodStep()}
-          {currentStep === 'budget' && renderBudgetStep()}
-        </ScrollView>
+    const handleContinue = () => {
+        switch (currentStep) {
+            case "sports":
+                setCurrentStep("ambiance");
+                break;
+            case "ambiance":
+                setCurrentStep("food");
+                break;
+            case "food":
+                setCurrentStep("budget");
+                break;
+            case "budget":
+                completeOnboarding();
+                break;
+        }
+    };
 
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            !isStepValid() && styles.continueButtonDisabled
-          ]}
-          onPress={handleContinue}
-          disabled={!isStepValid()}
-          activeOpacity={0.8}
+    const completeOnboarding = async () => {
+        updateUserPreferences({
+            sports: selections.sports,
+            ambiance: selections.ambiance,
+            foodTypes: selections.foodTypes,
+            budget: selections.budget,
+        });
+        await setOnboardingCompleted(true);
+        // Navigate to the main authenticated screen
+        navigation.navigate("Main");
+    };
+
+    const renderSportsStep = () => (
+        <>
+            <Text style={styles.title}>Quels sports t'intéressent ?</Text>
+            <Text style={styles.subtitle}>Sélectionne 1 ou plusieurs</Text>
+            <View style={styles.optionsContainer}>
+                {sportsOptions.map((option) => (
+                    <TouchableOpacity
+                        key={option.id}
+                        style={[
+                            styles.optionButton,
+                            selections.sports.includes(option.id) &&
+                                styles.optionButtonSelected,
+                        ]}
+                        onPress={() => toggleSelection("sports", option.id)}
+                    >
+                        <Text style={styles.optionIcon}>{option.icon}</Text>
+                        <Text
+                            style={[
+                                styles.optionLabel,
+                                selections.sports.includes(option.id) &&
+                                    styles.optionLabelSelected,
+                            ]}
+                        >
+                            {option.label}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={styles.optionButton}>
+                    <Text style={styles.optionLabel}>Ajouter</Text>
+                </TouchableOpacity>
+            </View>
+        </>
+    );
+
+    const renderAmbianceStep = () => (
+        <>
+            <Text style={styles.title}>Quelle ambiance préfères-tu</Text>
+            <Text style={styles.subtitle}>Sélectionne 1 ou plusieurs</Text>
+            <View style={styles.optionsContainer}>
+                {ambianceOptions.map((option) => (
+                    <TouchableOpacity
+                        key={option.id}
+                        style={[
+                            styles.optionButton,
+                            selections.ambiance.includes(option.id) &&
+                                styles.optionButtonSelected,
+                        ]}
+                        onPress={() => toggleSelection("ambiance", option.id)}
+                    >
+                        <Text style={styles.optionIcon}>{option.icon}</Text>
+                        <Text
+                            style={[
+                                styles.optionLabel,
+                                selections.ambiance.includes(option.id) &&
+                                    styles.optionLabelSelected,
+                            ]}
+                        >
+                            {option.label}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+        </>
+    );
+
+    const renderFoodStep = () => (
+        <>
+            <Text style={styles.title}>Plutôt bar ou fast-food ?</Text>
+            <View style={styles.optionsContainer}>
+                {foodOptions.map((option) => (
+                    <TouchableOpacity
+                        key={option.id}
+                        style={[
+                            styles.optionButton,
+                            selections.foodTypes.includes(option.id) &&
+                                styles.optionButtonSelected,
+                        ]}
+                        onPress={() => toggleSelection("foodTypes", option.id)}
+                    >
+                        <Text style={styles.optionIcon}>{option.icon}</Text>
+                        <Text
+                            style={[
+                                styles.optionLabel,
+                                selections.foodTypes.includes(option.id) &&
+                                    styles.optionLabelSelected,
+                            ]}
+                        >
+                            {option.label}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+        </>
+    );
+
+    const renderBudgetStep = () => (
+        <>
+            <Text style={styles.title}>Ton budget habituel ?</Text>
+            <View style={styles.optionsContainer}>
+                {budgetOptions.map((option) => (
+                    <TouchableOpacity
+                        key={option.id}
+                        style={[
+                            styles.optionButton,
+                            selections.budget === option.id &&
+                                styles.optionButtonSelected,
+                        ]}
+                        onPress={() => selectBudget(option.id)}
+                    >
+                        <Text
+                            style={[
+                                styles.optionLabel,
+                                selections.budget === option.id &&
+                                    styles.optionLabelSelected,
+                            ]}
+                        >
+                            {option.label}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+        </>
+    );
+
+    const isStepValid = () => {
+        switch (currentStep) {
+            case "sports":
+                return selections.sports.length > 0;
+            case "ambiance":
+                return selections.ambiance.length > 0;
+            case "food":
+                return selections.foodTypes.length > 0;
+            case "budget":
+                return selections.budget !== "";
+            default:
+                return false;
+        }
+    };
+
+    return (
+        <ImageBackground
+            source={images.background}
+            style={styles.container}
+            resizeMode="cover"
         >
-          <Text style={styles.continueButtonText}>Continuer</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    </ImageBackground>
-  );
+            <SafeAreaView style={styles.safeArea}>
+                <View style={styles.logoContainer}>
+                    <Image
+                        source={images.logo}
+                        style={styles.logoImage}
+                        resizeMode="contain"
+                    />
+                </View>
+
+                <ScrollView
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+                >
+                    {currentStep === "sports" && renderSportsStep()}
+                    {currentStep === "ambiance" && renderAmbianceStep()}
+                    {currentStep === "food" && renderFoodStep()}
+                    {currentStep === "budget" && renderBudgetStep()}
+                </ScrollView>
+
+                <TouchableOpacity
+                    style={[
+                        styles.continueButton,
+                        !isStepValid() && styles.continueButtonDisabled,
+                    ]}
+                    onPress={handleContinue}
+                    disabled={!isStepValid()}
+                    activeOpacity={0.8}
+                >
+                    <Text style={styles.continueButtonText}>Continuer</Text>
+                </TouchableOpacity>
+            </SafeAreaView>
+        </ImageBackground>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    paddingTop: theme.spacing.md,
-  },
-  logoImage: {
-    width: 100,
-    height: 100,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.xxl,
-  },
-  title: {
-    fontSize: theme.fonts.sizes.xl,
-    fontWeight: 'bold',
-    color: theme.colors.secondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  subtitle: {
-    fontSize: theme.fonts.sizes.md,
-    color: theme.colors.secondary,
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
-    opacity: 0.8,
-  },
-  optionsContainer: {
-    alignItems: 'center',
-    gap: theme.spacing.md,
-  },
-  optionButton: {
-    backgroundColor: theme.colors.secondary,
-    paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.full,
-    minWidth: 250,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.sm,
-  },
-  optionButtonSelected: {
-    backgroundColor: theme.colors.text,
-  },
-  optionIcon: {
-    fontSize: 20,
-  },
-  optionLabel: {
-    fontSize: theme.fonts.sizes.lg,
-    fontWeight: '600',
-    color: theme.colors.primary,
-  },
-  optionLabelSelected: {
-    color: theme.colors.secondary,
-  },
-  continueButton: {
-    backgroundColor: theme.colors.text,
-    paddingHorizontal: theme.spacing.xl,
-    paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.full,
-    marginHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.xl,
-  },
-  continueButtonDisabled: {
-    opacity: 0.5,
-  },
-  continueButtonText: {
-    color: theme.colors.primary,
-    fontSize: theme.fonts.sizes.lg,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
+    container: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    safeArea: {
+        flex: 1,
+    },
+    logoContainer: {
+        alignItems: "center",
+        paddingTop: theme.spacing.md,
+    },
+    logoImage: {
+        width: 100,
+        height: 100,
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: theme.spacing.lg,
+        paddingTop: theme.spacing.xxl,
+    },
+    title: {
+        fontSize: theme.fonts.sizes.xl,
+        fontWeight: "bold",
+        color: theme.colors.secondary,
+        textAlign: "center",
+        marginBottom: theme.spacing.sm,
+    },
+    subtitle: {
+        fontSize: theme.fonts.sizes.md,
+        color: theme.colors.secondary,
+        textAlign: "center",
+        marginBottom: theme.spacing.xl,
+        opacity: 0.8,
+    },
+    optionsContainer: {
+        alignItems: "center",
+        gap: theme.spacing.md,
+    },
+    optionButton: {
+        backgroundColor: theme.colors.secondary,
+        paddingHorizontal: theme.spacing.xl,
+        paddingVertical: theme.spacing.md,
+        borderRadius: theme.borderRadius.full,
+        minWidth: 250,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: theme.spacing.sm,
+    },
+    optionButtonSelected: {
+        backgroundColor: theme.colors.text,
+    },
+    optionIcon: {
+        fontSize: 20,
+    },
+    optionLabel: {
+        fontSize: theme.fonts.sizes.lg,
+        fontWeight: "600",
+        color: theme.colors.primary,
+    },
+    optionLabelSelected: {
+        color: theme.colors.secondary,
+    },
+    continueButton: {
+        backgroundColor: theme.colors.text,
+        paddingHorizontal: theme.spacing.xl,
+        paddingVertical: theme.spacing.md,
+        borderRadius: theme.borderRadius.full,
+        marginHorizontal: theme.spacing.lg,
+        marginBottom: theme.spacing.xl,
+    },
+    continueButtonDisabled: {
+        opacity: 0.5,
+    },
+    continueButtonText: {
+        color: theme.colors.primary,
+        fontSize: theme.fonts.sizes.lg,
+        fontWeight: "bold",
+        textAlign: "center",
+    },
 });
 
 export default OnboardingScreen;

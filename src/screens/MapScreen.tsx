@@ -17,13 +17,12 @@ import MapView, { Marker } from "react-native-maps";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useNavigation } from "@react-navigation/native";
-import { theme } from "../constants/theme";
+import { theme, images } from "../constants/theme";
 import { useStore } from "../store/useStore";
 import FloatingNavBar from "../components/FloatingNavBar";
 
 // Default user avatar
 const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/adventurer/png?seed=Match";
-const BACKGROUND_IMAGE = require("../../assets/background.png");
 
 const { width } = Dimensions.get("window");
 
@@ -330,7 +329,7 @@ const MapScreen = () => {
                 onPressOut={() => setShowFilters(false)}
             >
                 <ImageBackground
-                    source={BACKGROUND_IMAGE}
+                    source={images.background}
                     style={styles.modalContent}
                     imageStyle={{ borderRadius: 28 }}
                     // onStartShouldSetResponder={() => true}
@@ -624,7 +623,7 @@ const MapScreen = () => {
                 onPressOut={() => setShowSearch(false)}
             >
                 <ImageBackground
-                    source={BACKGROUND_IMAGE}
+                    source={images.background}
                     style={styles.searchModalContent}
                     imageStyle={{ borderRadius: 28 }}
                     // onStartShouldSetResponder={() => true}

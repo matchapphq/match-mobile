@@ -5,9 +5,9 @@ import { AppNavigator } from './src/navigation/AppNavigator';
 import { initializeStore } from './src/store/useStore';
 
 export default function App() {
-  useEffect(() => {
-    initializeStore();
-  }, []);
+    useEffect(() => {
+        initializeStore();
+    }, []);
 
   return (
     <SafeAreaProvider>

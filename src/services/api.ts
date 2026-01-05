@@ -56,6 +56,7 @@ export const apiService = {
   // Auth
   login: async (email: string, password: string) => {
     const response = await api.post('/auth/login', { email, password });
+    if (!response) throw new Error('Login failed');
     return response.data;
   },
   
