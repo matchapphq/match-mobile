@@ -208,9 +208,9 @@ export const useStore = create<AppState>((set, get) => ({
                 venue_types: data.foodTypes,
             };
             // Remove old keys if they are not expected by the API
-            delete apiData.sports;
-            delete apiData.ambiance;
-            delete apiData.foodTypes;
+            // delete apiData.sports;
+            // delete apiData.ambiance;
+            // delete apiData.foodTypes;
             
             const response = await apiService.signup(apiData);
             await AsyncStorage.setItem("authToken", response.token);

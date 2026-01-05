@@ -129,7 +129,7 @@ const OnboardingScreen = () => {
     const completeOnboarding = async () => {
         const success = await signup({
             ...credentials,
-            phoneNumber: `${selectedCountry.code}${credentials.phoneNumber}`,
+            phone: `${selectedCountry.code}${credentials.phoneNumber}`,
             ...selections,
         });
 
