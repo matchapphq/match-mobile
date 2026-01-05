@@ -61,7 +61,7 @@ export const apiService = {
   },
   
   signup: async (data: any) => {
-    const response = await api.post('/auth/signup', data);
+    const response = await api.post('/onboarding/complete', data);
     return response.data;
   },
   

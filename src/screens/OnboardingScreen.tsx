@@ -8,23 +8,33 @@ import {
     ImageBackground,
     Image,
     Animated,
+    TextInput,
+    Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { theme, images } from "../constants/theme";
 import { useStore } from "../store/useStore";
 
-type OnboardingStep = "sports" | "ambiance" | "food" | "budget";
+type OnboardingStep = "credentials" | "sports" | "ambiance" | "food" | "budget";
 
 const OnboardingScreen = () => {
     const navigation = useNavigation<any>();
-    const { updateUserPreferences, setOnboardingCompleted } = useStore();
-    const [currentStep, setCurrentStep] = useState<OnboardingStep>("sports");
+    const { signup } = useStore();
+    const [currentStep, setCurrentStep] =
+        useState<OnboardingStep>("credentials");
     const [selections, setSelections] = useState({
         sports: [] as string[],
         ambiance: [] as string[],
         foodTypes: [] as string[],
         budget: "" as string,
+    });
+
+    const [credentials, setCredentials] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
     });
 
     const sportsOptions = [
@@ -52,6 +62,10 @@ const OnboardingScreen = () => {
         { id: "+20", label: "+20 €" },
     ];
 
+    const handleCredentialChange = (name: string, value: string) => {
+        setCredentials((prev) => ({ ...prev, [name]: value }));
+    };
+
     const toggleSelection = (
         category: "sports" | "ambiance" | "foodTypes",
         item: string,
@@ -70,6 +84,9 @@ const OnboardingScreen = () => {
 
     const handleContinue = () => {
         switch (currentStep) {
+            case "credentials":
+                setCurrentStep("sports");
+                break;
             case "sports":
                 setCurrentStep("ambiance");
                 break;
@@ -86,16 +103,61 @@ const OnboardingScreen = () => {
     };
 
     const completeOnboarding = async () => {
-        updateUserPreferences({
-            sports: selections.sports,
-            ambiance: selections.ambiance,
-            foodTypes: selections.foodTypes,
-            budget: selections.budget,
+        const success = await signup({
+            ...credentials,
+            ...selections,
         });
-        await setOnboardingCompleted(true);
-        // Navigate to the main authenticated screen
-        navigation.navigate("Main");
+
+        if (success) {
+            navigation.navigate("Main");
+        } else {
+            Alert.alert(
+                "Erreur",
+                "L'inscription a échoué. Veuillez réessayer.",
+            );
+        }
     };
+
+    const renderCredentialsStep = () => (
+        <>
+            <Text style={styles.title}>Créez votre compte</Text>
+            <View style={styles.optionsContainer}>
+                <TextInput
+                    style={styles.input}
+                    placeholder="Prénom"
+                    value={credentials.firstName}
+                    onChangeText={(val) =>
+                        handleCredentialChange("firstName", val)
+                    }
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Nom"
+                    value={credentials.lastName}
+                    onChangeText={(val) =>
+                        handleCredentialChange("lastName", val)
+                    }
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Email"
+                    value={credentials.email}
+                    onChangeText={(val) => handleCredentialChange("email", val)}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                />
+                <TextInput
+                    style={styles.input}
+                    placeholder="Mot de passe"
+                    value={credentials.password}
+                    onChangeText={(val) =>
+                        handleCredentialChange("password", val)
+                    }
+                    secureTextEntry
+                />
+            </View>
+        </>
+    );
 
     const renderSportsStep = () => (
         <>
@@ -223,6 +285,13 @@ const OnboardingScreen = () => {
 
     const isStepValid = () => {
         switch (currentStep) {
+            case "credentials":
+                return (
+                    credentials.email.includes("@") &&
+                    credentials.password.length >= 6 &&
+                    credentials.firstName.length > 0 &&
+                    credentials.lastName.length > 0
+                );
             case "sports":
                 return selections.sports.length > 0;
             case "ambiance":
@@ -255,6 +324,7 @@ const OnboardingScreen = () => {
                     contentContainerStyle={styles.content}
                     showsVerticalScrollIndicator={false}
                 >
+                    {currentStep === "credentials" && renderCredentialsStep()}
                     {currentStep === "sports" && renderSportsStep()}
                     {currentStep === "ambiance" && renderAmbianceStep()}
                     {currentStep === "food" && renderFoodStep()}
@@ -294,7 +364,7 @@ const styles = StyleSheet.create({
         height: 100,
     },
     content: {
-        flex: 1,
+        flexGrow: 1,
         paddingHorizontal: theme.spacing.lg,
         paddingTop: theme.spacing.xxl,
     },
@@ -357,6 +427,15 @@ const styles = StyleSheet.create({
         fontSize: theme.fonts.sizes.lg,
         fontWeight: "bold",
         textAlign: "center",
+    },
+    input: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.md,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: 16,
+        color: theme.colors.text,
+        fontSize: theme.fonts.sizes.md,
+        width: "100%",
     },
 });
 

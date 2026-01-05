@@ -200,13 +200,27 @@ export const useStore = create<AppState>((set, get) => ({
     signup: async (data) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await apiService.signup(data);
+            // Map frontend state to the API schema
+            const apiData = {
+                ...data,
+                fav_sports: data.sports,
+                ambiances: data.ambiance,
+                venue_types: data.foodTypes,
+            };
+            // Remove old keys if they are not expected by the API
+            delete apiData.sports;
+            delete apiData.ambiance;
+            delete apiData.foodTypes;
+            
+            const response = await apiService.signup(apiData);
             await AsyncStorage.setItem("authToken", response.token);
             set({
                 user: response.user,
                 isAuthenticated: true,
+                onboardingCompleted: true, // Mark onboarding as completed
                 isLoading: false,
             });
+            await AsyncStorage.setItem('onboardingCompleted', 'true');
             return true;
         } catch (error: any) {
             set({ error: error.message || "Signup failed", isLoading: false });
@@ -224,10 +238,8 @@ export const useStore = create<AppState>((set, get) => ({
         }
     },
 
-    // TODO: This is a temporary solution to fix the navigation issue.
-    // A proper registration flow should be implemented in the OnboardingScreen.
     setOnboardingCompleted: async (completed) => {
-        set({ onboardingCompleted: completed, isAuthenticated: true });
+        set({ onboardingCompleted: completed });
         await AsyncStorage.setItem(
             "onboardingCompleted",
             JSON.stringify(completed),
