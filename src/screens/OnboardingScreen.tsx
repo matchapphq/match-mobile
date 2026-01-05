@@ -10,6 +10,8 @@ import {
     Animated,
     TextInput,
     Alert,
+    Modal,
+    FlatList,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -23,6 +25,15 @@ const OnboardingScreen = () => {
     const { signup } = useStore();
     const [currentStep, setCurrentStep] =
         useState<OnboardingStep>("credentials");
+
+    // Country code state
+    const [countryCodeModalVisible, setCountryCodeModalVisible] = useState(false);
+    const [selectedCountry, setSelectedCountry] = useState({
+        code: "+33",
+        flag: "🇫🇷",
+        name: "France",
+    });
+
     const [selections, setSelections] = useState({
         sports: [] as string[],
         ambiance: [] as string[],
@@ -35,7 +46,20 @@ const OnboardingScreen = () => {
         lastName: "",
         email: "",
         password: "",
+        phoneNumber: "",
     });
+
+    const countryOptions = [
+        { code: "+33", flag: "🇫🇷", name: "France" },
+        { code: "+1", flag: "🇺🇸", name: "United States" },
+        { code: "+44", flag: "🇬🇧", name: "United Kingdom" },
+        { code: "+49", flag: "🇩🇪", name: "Germany" },
+        { code: "+34", flag: "🇪🇸", name: "Spain" },
+        { code: "+39", flag: "🇮🇹", name: "Italy" },
+        { code: "+351", flag: "🇵🇹", name: "Portugal" },
+        { code: "+32", flag: "🇧🇪", name: "Belgium" },
+        { code: "+41", flag: "🇨🇭", name: "Switzerland" },
+    ];
 
     const sportsOptions = [
         { id: "foot", label: "Foot", icon: "⚽" },
@@ -105,6 +129,7 @@ const OnboardingScreen = () => {
     const completeOnboarding = async () => {
         const success = await signup({
             ...credentials,
+            phoneNumber: `${selectedCountry.code}${credentials.phoneNumber}`,
             ...selections,
         });
 
@@ -117,6 +142,20 @@ const OnboardingScreen = () => {
             );
         }
     };
+
+    const renderCountryItem = ({ item }: { item: typeof countryOptions[0] }) => (
+        <TouchableOpacity
+            style={styles.countryItem}
+            onPress={() => {
+                setSelectedCountry(item);
+                setCountryCodeModalVisible(false);
+            }}
+        >
+            <Text style={styles.countryFlag}>{item.flag}</Text>
+            <Text style={styles.countryName}>{item.name}</Text>
+            <Text style={styles.countryCode}>{item.code}</Text>
+        </TouchableOpacity>
+    );
 
     const renderCredentialsStep = () => (
         <>
@@ -146,6 +185,28 @@ const OnboardingScreen = () => {
                     keyboardType="email-address"
                     autoCapitalize="none"
                 />
+
+                {/* Phone Number Input with Country Code */}
+                <View style={styles.phoneInputContainer}>
+                    <TouchableOpacity
+                        style={styles.countrySelector}
+                        onPress={() => setCountryCodeModalVisible(true)}
+                    >
+                        <Text style={styles.countrySelectorText}>
+                            {selectedCountry.flag} {selectedCountry.code}
+                        </Text>
+                    </TouchableOpacity>
+                    <TextInput
+                        style={styles.phoneInput}
+                        placeholder="Téléphone"
+                        value={credentials.phoneNumber}
+                        onChangeText={(val) =>
+                            handleCredentialChange("phoneNumber", val)
+                        }
+                        keyboardType="phone-pad"
+                    />
+                </View>
+
                 <TextInput
                     style={styles.input}
                     placeholder="Mot de passe"
@@ -156,6 +217,33 @@ const OnboardingScreen = () => {
                     secureTextEntry
                 />
             </View>
+
+            {/* Country Code Selection Modal */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={countryCodeModalVisible}
+                onRequestClose={() => setCountryCodeModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Choisir un pays</Text>
+                            <TouchableOpacity
+                                onPress={() => setCountryCodeModalVisible(false)}
+                            >
+                                <Text style={styles.closeButton}>Fermer</Text>
+                            </TouchableOpacity>
+                        </View>
+                        <FlatList
+                            data={countryOptions}
+                            renderItem={renderCountryItem}
+                            keyExtractor={(item) => item.code}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    </View>
+                </View>
+            </Modal>
         </>
     );
 
@@ -170,7 +258,7 @@ const OnboardingScreen = () => {
                         style={[
                             styles.optionButton,
                             selections.sports.includes(option.id) &&
-                                styles.optionButtonSelected,
+                            styles.optionButtonSelected,
                         ]}
                         onPress={() => toggleSelection("sports", option.id)}
                     >
@@ -179,7 +267,7 @@ const OnboardingScreen = () => {
                             style={[
                                 styles.optionLabel,
                                 selections.sports.includes(option.id) &&
-                                    styles.optionLabelSelected,
+                                styles.optionLabelSelected,
                             ]}
                         >
                             {option.label}
@@ -204,7 +292,7 @@ const OnboardingScreen = () => {
                         style={[
                             styles.optionButton,
                             selections.ambiance.includes(option.id) &&
-                                styles.optionButtonSelected,
+                            styles.optionButtonSelected,
                         ]}
                         onPress={() => toggleSelection("ambiance", option.id)}
                     >
@@ -213,7 +301,7 @@ const OnboardingScreen = () => {
                             style={[
                                 styles.optionLabel,
                                 selections.ambiance.includes(option.id) &&
-                                    styles.optionLabelSelected,
+                                styles.optionLabelSelected,
                             ]}
                         >
                             {option.label}
@@ -234,7 +322,7 @@ const OnboardingScreen = () => {
                         style={[
                             styles.optionButton,
                             selections.foodTypes.includes(option.id) &&
-                                styles.optionButtonSelected,
+                            styles.optionButtonSelected,
                         ]}
                         onPress={() => toggleSelection("foodTypes", option.id)}
                     >
@@ -243,7 +331,7 @@ const OnboardingScreen = () => {
                             style={[
                                 styles.optionLabel,
                                 selections.foodTypes.includes(option.id) &&
-                                    styles.optionLabelSelected,
+                                styles.optionLabelSelected,
                             ]}
                         >
                             {option.label}
@@ -264,7 +352,7 @@ const OnboardingScreen = () => {
                         style={[
                             styles.optionButton,
                             selections.budget === option.id &&
-                                styles.optionButtonSelected,
+                            styles.optionButtonSelected,
                         ]}
                         onPress={() => selectBudget(option.id)}
                     >
@@ -272,7 +360,7 @@ const OnboardingScreen = () => {
                             style={[
                                 styles.optionLabel,
                                 selections.budget === option.id &&
-                                    styles.optionLabelSelected,
+                                styles.optionLabelSelected,
                             ]}
                         >
                             {option.label}
@@ -290,7 +378,8 @@ const OnboardingScreen = () => {
                     credentials.email.includes("@") &&
                     credentials.password.length >= 6 &&
                     credentials.firstName.length > 0 &&
-                    credentials.lastName.length > 0
+                    credentials.lastName.length > 0 &&
+                    credentials.phoneNumber.length > 0
                 );
             case "sports":
                 return selections.sports.length > 0;
@@ -436,6 +525,81 @@ const styles = StyleSheet.create({
         color: theme.colors.text,
         fontSize: theme.fonts.sizes.md,
         width: "100%",
+    },
+    phoneInputContainer: {
+        flexDirection: "row",
+        width: "100%",
+        gap: theme.spacing.sm,
+    },
+    countrySelector: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.md,
+        paddingHorizontal: theme.spacing.md,
+        justifyContent: "center",
+        alignItems: "center",
+        minWidth: 80,
+    },
+    countrySelectorText: {
+        color: theme.colors.text,
+        fontSize: theme.fonts.sizes.md,
+        fontWeight: "bold",
+    },
+    phoneInput: {
+        flex: 1,
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.md,
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: 16,
+        color: theme.colors.text,
+        fontSize: theme.fonts.sizes.md,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        justifyContent: "flex-end",
+    },
+    modalContent: {
+        backgroundColor: theme.colors.background,
+        borderTopLeftRadius: theme.borderRadius.xl,
+        borderTopRightRadius: theme.borderRadius.xl,
+        padding: theme.spacing.lg,
+        height: "50%",
+    },
+    modalHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: theme.spacing.lg,
+    },
+    modalTitle: {
+        fontSize: theme.fonts.sizes.lg,
+        fontWeight: "bold",
+        color: theme.colors.secondary,
+    },
+    closeButton: {
+        color: theme.colors.primary,
+        fontSize: theme.fonts.sizes.md,
+    },
+    countryItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: theme.spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.surface,
+    },
+    countryFlag: {
+        fontSize: 24,
+        marginRight: theme.spacing.md,
+    },
+    countryName: {
+        flex: 1,
+        fontSize: theme.fonts.sizes.md,
+        color: theme.colors.text,
+    },
+    countryCode: {
+        fontSize: theme.fonts.sizes.md,
+        color: theme.colors.secondary,
+        fontWeight: "bold",
     },
 });
 
