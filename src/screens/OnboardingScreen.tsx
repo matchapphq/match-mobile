@@ -12,6 +12,7 @@ import {
     Alert,
     Modal,
     FlatList,
+    ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
@@ -22,7 +23,7 @@ type OnboardingStep = "credentials" | "sports" | "ambiance" | "food" | "budget";
 
 const OnboardingScreen = () => {
     const navigation = useNavigation<any>();
-    const { signup } = useStore();
+    const { signup, isLoading } = useStore();
     const [currentStep, setCurrentStep] =
         useState<OnboardingStep>("credentials");
 
@@ -59,6 +60,7 @@ const OnboardingScreen = () => {
         { code: "+351", flag: "🇵🇹", name: "Portugal" },
         { code: "+32", flag: "🇧🇪", name: "Belgium" },
         { code: "+41", flag: "🇨🇭", name: "Switzerland" },
+        { code: "+86", flag: "🇨🇳", name: "China" }
     ];
 
     const sportsOptions = [
@@ -423,13 +425,20 @@ const OnboardingScreen = () => {
                 <TouchableOpacity
                     style={[
                         styles.continueButton,
-                        !isStepValid() && styles.continueButtonDisabled,
+                        (!isStepValid() || isLoading) && styles.continueButtonDisabled,
                     ]}
                     onPress={handleContinue}
-                    disabled={!isStepValid()}
+                    disabled={!isStepValid() || isLoading}
                     activeOpacity={0.8}
                 >
-                    <Text style={styles.continueButtonText}>Continuer</Text>
+                    {isLoading ? (
+                        <ActivityIndicator
+                            size="small"
+                            color={theme.colors.primary}
+                        />
+                    ) : (
+                        <Text style={styles.continueButtonText}>Continuer</Text>
+                    )}
                 </TouchableOpacity>
             </SafeAreaView>
         </ImageBackground>

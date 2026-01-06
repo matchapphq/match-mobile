@@ -4,6 +4,8 @@ import { Venue, Match, User, Reservation, VenueType, SportType } from '../types'
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8008/api';
 
+//const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://opportunely-untrinitarian-tommie.ngrok-free.dev';
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
