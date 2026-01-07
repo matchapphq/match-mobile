@@ -185,11 +185,11 @@ export const useStore = create<AppState>((set, get) => ({
         try {
             const response = await apiService.login(email, password);
             await AsyncStorage.setItem("authToken", response.token);
-            const user = await apiService.getMe();
-            console.log(user);
-            await AsyncStorage.setItem("user", JSON.stringify(user));
+            const user = (await apiService.getMe()) as any;
+            const userObject = user.user;
+            await AsyncStorage.setItem("user", JSON.stringify(userObject));
             set({
-                user: { ...user },
+                user: userObject,
                 isAuthenticated: true,
                 isLoading: false,
             });
@@ -215,8 +215,8 @@ export const useStore = create<AppState>((set, get) => ({
             // delete apiData.ambiance;
             // delete apiData.foodTypes;
 
-            const response = await apiService.signup(apiData);
             await AsyncStorage.setItem("authToken", response.token);
+            await AsyncStorage.setItem("user", JSON.stringify(response.user));
             set({
                 user: response.user,
                 isAuthenticated: true,
@@ -458,6 +458,7 @@ export const useStore = create<AppState>((set, get) => ({
             "user",
             "onboardingCompleted",
             "reservations",
+            "authToken",
         ]);
     },
 }));
@@ -465,13 +466,19 @@ export const useStore = create<AppState>((set, get) => ({
 // Initialize store from AsyncStorage
 export const initializeStore = async () => {
     try {
-        const [[, userStr], [, onboardingStr], [, reservationsStr], [, token]] =
-            await AsyncStorage.multiGet([
-                "user",
-                "onboardingCompleted",
-                "reservations",
-                "authToken",
-            ]);
+        const values = await AsyncStorage.multiGet([
+            "user",
+            "onboardingCompleted",
+            "reservations",
+            "authToken",
+        ]);
+
+        const userStr = values.find(([key]) => key === "user")?.[1] || null;
+        const onboardingStr =
+            values.find(([key]) => key === "onboardingCompleted")?.[1] || null;
+        const reservationsStr =
+            values.find(([key]) => key === "reservations")?.[1] || null;
+        const token = values.find(([key]) => key === "authToken")?.[1] || null;
 
         const user = userStr ? JSON.parse(userStr) : null;
         const onboarding = onboardingStr ? JSON.parse(onboardingStr) : false;

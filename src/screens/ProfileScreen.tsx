@@ -77,10 +77,6 @@ const ProfileScreen = () => {
 
     const handleLogout = () => {
         logout();
-        navigation.reset({
-            index: 0,
-            routes: [{ name: "Welcome" }],
-        });
     };
 
     return (
@@ -98,7 +94,7 @@ const ProfileScreen = () => {
                 </TouchableOpacity>
                 <View style={styles.titleContainer}>
                     <Text style={styles.title}>
-                        Bonjour { user?.first_name }
+                        Bonjour {user?.first_name} {user?.last_name}
                     </Text>
                     <View style={styles.titleUnderline} />
                 </View>
