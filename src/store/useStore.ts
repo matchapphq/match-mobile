@@ -185,8 +185,11 @@ export const useStore = create<AppState>((set, get) => ({
         try {
             const response = await apiService.login(email, password);
             await AsyncStorage.setItem("authToken", response.token);
+            const user = await apiService.getMe();
+            console.log(user);
+            await AsyncStorage.setItem("user", JSON.stringify(user));
             set({
-                user: response.user,
+                user: { ...user },
                 isAuthenticated: true,
                 isLoading: false,
             });
@@ -211,7 +214,7 @@ export const useStore = create<AppState>((set, get) => ({
             // delete apiData.sports;
             // delete apiData.ambiance;
             // delete apiData.foodTypes;
-            
+
             const response = await apiService.signup(apiData);
             await AsyncStorage.setItem("authToken", response.token);
             set({
@@ -220,7 +223,7 @@ export const useStore = create<AppState>((set, get) => ({
                 onboardingCompleted: true, // Mark onboarding as completed
                 isLoading: false,
             });
-            await AsyncStorage.setItem('onboardingCompleted', 'true');
+            await AsyncStorage.setItem("onboardingCompleted", "true");
             return true;
         } catch (error: any) {
             set({ error: error.message || "Signup failed", isLoading: false });
@@ -462,20 +465,17 @@ export const useStore = create<AppState>((set, get) => ({
 // Initialize store from AsyncStorage
 export const initializeStore = async () => {
     try {
-        const [userStr, onboardingStr, reservationsStr] =
+        const [[, userStr], [, onboardingStr], [, reservationsStr], [, token]] =
             await AsyncStorage.multiGet([
                 "user",
                 "onboardingCompleted",
                 "reservations",
+                "authToken",
             ]);
 
-        const user = userStr[1] ? JSON.parse(userStr[1]) : null;
-        const onboarding = onboardingStr[1]
-            ? JSON.parse(onboardingStr[1])
-            : false;
-        const reservations = reservationsStr[1]
-            ? JSON.parse(reservationsStr[1])
-            : [];
+        const user = userStr ? JSON.parse(userStr) : null;
+        const onboarding = onboardingStr ? JSON.parse(onboardingStr) : false;
+        const reservations = reservationsStr ? JSON.parse(reservationsStr) : [];
 
         // Parse date strings back into Date objects for reservations if needed
         const parsedReservations = reservations.map((res: any) => ({
@@ -485,7 +485,7 @@ export const initializeStore = async () => {
 
         useStore.setState({
             user,
-            isAuthenticated: !!user,
+            isAuthenticated: !!token && !!user,
             onboardingCompleted: onboarding,
             reservations: parsedReservations,
         });
