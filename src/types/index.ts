@@ -1,81 +1,89 @@
 export interface User {
-  id: string;
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  avatar?: string;
-  preferences?: UserPreferences;
+    user: {
+        id: string;
+        first_name?: string;
+        last_name?: string;
+        email?: string;
+        avatar?: string;
+        preferences?: UserPreferences;
+    };
+    id: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    avatar?: string;
+    preferences?: UserPreferences;
 }
 
 export interface UserPreferences {
-  sports: string[];
-  ambiance: string[];
-  foodTypes: string[];
-  budget: string;
+    sports: string[];
+    ambiance: string[];
+    foodTypes: string[];
+    budget: string;
 }
 
 export interface Venue {
-  id: string;
-  name: string;
-  address: string;
-  latitude: number;
-  longitude: number;
-  type: VenueType;
-  rating: number;
-  priceRange: string;
-  tags: string[];
-  distance?: number;
-  images?: string[];
-  description?: string;
-  hours?: string;
-  amenities?: string[];
-  matchesShowing?: Match[];
+    id: string;
+    name: string;
+    address: string;
+    latitude: number;
+    longitude: number;
+    type: VenueType;
+    rating: number;
+    priceRange: string;
+    tags: string[];
+    distance?: number;
+    images?: string[];
+    description?: string;
+    hours?: string;
+    amenities?: string[];
+    matchesShowing?: Match[];
 }
 
 export enum VenueType {
-  BAR = 'Bar',
-  RESTAURANT = 'Restaurant',
-  PUB = 'Pub',
-  FAST_FOOD = 'Fast-food',
-  CHICHA = 'Chicha',
+    BAR = "Bar",
+    RESTAURANT = "Restaurant",
+    PUB = "Pub",
+    FAST_FOOD = "Fast-food",
+    CHICHA = "Chicha",
 }
 
 export interface Match {
-  id: string;
-  homeTeam: string;
-  awayTeam: string;
-  sport: SportType;
-  date: Date;
-  time: string;
-  competition?: string;
-  thumbnail?: string;
+    id: string;
+    homeTeam: string;
+    awayTeam: string;
+    sport: SportType;
+    date: Date;
+    time: string;
+    competition?: string;
+    thumbnail?: string;
 }
 
 export enum SportType {
-  FOOTBALL = 'Football',
-  RUGBY = 'Rugby',
-  BASKETBALL = 'Basketball',
-  TENNIS = 'Tennis',
+    FOOTBALL = "Football",
+    RUGBY = "Rugby",
+    BASKETBALL = "Basketball",
+    TENNIS = "Tennis",
 }
 
 export interface Reservation {
-  id: string;
-  venueId: string;
-  venueName: string;
-  date: Date;
-  time: string;
-  numberOfPeople: number;
-  matchId?: string;
-  status: 'pending' | 'confirmed' | 'cancelled';
-  conditions?: string;
+    id: string;
+    venueId: string;
+    venueName: string;
+    date: Date;
+    time: string;
+    numberOfPeople: number;
+    matchId?: string;
+    status: "pending" | "confirmed" | "cancelled";
+    conditions?: string;
 }
 
 export interface Notification {
-  id: string;
-  type: 'match' | 'venue' | 'promo' | 'reservation';
-  title: string;
-  message: string;
-  date: Date;
-  read: boolean;
-  badge?: 'ON' | 'OFF';
+    id: string;
+    type: "match" | "venue" | "promo" | "reservation";
+    title: string;
+    message: string;
+    date: Date;
+    read: boolean;
+    badge?: "ON" | "OFF";
 }

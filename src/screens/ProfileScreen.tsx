@@ -94,7 +94,7 @@ const ProfileScreen = () => {
                 </TouchableOpacity>
                 <View style={styles.titleContainer}>
                     <Text style={styles.title}>
-                        Bonjour {user?.first_name} {user?.last_name}
+                        Bonjour {user?.user.first_name} {user?.user.last_name}
                     </Text>
                     <View style={styles.titleUnderline} />
                 </View>
@@ -109,7 +109,7 @@ const ProfileScreen = () => {
                         <Image
                             source={{
                                 uri:
-                                    user?.avatar ||
+                                    user?.user.avatar ||
                                     "https://api.dicebear.com/7.x/avataaars/png?seed=match",
                             }}
                             style={styles.avatarImage}

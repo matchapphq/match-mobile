@@ -185,11 +185,10 @@ export const useStore = create<AppState>((set, get) => ({
         try {
             const response = await apiService.login(email, password);
             await AsyncStorage.setItem("authToken", response.token);
-            const user = (await apiService.getMe()) as any;
-            const userObject = user.user;
-            await AsyncStorage.setItem("user", JSON.stringify(userObject));
+            const user = await apiService.getMe();
+            await AsyncStorage.setItem("user", JSON.stringify(user));
             set({
-                user: userObject,
+                user,
                 isAuthenticated: true,
                 isLoading: false,
             });
