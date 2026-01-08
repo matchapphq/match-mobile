@@ -13,7 +13,7 @@ import {
     ImageBackground,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MapView, { Marker } from "react-native-maps";
+import MapView, { Marker, Region } from "react-native-maps";
 import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { useNavigation } from "@react-navigation/native";
@@ -37,6 +37,7 @@ const MapScreen = () => {
         latitude: number;
         longitude: number;
     } | null>(null);
+    const [isLocationLoading, setIsLocationLoading] = useState(true);
     const [selectedFilters, setSelectedFilters] = useState(filters);
     const [selectedVenue, setSelectedVenue] = useState<any>(null);
 
@@ -52,10 +53,17 @@ const MapScreen = () => {
         "Final ATP",
         "Premier League",
     ];
+    const [region, setRegion] = useState<Region | null>(null);
+
     const mapRef = useRef<MapView>(null);
     const [isMapMoving, setIsMapMoving] = useState(false);
     const buttonOpacity = useRef(new Animated.Value(1)).current;
     const cardSlideAnim = useRef(new Animated.Value(300)).current;
+
+    const handleRegionChangeComplete = (newRegion: Region) => {
+        setRegion(newRegion);
+        setIsMapMoving(false);
+    };
 
     useEffect(() => {
         Animated.timing(buttonOpacity, {
@@ -77,33 +85,62 @@ const MapScreen = () => {
     };
 
     useEffect(() => {
-        loadVenues();
         getUserLocation();
     }, []);
 
-    const loadVenues = async () => {
-        const { fetchVenues, fetchNearbyVenues } = useStore.getState();
-        if (userLocation) {
+    const loadVenues = async (currentRegion: Region | null) => {
+        const { fetchNearbyVenues } = useStore.getState();
+        if (currentRegion) {
+            const radius = (currentRegion.latitudeDelta * 111 * 1000) / 2;
             await fetchNearbyVenues(
-                userLocation.latitude,
-                userLocation.longitude,
+                currentRegion.latitude,
+                currentRegion.longitude,
+                radius,
             );
-        } else {
-            await fetchVenues();
         }
     };
 
     const getUserLocation = async () => {
+        setIsLocationLoading(true);
         const { status } = await Location.requestForegroundPermissionsAsync();
+        let initialRegion;
         if (status !== "granted") {
-            return;
+            const defaultLocation = { latitude: 48.8566, longitude: 2.3522 };
+            setUserLocation(defaultLocation);
+            initialRegion = {
+                ...defaultLocation,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+            };
+        } else {
+            try {
+                const location = await Location.getCurrentPositionAsync({});
+                const userCoords = {
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                };
+                setUserLocation(userCoords);
+                initialRegion = {
+                    ...userCoords,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                };
+            } catch (error) {
+                const defaultLocation = {
+                    latitude: 48.8566,
+                    longitude: 2.3522,
+                };
+                setUserLocation(defaultLocation);
+                initialRegion = {
+                    ...defaultLocation,
+                    latitudeDelta: 0.0922,
+                    longitudeDelta: 0.0421,
+                };
+            }
         }
-
-        const location = await Location.getCurrentPositionAsync({});
-        setUserLocation({
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-        });
+        setRegion(initialRegion);
+        await loadVenues(initialRegion);
+        setIsLocationLoading(false);
     };
 
     const toggleFilter = (
@@ -353,8 +390,8 @@ const MapScreen = () => {
                                     style={[
                                         styles.filterChip,
                                         selectedFilters.sortOption ===
-                                        "distance" &&
-                                        styles.filterChipSelected,
+                                            "distance" &&
+                                            styles.filterChipSelected,
                                     ]}
                                     onPress={() =>
                                         handleSortSelection("distance", "asc")
@@ -364,8 +401,8 @@ const MapScreen = () => {
                                         style={[
                                             styles.filterChipText,
                                             selectedFilters.sortOption ===
-                                            "distance" &&
-                                            styles.filterChipTextSelected,
+                                                "distance" &&
+                                                styles.filterChipTextSelected,
                                         ]}
                                     >
                                         Distance
@@ -376,8 +413,8 @@ const MapScreen = () => {
                                     style={[
                                         styles.filterChip,
                                         selectedFilters.sortOption ===
-                                        "rating" &&
-                                        styles.filterChipSelected,
+                                            "rating" &&
+                                            styles.filterChipSelected,
                                     ]}
                                     onPress={() =>
                                         handleSortSelection("rating", "desc")
@@ -387,8 +424,8 @@ const MapScreen = () => {
                                         style={[
                                             styles.filterChipText,
                                             selectedFilters.sortOption ===
-                                            "rating" &&
-                                            styles.filterChipTextSelected,
+                                                "rating" &&
+                                                styles.filterChipTextSelected,
                                         ]}
                                     >
                                         Note
@@ -425,7 +462,7 @@ const MapScreen = () => {
                                                     selectedFilters.foodTypes.includes(
                                                         option,
                                                     ) &&
-                                                    styles.filterChipTextSelected,
+                                                        styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -464,7 +501,7 @@ const MapScreen = () => {
                                                     selectedFilters.priceRange.includes(
                                                         option,
                                                     ) &&
-                                                    styles.filterChipTextSelected,
+                                                        styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -500,7 +537,7 @@ const MapScreen = () => {
                                                     selectedFilters.sports.includes(
                                                         option,
                                                     ) &&
-                                                    styles.filterChipTextSelected,
+                                                        styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -536,7 +573,7 @@ const MapScreen = () => {
                                                     selectedFilters.ambiance.includes(
                                                         option,
                                                     ) &&
-                                                    styles.filterChipTextSelected,
+                                                        styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -575,7 +612,7 @@ const MapScreen = () => {
                                                     selectedFilters.foodTypes.includes(
                                                         option,
                                                     ) &&
-                                                    styles.filterChipTextSelected,
+                                                        styles.filterChipTextSelected,
                                                 ]}
                                             >
                                                 {option}
@@ -593,7 +630,6 @@ const MapScreen = () => {
                     >
                         <Text style={styles.validateButtonText}>VALIDER</Text>
                     </TouchableOpacity>
-
                 </ImageBackground>
 
                 {/*<TouchableOpacity
@@ -606,8 +642,8 @@ const MapScreen = () => {
                         color={theme.colors.primary}
                     />
                 </TouchableOpacity>*/}
-            </TouchableOpacity >
-        </Modal >
+            </TouchableOpacity>
+        </Modal>
     );
 
     const renderSearchModal = () => (
@@ -707,7 +743,6 @@ const MapScreen = () => {
                             VALIDER
                         </Text>
                     </TouchableOpacity>
-
                 </ImageBackground>
 
                 <TouchableOpacity
@@ -720,25 +755,32 @@ const MapScreen = () => {
                         color={theme.colors.primary}
                     />
                 </TouchableOpacity>
-            </TouchableOpacity >
-        </Modal >
+            </TouchableOpacity>
+        </Modal>
     );
+
+    if (isLocationLoading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <Image
+                    source={images.logo}
+                    style={styles.loadingLogo}
+                    resizeMode="contain"
+                />
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
             <MapView
                 ref={mapRef}
                 style={styles.map}
-                initialRegion={{
-                    latitude: userLocation?.latitude || 48.8566,
-                    longitude: userLocation?.longitude || 2.3522,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
-                }}
+                initialRegion={region}
                 showsUserLocation={true}
                 showsMyLocationButton={false}
                 onRegionChange={() => setIsMapMoving(true)}
-                onRegionChangeComplete={() => setIsMapMoving(false)}
+                onRegionChangeComplete={handleRegionChangeComplete}
             >
                 {filteredVenues.map((venue) => (
                     <Marker
@@ -774,7 +816,7 @@ const MapScreen = () => {
 
                 <Animated.View style={{ opacity: buttonOpacity }}>
                     <TouchableOpacity
-                        onPress={centerOnUser}
+                        onPress={() => region && loadVenues(region)}
                         style={styles.locationBadge}
                     >
                         <Text style={styles.headerTitle}>AUTOUR DE MOI</Text>
@@ -810,6 +852,16 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: theme.colors.background,
+    },
+    loadingLogo: {
+        width: 150,
+        height: 150,
     },
     map: {
         flex: 1,
