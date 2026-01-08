@@ -17,6 +17,11 @@ import MatchDetailsScreen from "../screens/MatchDetailsScreen";
 import ReservationsScreen from "../screens/ReservationsScreen";
 import NotificationsScreen from "../screens/NotificationsScreen";
 import SearchScreen from "../screens/SearchScreen";
+import LevelScreen from "../screens/LevelScreen";
+import ReviewsScreen from "../screens/ReviewsScreen";
+import FavoritesScreen from "../screens/FavoritesScreen";
+import UserInfoScreen from "../screens/UserInfoScreen";
+import PreferencesScreen from "../screens/PreferencesScreen";
 
 const Stack = createStackNavigator();
 
@@ -80,6 +85,23 @@ export const AppNavigator = () => {
                         <Stack.Screen
                             name="Notifications"
                             component={NotificationsScreen}
+                        />
+                        <Stack.Screen name="Level" component={LevelScreen} />
+                        <Stack.Screen
+                            name="Reviews"
+                            component={ReviewsScreen}
+                        />
+                        <Stack.Screen
+                            name="Favorites"
+                            component={FavoritesScreen}
+                        />
+                        <Stack.Screen
+                            name="UserInfo"
+                            component={UserInfoScreen}
+                        />
+                        <Stack.Screen
+                            name="Preferences"
+                            component={PreferencesScreen}
                         />
                     </>
                 )}

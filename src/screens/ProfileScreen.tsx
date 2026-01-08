@@ -70,6 +70,21 @@ const ProfileScreen = () => {
             case "notifications":
                 navigation.navigate("Notifications");
                 break;
+            case "level":
+                navigation.navigate("Level");
+                break;
+            case "reviews":
+                navigation.navigate("Reviews");
+                break;
+            case "favorites":
+                navigation.navigate("Favorites");
+                break;
+            case "info":
+                navigation.navigate("UserInfo");
+                break;
+            case "preferences":
+                navigation.navigate("Preferences");
+                break;
             default:
                 break;
         }
