@@ -1,608 +1,522 @@
-import React, { useState, useRef } from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    TextInput,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Dimensions,
-    Animated,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { createStackNavigator } from "@react-navigation/stack";
+import type { StackScreenProps } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
+import TestOnboardingLayout from "./testOnboarding/TestOnboardingLayout";
+import {
+    sharedStyles,
+    BRAND_PRIMARY,
+    SUCCESS,
+} from "./testOnboarding/styles";
+import {
+    USERNAME_SUGGESTIONS,
+    SPORTS_OPTIONS,
+    MOOD_OPTIONS,
+    VENUE_OPTIONS,
+    BUDGET_OPTIONS,
+} from "./testOnboarding/options";
+import {
+    useTestOnboardingForm,
+    TEST_ONBOARDING_TOTAL_STEPS,
+} from "../store/useTestOnboardingForm";
 import { useStore } from "../store/useStore";
 
-const { width, height } = Dimensions.get("window");
-const BRAND_PRIMARY = "#f47b25";
-const SURFACE_DARK = "#1c1c21";
-const BG_DARK = "#0b0b0f";
-const SUCCESS = "#34d399";
-
-const TOTAL_STEPS = 4;
-
-type FormData = {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
-    password: string;
-    confirmPassword: string;
-    username: string;
+type TestOnboardingStackParamList = {
+    TestOnboardingName: undefined;
+    TestOnboardingContact: undefined;
+    TestOnboardingSecurity: undefined;
+    TestOnboardingUsername: undefined;
+    TestOnboardingSports: undefined;
+    TestOnboardingMood: undefined;
+    TestOnboardingVenue: undefined;
+    TestOnboardingBudget: undefined;
 };
 
-const USERNAME_SUGGESTIONS = ["alex.goal", "alex_fan", "stadium_alex"];
+const Stack = createStackNavigator<TestOnboardingStackParamList>();
 
-const TestOnboardingScreen = () => {
-    const navigation = useNavigation<any>();
-    const setOnboardingCompleted = useStore((state) => state.setOnboardingCompleted);
-    const [step, setStep] = useState(1);
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    const fadeAnim = useRef(new Animated.Value(1)).current;
+type StepScreenProps<RouteName extends keyof TestOnboardingStackParamList> = StackScreenProps<
+    TestOnboardingStackParamList,
+    RouteName
+>;
 
-    const [formData, setFormData] = useState<FormData>({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        password: "",
-        confirmPassword: "",
-        username: "",
-    });
+const accent = { color: BRAND_PRIMARY };
 
-    const updateField = (field: keyof FormData, value: string) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
-    };
-
-    const animateTransition = (callback: () => void) => {
-        Animated.sequence([
-            Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
-            Animated.timing(fadeAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
-        ]).start();
-        setTimeout(callback, 150);
-    };
-
-    const handleNext = () => {
-        if (step < TOTAL_STEPS) {
-            animateTransition(() => setStep(step + 1));
-        } else {
-            setOnboardingCompleted(true);
-            navigation.replace("TestTab");
-        }
-    };
-
-    const handleBack = () => {
-        if (step > 1) {
-            animateTransition(() => setStep(step - 1));
-        } else {
-            navigation.goBack();
-        }
-    };
-
-    const progressWidth = `${(step / TOTAL_STEPS) * 100}%`;
-
-    const renderStepContent = () => {
-        switch (step) {
-            case 1:
-                return (
-                    <View style={styles.stepContent}>
-                        <View style={styles.iconBadge}>
-                            <MaterialIcons name="badge" size={24} color={BRAND_PRIMARY} />
-                        </View>
-                        <Text style={styles.title}>
-                            Parlons de <Text style={styles.titleAccent}>toi</Text>
-                        </Text>
-                        <Text style={styles.subtitle}>
-                            Dis-nous comment tu t'appelles pour personnaliser ton expérience sur Match.
-                        </Text>
-
-                        <View style={styles.formGroup}>
-                            <Text style={styles.label}>Prénom</Text>
-                            <View style={styles.inputWrapper}>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ex: Thomas"
-                                    placeholderTextColor="rgba(255,255,255,0.2)"
-                                    value={formData.firstName}
-                                    onChangeText={(v) => updateField("firstName", v)}
-                                />
-                                <MaterialIcons name="person" size={20} color="rgba(255,255,255,0.3)" style={styles.inputIcon} />
-                            </View>
-                        </View>
-
-                        <View style={styles.formGroup}>
-                            <Text style={styles.label}>Nom</Text>
-                            <View style={styles.inputWrapper}>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Ex: Dubois"
-                                    placeholderTextColor="rgba(255,255,255,0.2)"
-                                    value={formData.lastName}
-                                    onChangeText={(v) => updateField("lastName", v)}
-                                />
-                                <MaterialIcons name="badge" size={20} color="rgba(255,255,255,0.3)" style={styles.inputIcon} />
-                            </View>
-                        </View>
-                    </View>
-                );
-
-            case 2:
-                return (
-                    <View style={styles.stepContent}>
-                        <Text style={styles.title}>Coordonnées</Text>
-                        <Text style={styles.subtitle}>
-                            Comment peut-on vous joindre pour confirmer vos réservations ?
-                        </Text>
-
-                        <View style={styles.formGroup}>
-                            <Text style={styles.label}>Adresse email</Text>
-                            <View style={styles.inputWrapper}>
-                                <MaterialIcons name="mail" size={20} color="rgba(255,255,255,0.5)" style={styles.inputIconLeft} />
-                                <TextInput
-                                    style={[styles.input, styles.inputWithLeftIcon]}
-                                    placeholder="Entrez votre email"
-                                    placeholderTextColor="rgba(255,255,255,0.2)"
-                                    value={formData.email}
-                                    onChangeText={(v) => updateField("email", v)}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                />
-                                {formData.email.includes("@") && (
-                                    <MaterialIcons name="check-circle" size={20} color={SUCCESS} style={styles.inputIcon} />
-                                )}
-                            </View>
-                        </View>
-
-                        <View style={styles.formGroup}>
-                            <Text style={styles.label}>Numéro de téléphone</Text>
-                            <View style={styles.phoneRow}>
-                                <TouchableOpacity style={styles.countryCode}>
-                                    <Text style={styles.countryFlag}>🇫🇷</Text>
-                                    <Text style={styles.countryCodeText}>+33</Text>
-                                    <MaterialIcons name="expand-more" size={16} color="rgba(255,255,255,0.3)" />
-                                </TouchableOpacity>
-                                <View style={[styles.inputWrapper, styles.phoneInput]}>
-                                    <TextInput
-                                        style={styles.input}
-                                        placeholder="6 12 34 56 78"
-                                        placeholderTextColor="rgba(255,255,255,0.2)"
-                                        value={formData.phone}
-                                        onChangeText={(v) => updateField("phone", v)}
-                                        keyboardType="phone-pad"
-                                    />
-                                </View>
-                            </View>
-                            <Text style={styles.hint}>Un code de vérification vous sera envoyé par SMS.</Text>
-                        </View>
-                    </View>
-                );
-
-            case 3:
-                return (
-                    <View style={styles.stepContent}>
-                        <Text style={styles.title}>Sécurité</Text>
-                        <Text style={styles.subtitle}>
-                            Protégez votre compte en définissant un mot de passe sécurisé.
-                        </Text>
-
-                        <View style={styles.formGroup}>
-                            <Text style={styles.label}>Mot de passe</Text>
-                            <View style={styles.inputWrapper}>
-                                <MaterialIcons name="lock" size={20} color="rgba(255,255,255,0.5)" style={styles.inputIconLeft} />
-                                <TextInput
-                                    style={[styles.input, styles.inputWithLeftIcon]}
-                                    placeholder="••••••••"
-                                    placeholderTextColor="rgba(255,255,255,0.2)"
-                                    value={formData.password}
-                                    onChangeText={(v) => updateField("password", v)}
-                                    secureTextEntry={!showPassword}
-                                />
-                                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.visibilityBtn}>
-                                    <MaterialIcons
-                                        name={showPassword ? "visibility-off" : "visibility"}
-                                        size={20}
-                                        color="rgba(255,255,255,0.4)"
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-
-                        <View style={styles.formGroup}>
-                            <Text style={styles.label}>Confirmer le mot de passe</Text>
-                            <View style={styles.inputWrapper}>
-                                <MaterialIcons name="lock-reset" size={20} color="rgba(255,255,255,0.5)" style={styles.inputIconLeft} />
-                                <TextInput
-                                    style={[styles.input, styles.inputWithLeftIcon]}
-                                    placeholder="••••••••"
-                                    placeholderTextColor="rgba(255,255,255,0.2)"
-                                    value={formData.confirmPassword}
-                                    onChangeText={(v) => updateField("confirmPassword", v)}
-                                    secureTextEntry={!showConfirmPassword}
-                                />
-                                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)} style={styles.visibilityBtn}>
-                                    <MaterialIcons
-                                        name={showConfirmPassword ? "visibility-off" : "visibility"}
-                                        size={20}
-                                        color="rgba(255,255,255,0.4)"
-                                    />
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                );
-
-            case 4:
-                return (
-                    <View style={styles.stepContent}>
-                        <Text style={styles.title}>Ton identité unique</Text>
-                        <Text style={styles.subtitle}>
-                            Choisis un nom d'utilisateur pour que tes amis puissent te trouver facilement.
-                        </Text>
-
-                        <View style={styles.usernameInputWrapper}>
-                            <Text style={styles.atSymbol}>@</Text>
-                            <TextInput
-                                style={styles.usernameInput}
-                                placeholder="username"
-                                placeholderTextColor="rgba(255,255,255,0.2)"
-                                value={formData.username}
-                                onChangeText={(v) => updateField("username", v)}
-                                autoCapitalize="none"
-                            />
-                            {formData.username.length > 2 && (
-                                <MaterialIcons name="check-circle" size={24} color={SUCCESS} />
-                            )}
-                        </View>
-                        {formData.username.length > 2 && (
-                            <Text style={styles.availableText}>Ce nom d'utilisateur est disponible !</Text>
-                        )}
-
-                        <View style={styles.suggestionsSection}>
-                            <Text style={styles.suggestionsLabel}>SUGGESTIONS</Text>
-                            <View style={styles.suggestionsRow}>
-                                {USERNAME_SUGGESTIONS.map((s) => (
-                                    <TouchableOpacity
-                                        key={s}
-                                        style={styles.suggestionChip}
-                                        onPress={() => updateField("username", s)}
-                                    >
-                                        <Text style={styles.suggestionText}>{s}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </View>
-                    </View>
-                );
-
-            default:
-                return null;
-        }
-    };
+const NameStepScreen: React.FC<StepScreenProps<"TestOnboardingName">> = ({ navigation }) => {
+    const { data, updateField } = useTestOnboardingForm();
+    const canContinue = data.firstName.trim().length > 0 && data.lastName.trim().length > 0;
 
     return (
-        <View style={styles.container}>
-            <LinearGradient colors={[BG_DARK, BG_DARK]} style={StyleSheet.absoluteFillObject} />
-            <View style={styles.glowTop} />
-            <View style={styles.glowBottom} />
+        <TestOnboardingLayout
+            step={1}
+            title={
+                <>
+                    Parlons de <Text style={accent}>toi</Text>
+                </>
+            }
+            subtitle="Dis-nous comment tu t'appelles pour personnaliser ton expérience sur Match."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("TestOnboardingContact")}
+            onBack={() => navigation.goBack()}
+            footerNote="En continuant, tu acceptes nos CGU et notre Politique de confidentialité."
+        >
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Prénom</Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <TextInput
+                        style={sharedStyles.input}
+                        placeholder="Ex: Thomas"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.firstName}
+                        onChangeText={(value) => updateField("firstName", value)}
+                    />
+                    <MaterialIcons name="person" size={20} color="rgba(255,255,255,0.3)" style={sharedStyles.inputIcon} />
+                </View>
+            </View>
 
-            <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                    style={styles.keyboardView}
-                >
-                    <View style={styles.header}>
-                        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                            <MaterialIcons name="arrow-back-ios-new" size={18} color="rgba(255,255,255,0.8)" />
-                        </TouchableOpacity>
-                        <Text style={styles.stepIndicator}>Étape {step} sur {TOTAL_STEPS}</Text>
-                        <View style={{ width: 40 }} />
-                    </View>
-
-                    <View style={styles.progressBar}>
-                        <View style={[styles.progressFill, { width: progressWidth as any }]} />
-                    </View>
-
-                    <ScrollView
-                        style={styles.scrollView}
-                        contentContainerStyle={styles.scrollContent}
-                        keyboardShouldPersistTaps="handled"
-                        showsVerticalScrollIndicator={false}
-                    >
-                        <Animated.View style={{ opacity: fadeAnim }}>{renderStepContent()}</Animated.View>
-                    </ScrollView>
-
-                    <View style={styles.footer}>
-                        <TouchableOpacity style={styles.ctaButton} onPress={handleNext} activeOpacity={0.9}>
-                            <Text style={styles.ctaText}>{step === TOTAL_STEPS ? "Terminer" : "Continuer"}</Text>
-                            <MaterialIcons name="arrow-forward" size={20} color="#fff" />
-                        </TouchableOpacity>
-                        {step === 1 && (
-                            <Text style={styles.termsText}>
-                                En continuant, tu acceptes nos CGU et notre Politique de confidentialité.
-                            </Text>
-                        )}
-                        {step === 4 && (
-                            <Text style={styles.termsText}>Tu pourras le modifier plus tard dans ton profil.</Text>
-                        )}
-                    </View>
-                </KeyboardAvoidingView>
-            </SafeAreaView>
-        </View>
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Nom</Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <TextInput
+                        style={sharedStyles.input}
+                        placeholder="Ex: Dubois"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.lastName}
+                        onChangeText={(value) => updateField("lastName", value)}
+                    />
+                    <MaterialIcons name="badge" size={20} color="rgba(255,255,255,0.3)" style={sharedStyles.inputIcon} />
+                </View>
+            </View>
+        </TestOnboardingLayout>
     );
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: BG_DARK,
-    },
-    glowTop: {
-        position: "absolute",
-        top: -height * 0.1,
-        right: -width * 0.1,
-        width: width * 0.8,
-        height: width * 0.8,
-        borderRadius: width * 0.4,
-        backgroundColor: `${BRAND_PRIMARY}15`,
-        opacity: 0.6,
-    },
-    glowBottom: {
-        position: "absolute",
-        bottom: height * 0.1,
-        left: -width * 0.1,
-        width: width * 0.6,
-        height: width * 0.6,
-        borderRadius: width * 0.3,
-        backgroundColor: `${BRAND_PRIMARY}08`,
-        opacity: 0.5,
-    },
-    safeArea: {
-        flex: 1,
-    },
-    keyboardView: {
-        flex: 1,
-    },
-    header: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        paddingHorizontal: 20,
-        paddingTop: 14,
-        paddingBottom: 16,
-    },
-    backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: "rgba(255,255,255,0.05)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.05)",
-        alignItems: "center",
-        justifyContent: "center",
-    },
-    stepIndicator: {
-        fontSize: 12,
-        fontWeight: "500",
-        letterSpacing: 1,
-        color: "rgba(255,255,255,0.4)",
-        textTransform: "uppercase",
-    },
-    progressBar: {
-        height: 6,
-        backgroundColor: SURFACE_DARK,
-        borderRadius: 3,
-        marginHorizontal: 20,
-        marginBottom: 24,
-        overflow: "hidden",
-    },
-    progressFill: {
-        height: "100%",
-        backgroundColor: BRAND_PRIMARY,
-        borderRadius: 3,
-        shadowColor: BRAND_PRIMARY,
-        shadowOpacity: 0.6,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 0 },
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        paddingHorizontal: 24,
-        paddingBottom: 24,
-    },
-    stepContent: {
-        gap: 20,
-    },
-    iconBadge: {
-        width: 48,
-        height: 48,
-        borderRadius: 16,
-        backgroundColor: `${BRAND_PRIMARY}20`,
-        borderWidth: 1,
-        borderColor: `${BRAND_PRIMARY}30`,
-        alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 8,
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: "700",
-        color: "#fff",
-        letterSpacing: -0.5,
-    },
-    titleAccent: {
-        color: BRAND_PRIMARY,
-    },
-    subtitle: {
-        fontSize: 16,
-        color: "rgba(255,255,255,0.6)",
-        lineHeight: 24,
-        fontWeight: "300",
-    },
-    formGroup: {
-        gap: 8,
-        marginTop: 8,
-    },
-    label: {
-        fontSize: 14,
-        fontWeight: "600",
-        color: "#fff",
-        marginLeft: 4,
-    },
-    inputWrapper: {
-        backgroundColor: SURFACE_DARK,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        flexDirection: "row",
-        alignItems: "center",
-        paddingHorizontal: 16,
-    },
-    input: {
-        flex: 1,
-        height: 56,
-        fontSize: 16,
-        color: "#fff",
-    },
-    inputWithLeftIcon: {
-        paddingLeft: 8,
-    },
-    inputIcon: {
-        marginLeft: 8,
-    },
-    inputIconLeft: {
-        marginRight: 4,
-    },
-    visibilityBtn: {
-        padding: 8,
-    },
-    phoneRow: {
-        flexDirection: "row",
-        gap: 12,
-    },
-    countryCode: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 6,
-        backgroundColor: SURFACE_DARK,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        paddingHorizontal: 12,
-        height: 56,
-    },
-    countryFlag: {
-        fontSize: 20,
-    },
-    countryCodeText: {
-        fontSize: 14,
-        fontWeight: "500",
-        color: "#fff",
-    },
-    phoneInput: {
-        flex: 1,
-    },
-    hint: {
-        fontSize: 12,
-        color: "rgba(255,255,255,0.3)",
-        marginLeft: 4,
-        marginTop: 4,
-    },
-    usernameInputWrapper: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: SURFACE_DARK,
-        borderRadius: 16,
-        borderWidth: 2,
-        borderColor: `${BRAND_PRIMARY}50`,
-        paddingHorizontal: 16,
-        height: 64,
-        marginTop: 16,
-    },
-    atSymbol: {
-        fontSize: 24,
-        fontWeight: "600",
-        color: BRAND_PRIMARY,
-        marginRight: 4,
-    },
-    usernameInput: {
-        flex: 1,
-        fontSize: 22,
-        fontWeight: "500",
-        color: "#fff",
-    },
-    availableText: {
-        fontSize: 14,
-        color: SUCCESS,
-        fontWeight: "500",
-        marginTop: 8,
-        marginLeft: 4,
-    },
-    suggestionsSection: {
-        marginTop: 32,
-    },
-    suggestionsLabel: {
-        fontSize: 12,
-        fontWeight: "600",
-        color: "rgba(255,255,255,0.4)",
-        letterSpacing: 2,
-        marginBottom: 12,
-        marginLeft: 4,
-    },
-    suggestionsRow: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 12,
-    },
-    suggestionChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 12,
-        backgroundColor: SURFACE_DARK,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.05)",
-    },
-    suggestionText: {
-        fontSize: 14,
-        color: "rgba(255,255,255,0.7)",
-    },
-    footer: {
-        paddingHorizontal: 24,
-        paddingBottom: 16,
-        paddingTop: 12,
-        backgroundColor: BG_DARK,
-    },
-    ctaButton: {
-        height: 56,
-        borderRadius: 16,
-        backgroundColor: BRAND_PRIMARY,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
-        shadowColor: BRAND_PRIMARY,
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: 8 },
-    },
-    ctaText: {
-        fontSize: 17,
-        fontWeight: "700",
-        color: "#fff",
-    },
-    termsText: {
-        fontSize: 12,
-        color: "rgba(255,255,255,0.3)",
-        textAlign: "center",
-        marginTop: 16,
-        lineHeight: 18,
-    },
-});
+const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({ navigation }) => {
+    const { data, updateField } = useTestOnboardingForm();
+    const canContinue = data.email.includes("@") && data.phone.trim().length >= 8;
+
+    return (
+        <TestOnboardingLayout
+            step={2}
+            title="Coordonnées"
+            subtitle="Comment peut-on te joindre pour confirmer tes réservations ?"
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("TestOnboardingSecurity")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Adresse email</Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <MaterialIcons
+                        name="mail"
+                        size={20}
+                        color="rgba(255,255,255,0.5)"
+                        style={sharedStyles.inputIconLeft}
+                    />
+                    <TextInput
+                        style={[sharedStyles.input, sharedStyles.inputWithLeftIcon]}
+                        placeholder="Entrez votre email"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.email}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        onChangeText={(value) => updateField("email", value)}
+                    />
+                    {data.email.includes("@") && (
+                        <MaterialIcons name="check-circle" size={20} color={SUCCESS} style={sharedStyles.inputIcon} />
+                    )}
+                </View>
+            </View>
+
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Numéro de téléphone</Text>
+                <View style={sharedStyles.phoneRow}>
+                    <View style={sharedStyles.countryCode}>
+                        <Text style={sharedStyles.countryFlag}>🇫🇷</Text>
+                        <Text style={sharedStyles.countryCodeText}>+33</Text>
+                        <MaterialIcons name="expand-more" size={16} color="rgba(255,255,255,0.3)" />
+                    </View>
+                    <View style={[sharedStyles.inputWrapper, sharedStyles.phoneInput]}>
+                        <TextInput
+                            style={sharedStyles.input}
+                            placeholder="6 12 34 56 78"
+                            placeholderTextColor="rgba(255,255,255,0.2)"
+                            value={data.phone}
+                            onChangeText={(value) => updateField("phone", value)}
+                            keyboardType="phone-pad"
+                        />
+                    </View>
+                </View>
+                <Text style={sharedStyles.hint}>Un code de vérification te sera envoyé par SMS.</Text>
+            </View>
+        </TestOnboardingLayout>
+    );
+};
+
+const SecurityStepScreen: React.FC<StepScreenProps<"TestOnboardingSecurity">> = ({ navigation }) => {
+    const { data, updateField } = useTestOnboardingForm();
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const passwordsMatch =
+        data.password.trim().length >= 6 && data.password === data.confirmPassword && data.confirmPassword.length >= 6;
+
+    return (
+        <TestOnboardingLayout
+            step={3}
+            title="Sécurité"
+            subtitle="Protège ton compte en définissant un mot de passe sécurisé."
+            canContinue={passwordsMatch}
+            onNext={() => navigation.navigate("TestOnboardingUsername")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Mot de passe</Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <MaterialIcons
+                        name="lock"
+                        size={20}
+                        color="rgba(255,255,255,0.5)"
+                        style={sharedStyles.inputIconLeft}
+                    />
+                    <TextInput
+                        style={[sharedStyles.input, sharedStyles.inputWithLeftIcon]}
+                        placeholder="••••••••"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.password}
+                        secureTextEntry={!showPassword}
+                        onChangeText={(value) => updateField("password", value)}
+                    />
+                    <TouchableOpacity style={sharedStyles.visibilityBtn} onPress={() => setShowPassword(!showPassword)}>
+                        <MaterialIcons
+                            name={showPassword ? "visibility-off" : "visibility"}
+                            size={20}
+                            color="rgba(255,255,255,0.4)"
+                        />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Confirmer le mot de passe</Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <MaterialIcons
+                        name="lock-reset"
+                        size={20}
+                        color="rgba(255,255,255,0.5)"
+                        style={sharedStyles.inputIconLeft}
+                    />
+                    <TextInput
+                        style={[sharedStyles.input, sharedStyles.inputWithLeftIcon]}
+                        placeholder="••••••••"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.confirmPassword}
+                        secureTextEntry={!showConfirmPassword}
+                        onChangeText={(value) => updateField("confirmPassword", value)}
+                    />
+                    <TouchableOpacity
+                        style={sharedStyles.visibilityBtn}
+                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                        <MaterialIcons
+                            name={showConfirmPassword ? "visibility-off" : "visibility"}
+                            size={20}
+                            color="rgba(255,255,255,0.4)"
+                        />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </TestOnboardingLayout>
+    );
+};
+
+const UsernameStepScreen: React.FC<StepScreenProps<"TestOnboardingUsername">> = ({ navigation }) => {
+    const { data, updateField } = useTestOnboardingForm();
+    const canContinue = data.username.trim().length >= 3;
+
+    return (
+        <TestOnboardingLayout
+            step={4}
+            title="Ton identité unique"
+            subtitle="Choisis un nom d'utilisateur pour que tes amis te trouvent facilement."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("TestOnboardingSports")}
+            onBack={() => navigation.goBack()}
+            footerNote="Tu pourras le modifier plus tard dans ton profil."
+        >
+            <View style={sharedStyles.usernameInputWrapper}>
+                <Text style={sharedStyles.atSymbol}>@</Text>
+                <TextInput
+                    style={sharedStyles.usernameInput}
+                    placeholder="username"
+                    placeholderTextColor="rgba(255,255,255,0.2)"
+                    value={data.username}
+                    autoCapitalize="none"
+                    onChangeText={(value) => updateField("username", value)}
+                />
+                {data.username.length > 2 && <MaterialIcons name="check-circle" size={24} color={SUCCESS} />}
+            </View>
+            {data.username.length > 2 && (
+                <Text style={sharedStyles.availableText}>Ce nom d'utilisateur est disponible !</Text>
+            )}
+
+            <View style={sharedStyles.suggestionsSection}>
+                <Text style={sharedStyles.suggestionsLabel}>SUGGESTIONS</Text>
+                <View style={sharedStyles.suggestionsRow}>
+                    {USERNAME_SUGGESTIONS.map((suggestion) => (
+                        <TouchableOpacity
+                            key={suggestion}
+                            style={sharedStyles.suggestionChip}
+                            onPress={() => updateField("username", suggestion)}
+                        >
+                            <Text style={sharedStyles.suggestionText}>{suggestion}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+        </TestOnboardingLayout>
+    );
+};
+
+const SportsStepScreen: React.FC<StepScreenProps<"TestOnboardingSports">> = ({ navigation }) => {
+    const { data, toggleArrayValue } = useTestOnboardingForm();
+    const canContinue = data.fav_sports.length > 0;
+
+    return (
+        <TestOnboardingLayout
+            step={5}
+            title={
+                <>
+                    Quels sports {"\n"}
+                    <Text style={accent}>t'intéressent ?</Text>
+                </>
+            }
+            subtitle="Sélectionne tes favoris pour personnaliser ton flux et trouver les meilleurs bars."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("TestOnboardingMood")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.optionsList}>
+                {SPORTS_OPTIONS.map((sport) => {
+                    const isSelected = data.fav_sports.includes(sport.id);
+                    return (
+                        <TouchableOpacity
+                            key={sport.id}
+                            style={[sharedStyles.sportOption, isSelected && sharedStyles.sportOptionSelected]}
+                            onPress={() => toggleArrayValue("fav_sports", sport.id)}
+                            activeOpacity={0.9}
+                        >
+                            <View style={sharedStyles.sportLeft}>
+                                <View
+                                    style={[
+                                        sharedStyles.sportIconWrapper,
+                                        isSelected && sharedStyles.sportIconSelected,
+                                    ]}
+                                >
+                                    <MaterialIcons
+                                        name={sport.icon}
+                                        size={28}
+                                        color={isSelected ? "#fff" : "rgba(255,255,255,0.4)"}
+                                    />
+                                </View>
+                                <Text style={[sharedStyles.sportLabel, isSelected && sharedStyles.sportLabelSelected]}>
+                                    {sport.label}
+                                </Text>
+                            </View>
+                            {isSelected ? (
+                                <View style={sharedStyles.checkCircle}>
+                                    <MaterialIcons name="check" size={20} color={BRAND_PRIMARY} />
+                                </View>
+                            ) : (
+                                <MaterialIcons name="add-circle" size={24} color="rgba(255,255,255,0.3)" />
+                            )}
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </TestOnboardingLayout>
+    );
+};
+
+const MoodStepScreen: React.FC<StepScreenProps<"TestOnboardingMood">> = ({ navigation }) => {
+    const { data, updateField } = useTestOnboardingForm();
+    const canContinue = Boolean(data.ambiances[0]);
+
+    const handleSelectMood = (id: string) => {
+        updateField("ambiances", [id]);
+    };
+
+    return (
+        <TestOnboardingLayout
+            step={6}
+            title="Quelle ambiance ?"
+            subtitle="Choisis ton style pour que nous puissions te proposer les meilleurs spots."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("TestOnboardingVenue")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.moodGrid}>
+                {MOOD_OPTIONS.map((mood) => {
+                    const isSelected = data.ambiances.includes(mood.id);
+                    return (
+                        <TouchableOpacity
+                            key={mood.id}
+                            style={[sharedStyles.moodCard, isSelected && sharedStyles.moodCardSelected]}
+                            onPress={() => handleSelectMood(mood.id)}
+                            activeOpacity={0.9}
+                        >
+                            <MaterialIcons
+                                name={mood.icon}
+                                size={48}
+                                color={isSelected ? BRAND_PRIMARY : "rgba(255,255,255,0.3)"}
+                            />
+                            <Text style={[sharedStyles.moodLabel, isSelected && sharedStyles.moodLabelSelected]}>
+                                {mood.label}
+                            </Text>
+                            <Text style={sharedStyles.moodSubtitle}>{mood.subtitle}</Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </TestOnboardingLayout>
+    );
+};
+
+const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({ navigation }) => {
+    const { data, updateField } = useTestOnboardingForm();
+    const canContinue = data.venue_types.length > 0;
+
+    const handleSelectVenue = (id: string) => {
+        updateField("venue_types", [id]);
+    };
+
+    return (
+        <TestOnboardingLayout
+            step={7}
+            title={
+                <>
+                    Quel est votre {"\n"}
+                    <Text style={accent}>style ?</Text>
+                </>
+            }
+            subtitle="Choisis l'ambiance qui correspond à ton envie du moment."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("TestOnboardingBudget")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.optionsList}>
+                {VENUE_OPTIONS.map((venue) => {
+                    const isSelected = data.venue_types.includes(venue.id);
+                    return (
+                        <TouchableOpacity
+                            key={venue.id}
+                            style={[sharedStyles.venueOption, isSelected && sharedStyles.venueOptionSelected]}
+                            onPress={() => handleSelectVenue(venue.id)}
+                            activeOpacity={0.9}
+                        >
+                            <View style={sharedStyles.venueLeft}>
+                                <View
+                                    style={[
+                                        sharedStyles.venueIconWrapper,
+                                        isSelected && sharedStyles.venueIconSelected,
+                                    ]}
+                                >
+                                    <MaterialIcons
+                                        name={venue.icon}
+                                        size={26}
+                                        color={isSelected ? "#000" : "rgba(255,255,255,0.4)"}
+                                    />
+                                </View>
+                                <View style={sharedStyles.venueTexts}>
+                                    <Text
+                                        style={[sharedStyles.venueLabel, isSelected && sharedStyles.venueLabelSelected]}
+                                    >
+                                        {venue.label}
+                                    </Text>
+                                    <Text style={sharedStyles.venueSubtitle}>{venue.subtitle}</Text>
+                                </View>
+                            </View>
+                            <View style={[sharedStyles.radioCircle, isSelected && sharedStyles.radioCircleSelected]}>
+                                {isSelected && <MaterialIcons name="check" size={16} color="#000" />}
+                            </View>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </TestOnboardingLayout>
+    );
+};
+
+const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({ navigation }) => {
+    const { data, updateField, buildRequestPayload } = useTestOnboardingForm();
+    const setOnboardingCompleted = useStore((state) => state.setOnboardingCompleted);
+    const rootNavigation = useNavigation<any>();
+
+    const handleNext = () => {
+        const payload = buildRequestPayload();
+        console.log("TestOnboarding mock payload:", payload);
+        setOnboardingCompleted(true);
+        rootNavigation.reset({
+            index: 0,
+            routes: [{ name: "TestTab" }],
+        });
+    };
+
+    return (
+        <TestOnboardingLayout
+            step={8}
+            title={
+                <>
+                    Quel est {"\n"}votre budget ?
+                </>
+            }
+            subtitle="Nous trouverons les bars qui correspondent à tes attentes."
+            canContinue={Boolean(data.budget)}
+            nextLabel="Terminer"
+            onNext={handleNext}
+            onBack={() => navigation.goBack()}
+            footerNote="Choix modifiable plus tard dans les réglages."
+        >
+            <View style={sharedStyles.budgetList}>
+                {BUDGET_OPTIONS.map((budget) => {
+                    const isSelected = data.budget === budget.id;
+                    return (
+                        <TouchableOpacity
+                            key={budget.id}
+                            style={[sharedStyles.budgetOption, isSelected && sharedStyles.budgetOptionSelected]}
+                            onPress={() => updateField("budget", budget.id)}
+                            activeOpacity={0.9}
+                        >
+                            <View style={sharedStyles.budgetCenter}>
+                                <Text style={sharedStyles.budgetAmount}>{budget.label}</Text>
+                                <Text style={sharedStyles.budgetTier}>{budget.subtitle}</Text>
+                            </View>
+                            {isSelected && (
+                                <View style={sharedStyles.budgetCheck}>
+                                    <MaterialIcons name="check-circle" size={24} color={BRAND_PRIMARY} />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </TestOnboardingLayout>
+    );
+};
+
+const TestOnboardingScreen = () => {
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="TestOnboardingName" component={NameStepScreen} />
+            <Stack.Screen name="TestOnboardingContact" component={ContactStepScreen} />
+            <Stack.Screen name="TestOnboardingSecurity" component={SecurityStepScreen} />
+            <Stack.Screen name="TestOnboardingUsername" component={UsernameStepScreen} />
+            <Stack.Screen name="TestOnboardingSports" component={SportsStepScreen} />
+            <Stack.Screen name="TestOnboardingMood" component={MoodStepScreen} />
+            <Stack.Screen name="TestOnboardingVenue" component={VenueStepScreen} />
+            <Stack.Screen name="TestOnboardingBudget" component={BudgetStepScreen} />
+        </Stack.Navigator>
+    );
+};
 
 export default TestOnboardingScreen;
