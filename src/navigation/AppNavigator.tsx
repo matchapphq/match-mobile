@@ -5,9 +5,12 @@ import { theme } from "../constants/theme";
 import { useStore } from "../store/useStore";
 
 // Import screens
-import SplashScreen from "../screens/SplashScreen";
+import SplashScreen from "../screens/TestSplashScreen";
 import WelcomeScreen from "../screens/WelcomeScreen";
+import TestWelcomeScreen from "../screens/TestWelcomeScreen";
+import TestAuthEntryScreen from "../screens/TestAuthEntryScreen";
 import OnboardingScreen from "../screens/OnboardingScreen";
+import TestOnboardingScreen from "../screens/TestOnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
 import MapScreen from "../screens/MapScreen";
 import MatchesScreen from "../screens/MatchesScreen";
@@ -63,11 +66,18 @@ export const AppNavigator = () => {
                     </>
                 ) : (
                     <>
-                        <Stack.Screen name="TestTab" component={TestTabNavigator} />
+                        <Stack.Screen name="TestWelcome" component={TestWelcomeScreen} />
+                <Stack.Screen name="TestWelcome" component={TestWelcomeScreen} />
+                <Stack.Screen name="TestAuthEntry" component={TestAuthEntryScreen} />
+                <Stack.Screen name="TestTab" component={TestTabNavigator} />
                         ...
                     </>
                 )} */}
 
+                <Stack.Screen name="TestWelcome" component={TestWelcomeScreen} />
+                <Stack.Screen name="TestAuthEntry" component={TestAuthEntryScreen} />
+                <Stack.Screen name="TestOnboarding" component={TestOnboardingScreen} />
+                <Stack.Screen name="Login" component={LoginScreen} />
                 <Stack.Screen name="TestTab" component={TestTabNavigator} />
                 <Stack.Screen name="TestVenueProfile" component={TestVenueProfileScreen} />
                 <Stack.Screen name="TestReservationsScreen" component={TestReservationsScreen} />

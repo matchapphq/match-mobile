@@ -5,30 +5,12 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme, images } from '../constants/theme';
 import { useStore } from '../store/useStore';
+import { mockReservations } from '../lib/mockData';
 
 const ReservationsScreen = () => {
   const navigation = useNavigation<any>();
   const { reservations } = useStore();
   const [selectedQrCode, setSelectedQrCode] = useState<string | null>(null);
-
-  const mockReservations = [
-    {
-      id: '1',
-      venueName: 'The Kop Bar',
-      date: "Aujourd'hui",
-      details: '• Heure du match / table\n• Nombre de personnes\n• Conditions\n  (arriver avant X min, annulation, etc.)',
-      status: 'confirmed' as const,
-      qrCode: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJQAAACUCAYAAAB1PADUAAAABmJLR0QA/wD/AP+gvaeTAAAA...', // Placeholder base64
-    },
-    {
-      id: '2',
-      venueName: 'La fumée',
-      date: '07/12/2025',
-      details: '• Heure du match / table\n• Nombre de personnes\n• Conditions\n  (arriver avant X min, annulation, etc.)',
-      status: 'pending' as const,
-      qrCode: null,
-    },
-  ];
 
   const handleCancelReservation = (id: string) => {
     // Handle cancellation

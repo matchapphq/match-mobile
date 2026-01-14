@@ -5,48 +5,11 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme, images } from '../constants/theme';
 import { useStore } from '../store/useStore';
+import { mockNotificationSettings } from '../lib/mockData';
 
 const NotificationsScreen = () => {
   const navigation = useNavigation<any>();
   const { notifications, markNotificationAsRead } = useStore();
-
-  const mockNotifications = [
-    {
-      id: '1',
-      type: 'match' as const,
-      title: 'Matchs Suivis',
-      message: 'Notification 30 min avant\nNotification quand un bar proche diffuse le match',
-      badge: 'ON/OFF' as const,
-    },
-    {
-      id: '2',
-      type: 'venue' as const,
-      title: 'Gros matchs',
-      message: 'Alerte type\n"PSG / OM : forte affluence — pense à réserver !"',
-      badge: 'ON/OFF' as const,
-    },
-    {
-      id: '3',
-      type: 'promo' as const,
-      title: 'Promos & Happy Hour',
-      message: 'Bars, restaurants et fast food\navec offres limitées / événements',
-      badge: 'ON/OFF' as const,
-    },
-    {
-      id: '4',
-      type: 'venue' as const,
-      title: 'Nouveaux bars ajoutés autour de moi',
-      message: '',
-      badge: 'ON/OFF' as const,
-    },
-    {
-      id: '5',
-      type: 'reservation' as const,
-      title: 'Rappels de réservation',
-      message: '',
-      badge: 'ON/OFF' as const,
-    },
-  ];
 
   const handleToggleNotification = (id: string) => {
     // Toggle notification on/off
@@ -86,7 +49,7 @@ const NotificationsScreen = () => {
             </View>
 
             <View style={styles.notificationsList}>
-              {mockNotifications.map(notification => (
+              {mockNotificationSettings.map(notification => (
                 <View key={notification.id} style={styles.notificationItem}>
                   <View style={styles.notificationContent}>
                     <Text style={styles.notificationTitle}>• {notification.title}</Text>

@@ -11,7 +11,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
+import { useStore } from '../store/useStore';
 
 type SectionRow = {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -68,9 +70,28 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
   },
 ];
 
-const TestProfilePage = ({ navigation }: { navigation: any }) => {
+const TestProfilePage = () => {
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+  const logout = useStore((state) => state.logout);
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
+
+  const handleLogout = () => {
+    Alert.alert('Déconnexion', 'Veux-tu te déconnecter de Match ?', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Confirmer',
+        style: 'destructive',
+        onPress: () => {
+          logout();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'TestWelcome' }],
+          });
+        },
+      },
+    ]);
+  };
 
   return (
     <View style={styles.root}>
@@ -152,6 +173,10 @@ const TestProfilePage = ({ navigation }: { navigation: any }) => {
                     }
                     if (row.label === 'Parler à un conseiller') {
                       Alert.alert('Support', 'Nous connectons cette option prochainement.');
+                      return;
+                    }
+                    if (row.label === 'Déconnexion') {
+                      handleLogout();
                       return;
                     }
                   };
