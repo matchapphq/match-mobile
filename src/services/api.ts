@@ -82,6 +82,71 @@ export interface MatchVenue {
     allowsReservations: boolean;
 }
 
+export interface MatchDetails {
+    id: string;
+    scheduled_at: string;
+    status: string;
+    homeTeam?: { id: string; name: string; logo_url?: string };
+    awayTeam?: { id: string; name: string; logo_url?: string };
+    league?: { id: string; name: string; sport?: { name: string } };
+    thumbnail?: string;
+}
+
+export interface VenueDetails {
+    id: string;
+    name: string;
+    city?: string;
+    street_address?: string;
+    phone?: string;
+    latitude?: number;
+    longitude?: number;
+    description?: string;
+    price_range?: string;
+    rating?: number;
+    photos?: VenuePhoto[];
+    opening_hours?: VenueOpeningHours[];
+    amenities?: string[];
+}
+
+export interface VenuePhoto {
+    id: string;
+    url: string;
+    is_primary?: boolean;
+}
+
+export interface VenueOpeningHours {
+    day_of_week: number;
+    open_time: string;
+    close_time: string;
+    is_closed?: boolean;
+}
+
+export interface VenueAvailability {
+    venueMatchId: string;
+    matchId: string;
+    availableCapacity: number;
+    totalCapacity: number;
+    maxGroupSize: number;
+    scheduledAt: string;
+}
+
+export interface UpcomingNearbyMatch {
+    venueMatchId: string;
+    match: MatchDetails;
+    venue: { id: string; name: string; city?: string };
+    availableCapacity: number;
+    isFeatured: boolean;
+}
+
+export interface SearchFilters {
+    query?: string;
+    sport?: string;
+    date?: string;
+    lat?: number;
+    lng?: number;
+    radius?: number;
+}
+
 export interface CreateReservationPayload {
     venueMatchId: string;
     partySize: number;
@@ -103,6 +168,46 @@ export interface CreateReservationResponse {
     };
     qr_code?: string;
     qrCode?: string;
+}
+
+export interface ApiReservation {
+    id: string;
+    user_id: string;
+    venue_match_id: string;
+    party_size: number;
+    status: string;
+    special_requests?: string | null;
+    qr_code?: string | null;
+    created_at: string;
+    canceled_at?: string | null;
+    canceled_reason?: string | null;
+    venueMatch?: {
+        id: string;
+        venue?: {
+            id: string;
+            name: string;
+            city?: string;
+            street_address?: string;
+            phone?: string;
+        };
+        match?: {
+            id: string;
+            scheduled_at: string;
+            homeTeam?: { name: string };
+            awayTeam?: { name: string };
+            league?: { name: string };
+        };
+    };
+}
+
+export interface GetReservationResponse {
+    reservation: ApiReservation;
+    qrCode?: string;
+}
+
+export interface CancelReservationResponse {
+    message: string;
+    reservation: ApiReservation;
 }
 
 export const apiService = {
@@ -145,10 +250,62 @@ export const apiService = {
         const response = await api.get("/venues/nearby", {
             params: { lat, lng, radius },
         });
-        // Handle both array and { data: [] } response formats
         return Array.isArray(response.data)
             ? response.data
             : response.data?.data || [];
+    },
+
+    getVenueDetails: async (venueId: string): Promise<VenueDetails> => {
+        const response = await api.get(`/venues/${venueId}`);
+        return response.data?.data || response.data;
+    },
+
+    getVenuePhotos: async (venueId: string): Promise<VenuePhoto[]> => {
+        const response = await api.get(`/venues/${venueId}/photos`);
+        return response.data?.data || response.data || [];
+    },
+
+    getVenueReviews: async (venueId: string): Promise<any[]> => {
+        const response = await api.get(`/venues/${venueId}/reviews`);
+        return response.data?.data || response.data || [];
+    },
+
+    getVenueAvailability: async (venueId: string): Promise<VenueAvailability[]> => {
+        const response = await api.get(`/venues/${venueId}/availability`);
+        return response.data?.data || response.data || [];
+    },
+
+    getVenueOpeningHours: async (venueId: string): Promise<VenueOpeningHours[]> => {
+        const response = await api.get(`/venues/${venueId}/opening-hours`);
+        return response.data?.data || response.data || [];
+    },
+
+    getVenueMenu: async (venueId: string): Promise<any[]> => {
+        const response = await api.get(`/venues/${venueId}/menu`);
+        return response.data?.data || response.data || [];
+    },
+
+    getVenueAmenities: async (venueId: string): Promise<string[]> => {
+        const response = await api.get(`/venues/${venueId}/amenities`);
+        return response.data?.data || response.data || [];
+    },
+
+    // Favorites
+    addVenueToFavorites: async (venueId: string): Promise<void> => {
+        await api.post(`/venues/${venueId}/favorite`);
+    },
+
+    removeVenueFromFavorites: async (venueId: string): Promise<void> => {
+        await api.delete(`/venues/${venueId}/favorite`);
+    },
+
+    checkVenueFavorite: async (venueId: string): Promise<boolean> => {
+        try {
+            const response = await api.get(`/venues/${venueId}/favorite`);
+            return response.data?.isFavorite ?? false;
+        } catch {
+            return false;
+        }
     },
 
     // Matches
@@ -173,12 +330,29 @@ export const apiService = {
         return response.data;
     },
 
+    getMatchById: async (matchId: string): Promise<MatchDetails> => {
+        const response = await api.get(`/matches/${matchId}`);
+        return response.data?.data || response.data;
+    },
+
     getMatchVenues: async (matchId: string): Promise<MatchVenue[]> => {
         const response = await api.get(`/matches/${matchId}/venues`);
         const data = Array.isArray(response.data)
             ? response.data
             : response.data?.data || [];
         return data;
+    },
+
+    getUpcomingNearbyMatches: async (
+        lat: number,
+        lng: number,
+        distanceKm: number = 10,
+        limit: number = 20,
+    ): Promise<UpcomingNearbyMatch[]> => {
+        const response = await api.get("/matches/upcoming-nearby", {
+            params: { lat, lng, distance_km: distanceKm, limit },
+        });
+        return response.data?.data || [];
     },
 
     // Reservations
@@ -189,13 +363,19 @@ export const apiService = {
         return response.data;
     },
 
-    getUserReservations: async (): Promise<Reservation[]> => {
+    getUserReservations: async (): Promise<{ data: ApiReservation[] }> => {
         const response = await api.get("/reservations");
         return response.data;
     },
 
-    cancelReservation: async (id: string): Promise<void> => {
-        await api.delete(`/reservations/${id}`);
+    getReservationById: async (id: string): Promise<GetReservationResponse> => {
+        const response = await api.get(`/reservations/${id}`);
+        return response.data;
+    },
+
+    cancelReservation: async (id: string, reason?: string): Promise<CancelReservationResponse> => {
+        const response = await api.post(`/reservations/${id}/cancel`, { reason });
+        return response.data;
     },
 
     // User
@@ -206,6 +386,34 @@ export const apiService = {
 
     getUserProfile: async (): Promise<User> => {
         const response = await api.get("/users/profile");
+        return response.data;
+    },
+
+    // Discovery
+    discoverNearby: async (
+        lat: number,
+        lng: number,
+        radius?: number,
+    ): Promise<{ venues: Venue[]; matches: UpcomingNearbyMatch[] }> => {
+        const response = await api.get("/discovery/nearby", {
+            params: { lat, lng, radius },
+        });
+        return response.data;
+    },
+
+    discoverMatchesNearby: async (
+        lat: number,
+        lng: number,
+        radius?: number,
+    ): Promise<UpcomingNearbyMatch[]> => {
+        const response = await api.get("/discovery/matches-nearby", {
+            params: { lat, lng, radius },
+        });
+        return response.data?.data || response.data || [];
+    },
+
+    search: async (filters: SearchFilters): Promise<{ venues: Venue[]; matches: Match[] }> => {
+        const response = await api.post("/discovery/search", filters);
         return response.data;
     },
 };

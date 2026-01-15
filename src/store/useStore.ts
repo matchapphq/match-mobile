@@ -8,7 +8,33 @@ import {
     Reservation,
     Notification,
 } from "../types";
-import { apiService, mockData } from "../services/api";
+import { apiService, mockData, ApiReservation } from "../services/api";
+
+// Transform API reservation to mobile Reservation type
+const transformApiReservation = (apiRes: ApiReservation, qrCode?: string): Reservation => {
+    const venue = apiRes.venueMatch?.venue;
+    const match = apiRes.venueMatch?.match;
+    const scheduledAt = match?.scheduled_at ? new Date(match.scheduled_at) : new Date();
+    
+    let status: "pending" | "confirmed" | "cancelled" = "pending";
+    if (apiRes.status === "confirmed") status = "confirmed";
+    else if (apiRes.status === "canceled" || apiRes.status === "cancelled") status = "cancelled";
+    
+    return {
+        id: apiRes.id,
+        venueId: venue?.id || apiRes.venue_match_id,
+        venueName: venue?.name || "Venue",
+        venueAddress: [venue?.street_address, venue?.city].filter(Boolean).join(", ") || undefined,
+        date: scheduledAt,
+        time: scheduledAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        numberOfPeople: apiRes.party_size,
+        matchId: match?.id,
+        matchTitle: match ? `${match.homeTeam?.name || "TBD"} vs ${match.awayTeam?.name || "TBD"}` : undefined,
+        status,
+        conditions: apiRes.special_requests || undefined,
+        qrCode: qrCode || apiRes.qr_code || undefined,
+    };
+};
 
 interface AppState {
     // User
@@ -70,6 +96,11 @@ interface AppState {
     updateReservation: (id: string, updates: Partial<Reservation>) => void;
     cancelReservation: (id: string) => void;
 
+    // Reservation API Actions
+    fetchReservations: () => Promise<void>;
+    cancelReservationApi: (id: string, reason?: string) => Promise<boolean>;
+    getReservationWithQR: (id: string) => Promise<Reservation | null>;
+
     addNotification: (notification: Notification) => void;
     markNotificationAsRead: (id: string) => void;
     clearNotifications: () => void;
@@ -85,6 +116,7 @@ interface AppState {
     fetchUpcomingMatches: () => Promise<void>;
     login: (email: string, password: string) => Promise<boolean>;
     signup: (data: any) => Promise<boolean>;
+    refreshReservations: () => Promise<void>;
 
     // Loading states
     isLoading: boolean;
@@ -429,6 +461,61 @@ export const useStore = create<AppState>((set, get) => ({
         );
         set({ reservations: updated });
         AsyncStorage.setItem("reservations", JSON.stringify(updated));
+    },
+
+    // Reservation API Actions
+    fetchReservations: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const response = await apiService.getUserReservations();
+            const apiReservations = response.data || [];
+            const transformed = apiReservations.map((r) => transformApiReservation(r));
+            set({ reservations: transformed, isLoading: false });
+            AsyncStorage.setItem("reservations", JSON.stringify(transformed));
+        } catch (error) {
+            console.error("Error fetching reservations:", error);
+            set({ isLoading: false, error: "Failed to fetch reservations" });
+        }
+    },
+
+    refreshReservations: async () => {
+        try {
+            const response = await apiService.getUserReservations();
+            const apiReservations = response.data || [];
+            const transformed = apiReservations.map((r) => transformApiReservation(r));
+            set({ reservations: transformed });
+            AsyncStorage.setItem("reservations", JSON.stringify(transformed));
+        } catch (error) {
+            console.error("Error refreshing reservations:", error);
+        }
+    },
+
+    cancelReservationApi: async (id, reason) => {
+        set({ isLoading: true, error: null });
+        try {
+            await apiService.cancelReservation(id, reason);
+            const { reservations } = get();
+            const updated = reservations.map((r) =>
+                r.id === id ? { ...r, status: "cancelled" as const } : r,
+            );
+            set({ reservations: updated, isLoading: false });
+            AsyncStorage.setItem("reservations", JSON.stringify(updated));
+            return true;
+        } catch (error) {
+            console.error("Error canceling reservation:", error);
+            set({ isLoading: false, error: "Failed to cancel reservation" });
+            return false;
+        }
+    },
+
+    getReservationWithQR: async (id) => {
+        try {
+            const response = await apiService.getReservationById(id);
+            return transformApiReservation(response.reservation, response.qrCode);
+        } catch (error) {
+            console.error("Error fetching reservation with QR:", error);
+            return null;
+        }
     },
 
     addNotification: (notification) => {

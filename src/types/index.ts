@@ -5,6 +5,7 @@ export interface User {
         last_name?: string;
         email?: string;
         avatar?: string;
+        created_at?: string;
         preferences?: UserPreferences;
     };
     id: string;
@@ -12,6 +13,7 @@ export interface User {
     last_name?: string;
     email?: string;
     avatar?: string;
+    created_at?: string;
     preferences?: UserPreferences;
 }
 
@@ -70,12 +72,15 @@ export interface Reservation {
     id: string;
     venueId: string;
     venueName: string;
+    venueAddress?: string;
     date: Date;
     time: string;
     numberOfPeople: number;
     matchId?: string;
+    matchTitle?: string;
     status: "pending" | "confirmed" | "cancelled";
     conditions?: string;
+    qrCode?: string;
 }
 
 export interface Notification {

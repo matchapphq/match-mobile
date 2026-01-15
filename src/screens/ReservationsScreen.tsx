@@ -1,24 +1,62 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Modal, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ImageBackground, Modal, Image, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme, images } from '../constants/theme';
 import { useStore } from '../store/useStore';
-import { mockReservations } from '../lib/mockData';
 
 const ReservationsScreen = () => {
   const navigation = useNavigation<any>();
-  const { reservations } = useStore();
+  const { reservations, fetchReservations, cancelReservationApi, getReservationWithQR, isLoading, error } = useStore();
   const [selectedQrCode, setSelectedQrCode] = useState<string | null>(null);
+  const [loadingQR, setLoadingQR] = useState(false);
+
+  // Fetch reservations when screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchReservations();
+    }, [fetchReservations])
+  );
 
   const handleCancelReservation = (id: string) => {
-    // Handle cancellation
+    Alert.alert(
+      "Annuler la réservation",
+      "Êtes-vous sûr de vouloir annuler cette réservation ?",
+      [
+        { text: "Non", style: "cancel" },
+        {
+          text: "Oui, annuler",
+          style: "destructive",
+          onPress: async () => {
+            const success = await cancelReservationApi(id);
+            if (success) {
+              Alert.alert("Succès", "Réservation annulée avec succès");
+            } else {
+              Alert.alert("Erreur", "Impossible d'annuler la réservation");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleViewQRCode = async (reservationId: string) => {
+    setLoadingQR(true);
+    const reservation = await getReservationWithQR(reservationId);
+    setLoadingQR(false);
+    if (reservation?.qrCode) {
+      setSelectedQrCode(reservation.qrCode);
+    } else {
+      Alert.alert("Erreur", "Impossible de charger le QR code");
+    }
   };
 
   const handleContactVenue = (venueName: string) => {
-    // Handle contact venue
+    Alert.alert("Contacter", `Contacter ${venueName}`);
   };
+
+  const activeReservations = reservations.filter((r) => r.status !== "cancelled");
 
   return (
     <ImageBackground source={images.background} style={styles.backgroundContainer} resizeMode="cover">
@@ -41,45 +79,79 @@ const ReservationsScreen = () => {
               <Text style={styles.cardIconText}>📋</Text>
             </View>
 
-            <Text style={styles.cardTitle}>Vous avez {mockReservations.length} réservations</Text>
+            {isLoading ? (
+              <ActivityIndicator size="large" color={theme.colors.primary} style={{ marginVertical: 20 }} />
+            ) : error ? (
+              <Text style={styles.errorText}>{error}</Text>
+            ) : activeReservations.length === 0 ? (
+              <Text style={styles.emptyText}>Aucune réservation en cours</Text>
+            ) : (
+              <>
+                <Text style={styles.cardTitle}>Vous avez {activeReservations.length} réservation{activeReservations.length > 1 ? 's' : ''}</Text>
 
-            {mockReservations.map(reservation => (
-              <View key={reservation.id} style={styles.reservationCard}>
-                <View style={styles.reservationHeader}>
-                  <Text style={styles.venueName}>
-                    {reservation.venueName} - {reservation.date}
-                  </Text>
-                </View>
+                {activeReservations.map(reservation => {
+                  const dateStr = reservation.date instanceof Date 
+                    ? reservation.date.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+                    : String(reservation.date);
+                  const details = [
+                    reservation.matchTitle,
+                    `${reservation.numberOfPeople} personne${reservation.numberOfPeople > 1 ? 's' : ''}`,
+                    reservation.time,
+                    reservation.venueAddress,
+                  ].filter(Boolean).join(' • ');
 
-                <Text style={styles.reservationDetails}>{reservation.details}</Text>
+                  return (
+                    <View key={reservation.id} style={styles.reservationCard}>
+                      <View style={styles.reservationHeader}>
+                        <Text style={styles.venueName}>
+                          {reservation.venueName} - {dateStr}
+                        </Text>
+                        <View style={[styles.statusBadge, reservation.status === 'confirmed' ? styles.confirmedBadge : styles.pendingBadge]}>
+                          <Text style={styles.statusText}>
+                            {reservation.status === 'confirmed' ? 'Confirmée' : 'En attente'}
+                          </Text>
+                        </View>
+                      </View>
 
-                <View style={styles.buttonGroup}>
-                  {reservation.status === 'confirmed' && reservation.qrCode && (
-                    <TouchableOpacity
-                      style={styles.qrButton}
-                      onPress={() => setSelectedQrCode(reservation.qrCode)}
-                    >
-                      <Ionicons name="qr-code-outline" size={20} color={theme.colors.background} style={{ marginRight: 8 }} />
-                      <Text style={styles.qrButtonText}>Voir le QR Code</Text>
-                    </TouchableOpacity>
-                  )}
+                      <Text style={styles.reservationDetails}>{details}</Text>
 
-                  <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={() => handleCancelReservation(reservation.id)}
-                  >
-                    <Text style={styles.cancelButtonText}>Annuler la réservation</Text>
-                  </TouchableOpacity>
+                      <View style={styles.buttonGroup}>
+                        {reservation.status === 'confirmed' && (
+                          <TouchableOpacity
+                            style={styles.qrButton}
+                            onPress={() => handleViewQRCode(reservation.id)}
+                            disabled={loadingQR}
+                          >
+                            {loadingQR ? (
+                              <ActivityIndicator size="small" color={theme.colors.background} />
+                            ) : (
+                              <>
+                                <Ionicons name="qr-code-outline" size={20} color={theme.colors.background} style={{ marginRight: 8 }} />
+                                <Text style={styles.qrButtonText}>Voir le QR Code</Text>
+                              </>
+                            )}
+                          </TouchableOpacity>
+                        )}
 
-                  <TouchableOpacity
-                    style={styles.contactButton}
-                    onPress={() => handleContactVenue(reservation.venueName)}
-                  >
-                    <Text style={styles.contactButtonText}>Contacter le bar</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
+                        <TouchableOpacity
+                          style={styles.cancelButton}
+                          onPress={() => handleCancelReservation(reservation.id)}
+                        >
+                          <Text style={styles.cancelButtonText}>Annuler la réservation</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                          style={styles.contactButton}
+                          onPress={() => handleContactVenue(reservation.venueName)}
+                        >
+                          <Text style={styles.contactButtonText}>Contacter le bar</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  );
+                })}
+              </>
+            )}
           </View>
         </ScrollView>
 
@@ -202,6 +274,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: theme.spacing.lg,
   },
+  errorText: {
+    fontSize: theme.fonts.sizes.md,
+    color: '#ff6b6b',
+    textAlign: 'center',
+    marginVertical: theme.spacing.lg,
+  },
+  emptyText: {
+    fontSize: theme.fonts.sizes.md,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginVertical: theme.spacing.lg,
+  },
   reservationCard: {
     backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.md,
@@ -210,10 +294,32 @@ const styles = StyleSheet.create({
   },
   reservationHeader: {
     marginBottom: theme.spacing.sm,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   venueName: {
     fontSize: theme.fonts.sizes.md,
     fontWeight: 'bold',
+    color: theme.colors.text,
+    flex: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.full,
+    marginLeft: theme.spacing.sm,
+  },
+  confirmedBadge: {
+    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+  },
+  pendingBadge: {
+    backgroundColor: 'rgba(255, 193, 7, 0.2)',
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
     color: theme.colors.text,
   },
   reservationDetails: {

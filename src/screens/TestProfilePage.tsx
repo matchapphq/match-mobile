@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,14 @@ import {
   StatusBar,
   ImageBackground,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { useStore } from '../store/useStore';
+import type { UserProfile } from '../services/testApi';
 
 type SectionRow = {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -24,11 +26,13 @@ type SectionRow = {
   accent?: string;
 };
 
-const PROFILE_DATA = {
-  name: 'Alex Martin',
-  email: 'alex.martin@example.com',
-  badgeLabel: 'Membre Gold',
-  avatar: 'https://lh3.googleusercontent.com/aida-public/AB6AXuChmt00KB9g8IBMZd_IR3ke3Gwft5yoKGVzN-8fgjdV7GgI4c71dESH3eO8QbxO90D1zpzu7HVhZ7d0jaKtWza6F9OQYCmEoHH4dHRJlsYMt1VtECsAK0drJ0FD2rhoQHHWtm0zShI-4oCC20k3ZEPQLWO0vJEZcUX-G9QGG0tqS-EYxN0vkFW3X44r0qVvQqabL6BTYwda2OnxJf4jQmldITRtTxbzWpuagyaKoM1JrYgLvvCXGhBBTqdIyeoI22YBKVmbCoa3OQdP',
+const DEFAULT_PROFILE: UserProfile = {
+  name: 'Utilisateur',
+  email: '',
+  badgeLabel: 'Fan',
+  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+  memberSince: '2024',
+  tier: 'Gold',
 };
 
 const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
@@ -74,7 +78,23 @@ const TestProfilePage = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const logout = useStore((state) => state.logout);
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
+  const user = useStore((state) => state.user);
+  const userData = user?.user ?? user ?? null;
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  // Build profile from store user data
+  const profile: UserProfile = {
+    name: userData
+      ? [userData.first_name, userData.last_name].filter(Boolean).join(' ') || 'Utilisateur'
+      : DEFAULT_PROFILE.name,
+    email: userData?.email || DEFAULT_PROFILE.email,
+    badgeLabel: 'Fan',
+    avatar: userData?.avatar || DEFAULT_PROFILE.avatar,
+    memberSince: userData?.created_at ? new Date(userData.created_at).getFullYear().toString() : '2024',
+    tier: 'Gold',
+  };
+
+  const isLoading = false;
 
   const handleLogout = () => {
     Alert.alert('Déconnexion', 'Veux-tu te déconnecter de Match ?', [
@@ -106,30 +126,36 @@ const TestProfilePage = () => {
         </View>
 
         <View style={styles.avatarSection}>
-          <View style={styles.avatarWrapper}>
-            <ImageBackground
-              source={{
-                uri: PROFILE_DATA.avatar,
-              }}
-              style={styles.avatar}
-              imageStyle={{ borderRadius: 64 }}
-            />
-            <TouchableOpacity style={styles.avatarEditBadge} activeOpacity={0.9}>
-              <MaterialIcons name="edit" size={22} color={COLORS.text} />
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.name}>{PROFILE_DATA.name}</Text>
-          <Text style={styles.memberSince}>{PROFILE_DATA.email}</Text>
-          <TouchableOpacity
-            style={styles.badge}
-            activeOpacity={0.85}
-            onPress={() =>
-              Alert.alert('Avantages Membre Gold', "Accédez à vos avantages exclusifs prochainement.")
-            }
-          >
-            <MaterialIcons name="emoji-events" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-            <Text style={styles.badgeLabel}>{PROFILE_DATA.badgeLabel}</Text>
-          </TouchableOpacity>
+          {isLoading ? (
+            <ActivityIndicator color={COLORS.primary} size="large" style={{ marginVertical: 40 }} />
+          ) : (
+            <>
+              <View style={styles.avatarWrapper}>
+                <ImageBackground
+                  source={{
+                    uri: profile.avatar,
+                  }}
+                  style={styles.avatar}
+                  imageStyle={{ borderRadius: 64 }}
+                />
+                <TouchableOpacity style={styles.avatarEditBadge} activeOpacity={0.9}>
+                  <MaterialIcons name="edit" size={22} color={COLORS.text} />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.name}>{profile.name}</Text>
+              <Text style={styles.memberSince}>{profile.email}</Text>
+              <TouchableOpacity
+                style={styles.badge}
+                activeOpacity={0.85}
+                onPress={() =>
+                  Alert.alert(`Avantages Membre ${profile.tier}`, "Accédez à vos avantages exclusifs prochainement.")
+                }
+              >
+                <MaterialIcons name="emoji-events" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
+                <Text style={styles.badgeLabel}>{profile.badgeLabel}</Text>
+              </TouchableOpacity>
+            </>
+          )}
         </View>
 
         <View style={styles.sectionsWrapper}>
