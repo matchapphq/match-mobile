@@ -240,7 +240,17 @@ const TestMatchDetailScreen = ({
                                     <Text style={styles.venueMeta} numberOfLines={2}>
                                         {venue.address}
                                     </Text>
-                                    <TouchableOpacity style={styles.venueButton}>
+                                    <TouchableOpacity
+                                        style={styles.venueButton}
+                                        onPress={() =>
+                                            navigation.navigate("TestReservationsScreen", {
+                                                venue,
+                                                matchId: match.id,
+                                                match,
+                                                matchDateIso: match.dateIso,
+                                            })
+                                        }
+                                    >
                                         <Text style={styles.venueButtonText}>RÉSERVER UNE TABLE</Text>
                                     </TouchableOpacity>
                                 </View>

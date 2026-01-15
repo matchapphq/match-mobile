@@ -1,4 +1,32 @@
-export type VenueMatch = {
+// match-mobile/src/types/testApi.types.ts
+
+export interface UserProfile {
+    name: string;
+    email: string;
+    badgeLabel: string;
+    avatar: string;
+    memberSince: string;
+    tier: string;
+    first_name?: string;
+    last_name?: string;
+}
+
+export interface Venue {
+    id: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    address: string;
+    distance?: string;
+    image: string;
+    rating: number;
+    tags: string[];
+    priceLevel: string;
+    isOpen: boolean;
+    matches?: VenueMatch[];
+}
+
+export interface VenueMatch {
     id: string;
     date: string;
     month: string;
@@ -9,45 +37,14 @@ export type VenueMatch = {
     team1Color: string;
     team2Color: string;
     bgImage?: string;
-};
+}
 
-export type Venue = {
-    id: string;
-    name: string;
-    latitude: number;
-    longitude: number;
-    address: string;
-    distance: string;
-    image: string;
-    rating: number;
-    tags: string[];
-    priceLevel: string;
-    isOpen: boolean;
-    matches: VenueMatch[];
-};
+export interface SearchTrend {
+    icon: string;
+    label: string;
+}
 
-export type SearchTrend = { icon: string; label: string };
-
-export type SearchMatchTeam = {
-    badge: string;
-    name: string;
-    color: string;
-};
-
-export type SearchMatchResult = {
-    id: string;
-    league: string;
-    timeLabel: string;
-    kickoffTime: string;
-    statusLabel: string;
-    stadium: string;
-    city: string;
-    heroImage: string;
-    home: SearchMatchTeam;
-    away: SearchMatchTeam;
-};
-
-export type SearchResult = {
+export interface SearchResult {
     id: string;
     name: string;
     tag: string;
@@ -56,9 +53,32 @@ export type SearchResult = {
     image: string;
     rating: number;
     priceLevel: string;
-};
+}
 
-export type Booking = {
+export interface SearchMatchResult {
+    id: string;
+    league: string;
+    timeLabel: string;
+    kickoffTime: string;
+    statusLabel: string;
+    scheduledAt: string;
+    dateIso: string;
+    stadium: string;
+    city: string;
+    heroImage?: string;
+    home: {
+        badge: string;
+        name: string;
+        color: string;
+    };
+    away: {
+        badge: string;
+        name: string;
+        color: string;
+    };
+}
+
+export interface Booking {
     id: string;
     status: "confirmed" | "pending";
     venue: string;
@@ -72,44 +92,18 @@ export type Booking = {
     time: string;
     qrCode: string;
     image: string;
-};
+}
 
-export type FaqItem = {
+export interface FaqItem {
     id: string;
     question: string;
     answer: string;
-};
+}
 
-export type UserProfile = {
-    name: string;
-    email: string;
-    badgeLabel: string;
-    avatar: string;
-    memberSince: string;
-    tier: "Gold" | "Silver" | "Bronze";
-};
-
-export type ReservationDate = {
+export interface ReservationDate {
     fullDate: Date;
     day: number;
     month: string;
     weekDay: string;
     isoDate: string;
-};
-
-export type NotificationSetting = {
-    id: string;
-    type: "match" | "venue" | "promo" | "reservation";
-    title: string;
-    message: string;
-    badge: "ON/OFF";
-};
-
-export type MockReservation = {
-    id: string;
-    venueName: string;
-    date: string;
-    details: string;
-    status: "confirmed" | "pending";
-    qrCode: string | null;
-};
+}

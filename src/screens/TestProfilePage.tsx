@@ -92,6 +92,8 @@ const TestProfilePage = () => {
     avatar: userData?.avatar || DEFAULT_PROFILE.avatar,
     memberSince: userData?.created_at ? new Date(userData.created_at).getFullYear().toString() : '2024',
     tier: 'Gold',
+    first_name: userData?.first_name,
+    last_name: userData?.last_name,
   };
 
   const isLoading = false;
@@ -142,7 +144,11 @@ const TestProfilePage = () => {
                   <MaterialIcons name="edit" size={22} color={COLORS.text} />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.name}>{profile.name}</Text>
+              <Text style={styles.name}>
+                {profile.first_name && profile.last_name
+                  ? `${profile.first_name} ${profile.last_name}`
+                  : profile.name}
+              </Text>
               <Text style={styles.memberSince}>{profile.email}</Text>
               <TouchableOpacity
                 style={styles.badge}

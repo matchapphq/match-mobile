@@ -93,7 +93,7 @@ const FILTERS = [
     { label: "Tennis", icon: "sports-tennis", selected: false },
 ];
 
-const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
+const TestReservationsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const insets = useSafeAreaInsets();
     const [guests, setGuests] = useState(4);
     const [specialRequest, setSpecialRequest] = useState("");
@@ -103,7 +103,9 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
     const [dates, setDates] = useState<ReservationDate[]>([]);
     const [datesLoading, setDatesLoading] = useState(true);
     const [datesError, setDatesError] = useState<string | null>(null);
-    const [selectedDateIso, setSelectedDateIso] = useState<string | null>(null);
+
+    const preselectedDateIsoFromRoute = route.params?.matchDateIso || route.params?.match?.dateIso || null;
+    const [selectedDateIso, setSelectedDateIso] = useState<string | null>(preselectedDateIsoFromRoute);
 
     const [availableMatches, setAvailableMatches] = useState<EnrichedMatch[]>([]);
     const [matchesLoading, setMatchesLoading] = useState(false);
@@ -112,6 +114,9 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
 
     const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
     const venuesCache = useRef<Map<string, MatchVenue[]>>(new Map());
+
+    const preselectedVenue = route.params?.venue;
+    const preselectedMatchIdFromRoute = route.params?.matchId;
 
     const selectedMatch = useMemo(
         () => availableMatches.find((m) => m.id === selectedMatchId),
@@ -141,7 +146,9 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
                 const matchesForDate = upcomingMatches.filter((match) => toIsoDate(match.date) === dateIso);
                 if (matchesForDate.length === 0) {
                     setAvailableMatches([]);
-                    setSelectedMatchId(null);
+                    if (!preselectedMatchIdFromRoute) { // Only reset if not preselected
+                         setSelectedMatchId(null);
+                    }
                     return;
                 }
 
@@ -149,7 +156,16 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
                     matchesForDate.map(async (match) => {
                         try {
                             const venues = await fetchMatchVenues(match.id);
-                            const venue = venues.find((v) => v.allowsReservations && v.availableCapacity > 0) ?? venues[0];
+                            let venue = venues.find((v) => v.allowsReservations && v.availableCapacity > 0) ?? venues[0];
+
+                            // If preselectedVenue exists, try to find a matching venue
+                            if (preselectedVenue) {
+                                const matchedVenue = venues.find(v => v.venue.id === preselectedVenue.id);
+                                if (matchedVenue) {
+                                    venue = matchedVenue;
+                                }
+                            }
+
                             if (!venue) return null;
                             return {
                                 id: match.id,
@@ -172,8 +188,14 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
 
                 const filtered = enriched.filter(Boolean) as EnrichedMatch[];
                 setAvailableMatches(filtered);
-                if (!filtered.some((match) => match.id === selectedMatchId)) {
+                // If there's a preselectedMatchIdFromRoute, and it's still in the filtered list, keep it selected
+                // Otherwise, reset selectedMatchId only if the current selectedMatchId is not in the filtered list
+                if (preselectedMatchIdFromRoute && filtered.some(m => m.id === preselectedMatchIdFromRoute)) {
+                    setSelectedMatchId(preselectedMatchIdFromRoute);
+                } else if (selectedMatchId && !filtered.some((match) => match.id === selectedMatchId)) {
                     setSelectedMatchId(null);
+                } else if (!selectedMatchId && filtered.length > 0) { // Automatically select first match if none is selected
+                    setSelectedMatchId(filtered[0].id);
                 }
             } catch (error) {
                 console.warn("Failed to load matches", error);
@@ -183,7 +205,7 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
                 setMatchesLoading(false);
             }
         },
-        [fetchMatchVenues, upcomingMatches, selectedMatchId],
+        [fetchMatchVenues, upcomingMatches, preselectedVenue, preselectedMatchIdFromRoute, selectedMatchId],
     );
 
     const loadUpcomingMatches = useCallback(async () => {
@@ -198,18 +220,31 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
                 new Map(sorted.map((match) => [toIsoDate(match.date), buildReservationDate(match.date)])).values(),
             );
             setDates(uniqueDates);
-            const initialDate = uniqueDates[0]?.isoDate ?? null;
+
+            let initialDate = preselectedDateIsoFromRoute || uniqueDates[0]?.isoDate || null;
+            let initialMatchId = null;
+
+            if (preselectedMatchIdFromRoute) {
+                const preselectedMatch = sorted.find(match => match.id === preselectedMatchIdFromRoute);
+                if (preselectedMatch) {
+                    initialDate = toIsoDate(preselectedMatch.date);
+                    initialMatchId = preselectedMatchIdFromRoute;
+                }
+            }
+
             setSelectedDateIso(initialDate);
+            setSelectedMatchId(initialMatchId); // Set the preselected match ID here
         } catch (error) {
             console.warn("Failed to load reservation dates", error);
             setDates([]);
             setUpcomingMatches([]);
             setDatesError("Impossible de charger les dates disponibles.");
             setSelectedDateIso(null);
+            setSelectedMatchId(null);
         } finally {
             setDatesLoading(false);
         }
-    }, []);
+    }, [preselectedDateIsoFromRoute, preselectedMatchIdFromRoute]);
 
     useEffect(() => {
         loadUpcomingMatches();

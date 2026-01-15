@@ -58,16 +58,21 @@ const transformApiMatch = (apiMatch: any): VenueMatch => {
 
 // Transform API match to SearchMatchResult format
 const transformToSearchMatch = (apiMatch: any): SearchMatchResult => {
-    const scheduledAt = new Date(apiMatch.scheduled_at || apiMatch.date);
+    const scheduledAtRaw = apiMatch.scheduled_at || apiMatch.date;
+    const scheduledAtDate = new Date(scheduledAtRaw || Date.now());
+    const dateIso = scheduledAtDate.toISOString().split("T")[0];
+    const scheduledAt = scheduledAtDate.toISOString();
     const homeTeam = apiMatch.homeTeam?.name || apiMatch.homeTeam || "Home";
     const awayTeam = apiMatch.awayTeam?.name || apiMatch.awayTeam || "Away";
     
     return {
         id: apiMatch.id,
         league: apiMatch.league?.name || apiMatch.competition || "Ligue",
-        timeLabel: scheduledAt.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }),
-        kickoffTime: scheduledAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
-        statusLabel: scheduledAt > new Date() ? "À venir" : "Terminé",
+        timeLabel: scheduledAtDate.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }),
+        kickoffTime: scheduledAtDate.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        statusLabel: scheduledAtDate > new Date() ? "À venir" : "Terminé",
+        scheduledAt,
+        dateIso,
         stadium: "Stade",
         city: "Paris",
         heroImage: apiMatch.thumbnail || "https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=800",
@@ -231,6 +236,8 @@ export const testApi = {
                 avatar: user.avatar || "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200",
                 memberSince: "2024",
                 tier: "Gold",
+                first_name: user.first_name,
+                last_name: user.last_name,
             };
         } catch (error) {
             console.warn("API fetchProfile failed", error);

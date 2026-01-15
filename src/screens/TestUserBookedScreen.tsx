@@ -16,6 +16,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { testApi, Booking } from '../services/testApi';
+import { apiService } from '../services/api';
 
 const STATUS_STYLES: Record<string, { label: string; color: string }> = {
   confirmed: { label: 'Confirmé', color: '#4ade80' },
@@ -29,6 +30,9 @@ const TestUserBookedScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeQrBooking, setActiveQrBooking] = useState<Booking | null>(null);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const [qrError, setQrError] = useState<string | null>(null);
+  const [isQrLoading, setIsQrLoading] = useState(false);
 
   const loadBookings = useCallback(async () => {
     try {
@@ -47,6 +51,40 @@ const TestUserBookedScreen = () => {
   useEffect(() => {
     loadBookings();
   }, [loadBookings]);
+
+  const handleOpenQrModal = useCallback(async (booking: Booking) => {
+    setActiveQrBooking(booking);
+    setQrCode(null);
+    setQrError(null);
+
+    if (!booking.id) {
+      setQrError("Identifiant de réservation introuvable");
+      return;
+    }
+
+    try {
+      setIsQrLoading(true);
+      const response = await apiService.getReservationById(booking.id);
+      const qrImage = response.qrCode || response.reservation?.qr_code;
+
+      if (qrImage && qrImage.startsWith('data:image')) {
+        setQrCode(qrImage);
+      } else {
+        setQrError("QR code indisponible");
+      }
+    } catch (err) {
+      setQrError("Impossible de récupérer le QR code");
+    } finally {
+      setIsQrLoading(false);
+    }
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setActiveQrBooking(null);
+    setQrCode(null);
+    setQrError(null);
+    setIsQrLoading(false);
+  }, []);
 
   const renderStatus = (status: string) => {
     const statusConfig = STATUS_STYLES[status] ?? STATUS_STYLES.confirmed;
@@ -86,7 +124,7 @@ const TestUserBookedScreen = () => {
           <Image source={{ uri: booking.image }} style={[styles.cardImage, booking.status === 'pending' && styles.cardImagePending]} />
         </View>
         <View style={styles.divider} />
-        <TouchableOpacity style={styles.qrButton} onPress={() => setActiveQrBooking(booking)}>
+        <TouchableOpacity style={styles.qrButton} onPress={() => handleOpenQrModal(booking)}>
           <MaterialIcons name="qr-code" size={20} color={COLORS.text} />
           <Text style={styles.qrButtonText}>Voir le QR Code</Text>
         </TouchableOpacity>
@@ -149,7 +187,7 @@ const TestUserBookedScreen = () => {
         <View style={{ height: 80 }} />
       </ScrollView>
 
-      <Modal visible={!!activeQrBooking} transparent animationType="fade" onRequestClose={() => setActiveQrBooking(null)}>
+      <Modal visible={!!activeQrBooking} transparent animationType="fade" onRequestClose={handleCloseModal}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheet}>
             <View style={styles.modalHandle} />
@@ -170,7 +208,16 @@ const TestUserBookedScreen = () => {
                     <Text style={styles.modalLocationText}>{activeQrBooking.location}</Text>
                   </View>
                   <View style={styles.qrPreview}>
-                    <Image source={{ uri: activeQrBooking.qrCode }} style={styles.qrImage} />
+                    {isQrLoading ? (
+                      <ActivityIndicator color={COLORS.primary} style={{ flex: 1 }} />
+                    ) : qrCode ? (
+                      <Image source={{ uri: qrCode }} style={styles.qrImage} resizeMode="contain" />
+                    ) : (
+                      <View style={styles.qrFallback}>
+                        <MaterialIcons name="qr-code" size={64} color={COLORS.subtext} />
+                        <Text style={styles.qrFallbackText}>{qrError ?? 'QR code indisponible'}</Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={styles.modalReference}>REF: {activeQrBooking.reference}</Text>
                 </View>
@@ -202,7 +249,7 @@ const TestUserBookedScreen = () => {
               </View>
             )}
 
-            <Pressable style={styles.modalCloseButton} onPress={() => setActiveQrBooking(null)}>
+            <Pressable style={styles.modalCloseButton} onPress={handleCloseModal}>
               <Text style={styles.modalCloseText}>Fermer</Text>
             </Pressable>
           </View>
@@ -536,6 +583,17 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: 12,
+  },
+  qrFallback: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  qrFallbackText: {
+    color: COLORS.subtext,
+    fontSize: 12,
+    textAlign: 'center',
   },
   modalReference: {
     color: '#9ca3af',
