@@ -202,30 +202,50 @@ export const useStore = create<AppState>((set, get) => ({
     signup: async (data) => {
         set({ isLoading: true, error: null });
         try {
-            // Map frontend state to the API schema
-            const apiData = {
-                ...data,
-                fav_sports: data.sports,
-                ambiances: data.ambiance,
-                venue_types: data.foodTypes,
+            const payload = {
+                email: data.email,
+                firstName: data.firstName,
+                username: data.username,
+                lastName: data.lastName,
+                password: data.password,
+                role: data.role ?? "user",
+                referralCode: data.referralCode?.trim() || undefined,
+                phone: data.phone || data.phoneNumber || undefined,
+                fav_sports: data.fav_sports ?? data.sports ?? [],
+                fav_team_ids: data.fav_team_ids ?? data.favoriteTeams ?? [],
+                ambiances: data.ambiances ?? data.ambiance ?? [],
+                venue_types: data.venue_types ?? data.foodTypes ?? [],
+                budget: data.budget ?? data.priceRange ?? undefined,
+                home_lat: data.home_lat ?? data.lat ?? undefined,
+                home_lng: data.home_lng ?? data.lng ?? undefined,
             };
-            // Remove old keys if they are not expected by the API
-            // delete apiData.sports;
-            // delete apiData.ambiance;
-            // delete apiData.foodTypes;
 
-            await AsyncStorage.setItem("authToken", response.token);
-            await AsyncStorage.setItem("user", JSON.stringify(response.user));
+            const response = await apiService.signup(payload);
+            const { token, user } = response;
+            if (!token || !user) {
+                throw new Error("Signup response missing data");
+            }
+
+            await AsyncStorage.setItem("authToken", token);
+            await AsyncStorage.setItem("user", JSON.stringify(user));
+            await AsyncStorage.setItem("onboardingCompleted", "true");
+
             set({
-                user: response.user,
+                user,
                 isAuthenticated: true,
-                onboardingCompleted: true, // Mark onboarding as completed
+                onboardingCompleted: true,
                 isLoading: false,
             });
-            await AsyncStorage.setItem("onboardingCompleted", "true");
             return true;
         } catch (error: any) {
-            set({ error: error.message || "Signup failed", isLoading: false });
+            console.error("Signup failed:", error);
+            set({
+                error:
+                    error?.response?.data?.error ||
+                    error.message ||
+                    "Signup failed",
+                isLoading: false,
+            });
             return false;
         }
     },

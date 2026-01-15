@@ -1,13 +1,24 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ImageBackground, StatusBar, Dimensions, ActivityIndicator } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BlurView } from 'expo-blur';
-import { COLORS } from '../constants/colors';
-import { testApi } from '../services/testApi';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+    View,
+    Text,
+    StyleSheet,
+    ScrollView,
+    TouchableOpacity,
+    TextInput,
+    ImageBackground,
+    StatusBar,
+    Dimensions,
+    ActivityIndicator,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { COLORS } from "../constants/colors";
+import { apiService, MatchVenue } from "../services/api";
+import type { Match } from "../types";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 type ReservationDate = {
     fullDate: Date;
@@ -17,110 +28,212 @@ type ReservationDate = {
     isoDate: string;
 };
 
+type EnrichedMatch = {
+    id: string;
+    league?: string;
+    team1: string;
+    team2: string;
+    time: string;
+    bgImage?: string;
+    venueMatchId: string;
+    venueName: string;
+    venueAddress?: string;
+    dateIso: string;
+};
+
 const getArrivalTime = (matchTime: string) => {
-    if (!matchTime) return '--:--';
-    const [hours, minutes] = matchTime.split(':').map(Number);
+    if (!matchTime) return "--:--";
+    const [hours, minutes] = matchTime.split(":").map(Number);
     const date = new Date();
     date.setHours(hours, minutes, 0, 0);
     date.setMinutes(date.getMinutes() - 30);
-    const h = date.getHours().toString().padStart(2, '0');
-    const m = date.getMinutes().toString().padStart(2, '0');
+    const h = date.getHours().toString().padStart(2, "0");
+    const m = date.getMinutes().toString().padStart(2, "0");
     return `${h}:${m}`;
 };
 
+const toIsoDate = (date: Date) => date.toISOString().split("T")[0];
+
+const weekDays = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+const months = ["JAN", "FEV", "MAR", "AVR", "MAI", "JUIN", "JUIL", "AOUT", "SEPT", "OCT", "NOV", "DEC"];
+
+const buildReservationDate = (date: Date): ReservationDate => {
+    return {
+        fullDate: date,
+        day: date.getDate(),
+        month: months[date.getMonth()],
+        weekDay: weekDays[date.getDay()],
+        isoDate: toIsoDate(date),
+    };
+};
+
+const formatFullDateLabel = (reservationDate?: ReservationDate) => {
+    if (!reservationDate) return "";
+    return `${reservationDate.weekDay} ${reservationDate.day} ${reservationDate.month}`;
+};
+
+const formatVenueAddress = (venue?: MatchVenue["venue"]) => {
+    if (!venue) return undefined;
+    const parts = [venue.street_address, venue.city].filter(Boolean);
+    return parts.join(", ");
+};
+
+const extractErrorMessage = (error: any) => {
+    const apiError = error?.response?.data?.error;
+    if (typeof apiError === "string") return apiError;
+    if (error?.message) return error.message;
+    return "Impossible de confirmer la réservation.";
+};
+
 const FILTERS = [
-    { label: 'Tout', icon: 'apps', selected: true },
-    { label: 'Football', icon: 'sports-soccer', selected: false },
-    { label: 'Basket', icon: 'sports-basketball', selected: false },
-    { label: 'Rugby', icon: 'sports-rugby', selected: false },
-    { label: 'Tennis', icon: 'sports-tennis', selected: false },
+    { label: "Tout", icon: "apps", selected: true },
+    { label: "Football", icon: "sports-soccer", selected: false },
+    { label: "Basket", icon: "sports-basketball", selected: false },
+    { label: "Rugby", icon: "sports-rugby", selected: false },
+    { label: "Tennis", icon: "sports-tennis", selected: false },
 ];
 
 const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
     const insets = useSafeAreaInsets();
     const [guests, setGuests] = useState(4);
-    const [specialRequest, setSpecialRequest] = useState('');
+    const [specialRequest, setSpecialRequest] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [reservationError, setReservationError] = useState<string | null>(null);
 
-    // Dynamic Date & Match Logic
-    // We use useMemo to ensure dates are generated once on mount
     const [dates, setDates] = useState<ReservationDate[]>([]);
     const [datesLoading, setDatesLoading] = useState(true);
     const [datesError, setDatesError] = useState<string | null>(null);
     const [selectedDateIso, setSelectedDateIso] = useState<string | null>(null);
 
-    const [availableMatches, setAvailableMatches] = useState<any[]>([]);
+    const [availableMatches, setAvailableMatches] = useState<EnrichedMatch[]>([]);
     const [matchesLoading, setMatchesLoading] = useState(false);
     const [matchesError, setMatchesError] = useState<string | null>(null);
     const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
 
+    const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
+    const venuesCache = useRef<Map<string, MatchVenue[]>>(new Map());
+
     const selectedMatch = useMemo(
-        () => availableMatches.find(m => m.id === selectedMatchId),
-        [availableMatches, selectedMatchId]
+        () => availableMatches.find((m) => m.id === selectedMatchId),
+        [availableMatches, selectedMatchId],
     );
-    const selectedDate = useMemo(
-        () => dates.find((date) => date.isoDate === selectedDateIso),
-        [dates, selectedDateIso]
+    const selectedDate = useMemo(() => dates.find((date) => date.isoDate === selectedDateIso), [dates, selectedDateIso]);
+
+    const arrivalTime = useMemo(() => (selectedMatch ? getArrivalTime(selectedMatch.time) : "--:--"), [selectedMatch]);
+
+    const fetchMatchVenues = useCallback(
+        async (matchId: string): Promise<MatchVenue[]> => {
+            if (venuesCache.current.has(matchId)) {
+                return venuesCache.current.get(matchId)!;
+            }
+            const venues = await apiService.getMatchVenues(matchId);
+            venuesCache.current.set(matchId, venues);
+            return venues;
+        },
+        [],
     );
 
-    const arrivalTime = useMemo(() =>
-        selectedMatch ? getArrivalTime(selectedMatch.time) : '--:--',
-        [selectedMatch]
+    const loadMatchesForDate = useCallback(
+        async (dateIso: string) => {
+            setMatchesError(null);
+            setMatchesLoading(true);
+            try {
+                const matchesForDate = upcomingMatches.filter((match) => toIsoDate(match.date) === dateIso);
+                if (matchesForDate.length === 0) {
+                    setAvailableMatches([]);
+                    setSelectedMatchId(null);
+                    return;
+                }
+
+                const enriched = await Promise.all(
+                    matchesForDate.map(async (match) => {
+                        try {
+                            const venues = await fetchMatchVenues(match.id);
+                            const venue = venues.find((v) => v.allowsReservations && v.availableCapacity > 0) ?? venues[0];
+                            if (!venue) return null;
+                            return {
+                                id: match.id,
+                                league: match.competition ?? "Match",
+                                team1: match.homeTeam,
+                                team2: match.awayTeam,
+                                time: match.time,
+                                bgImage: match.thumbnail,
+                                venueMatchId: venue.venueMatchId,
+                                venueName: venue.venue?.name ?? "Venue",
+                                venueAddress: formatVenueAddress(venue.venue),
+                                dateIso,
+                            };
+                        } catch (error) {
+                            console.warn("Failed to load venues for match", match.id, error);
+                            return null;
+                        }
+                    }),
+                );
+
+                const filtered = enriched.filter(Boolean) as EnrichedMatch[];
+                setAvailableMatches(filtered);
+                if (!filtered.some((match) => match.id === selectedMatchId)) {
+                    setSelectedMatchId(null);
+                }
+            } catch (error) {
+                console.warn("Failed to load matches", error);
+                setMatchesError("Impossible de charger les matchs pour cette date.");
+                setAvailableMatches([]);
+            } finally {
+                setMatchesLoading(false);
+            }
+        },
+        [fetchMatchVenues, upcomingMatches, selectedMatchId],
     );
 
-    const loadMatchesForDate = useCallback(async (dateIso: string) => {
-        setMatchesError(null);
-        setMatchesLoading(true);
-        try {
-            const data = await testApi.fetchMatchesForDate(dateIso);
-            setAvailableMatches(data);
-        } catch (error) {
-            console.warn('Failed to load matches', error);
-            setMatchesError("Impossible de charger les matchs pour cette date.");
-            setAvailableMatches([]);
-        } finally {
-            setMatchesLoading(false);
-        }
-    }, []);
-
-    const loadDates = useCallback(async () => {
+    const loadUpcomingMatches = useCallback(async () => {
         setDatesError(null);
         setDatesLoading(true);
         try {
-            const fetchedDates = await testApi.fetchReservationDates();
-            setDates(fetchedDates);
-            setSelectedDateIso(fetchedDates[0]?.isoDate ?? null);
+            const results = await apiService.getUpcomingMatches();
+            const sorted = [...results].sort((a, b) => a.date.getTime() - b.date.getTime());
+            setUpcomingMatches(sorted);
+
+            const uniqueDates = Array.from(
+                new Map(sorted.map((match) => [toIsoDate(match.date), buildReservationDate(match.date)])).values(),
+            );
+            setDates(uniqueDates);
+            const initialDate = uniqueDates[0]?.isoDate ?? null;
+            setSelectedDateIso(initialDate);
         } catch (error) {
-            console.warn('Failed to load reservation dates', error);
+            console.warn("Failed to load reservation dates", error);
+            setDates([]);
+            setUpcomingMatches([]);
             setDatesError("Impossible de charger les dates disponibles.");
+            setSelectedDateIso(null);
         } finally {
             setDatesLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        loadDates();
-    }, [loadDates]);
+        loadUpcomingMatches();
+    }, [loadUpcomingMatches]);
 
     useEffect(() => {
         if (!selectedDateIso) {
             setAvailableMatches([]);
+            setSelectedMatchId(null);
             return;
         }
-        setSelectedMatchId(null);
         loadMatchesForDate(selectedDateIso);
-    }, [selectedDateIso, loadMatchesForDate]);
+    }, [loadMatchesForDate, selectedDateIso]);
 
     const handleBack = () => navigation.goBack();
-    const incrementGuests = () => setGuests(prev => prev + 1);
-    const decrementGuests = () => setGuests(prev => Math.max(1, prev - 1));
+    const incrementGuests = () => setGuests((prev) => prev + 1);
+    const decrementGuests = () => setGuests((prev) => Math.max(1, prev - 1));
 
     const toggleMatchSelection = (id: string) => {
-        setSelectedMatchId(prev => prev === id ? null : id);
+        setSelectedMatchId((prev) => (prev === id ? null : id));
     };
 
     const handleRetryDates = () => {
-        loadDates();
+        loadUpcomingMatches();
     };
 
     const handleRetryMatches = () => {
@@ -129,26 +242,37 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
         }
     };
 
-    const handleConfirmReservation = () => {
-        if (isSubmitting) return;
+    const handleConfirmReservation = useCallback(async () => {
+        if (isSubmitting || !selectedMatch) return;
+        setReservationError(null);
         setIsSubmitting(true);
+        try {
+            const response = await apiService.createReservation({
+                venueMatchId: selectedMatch.venueMatchId,
+                partySize: guests,
+                specialRequests: specialRequest.trim() ? specialRequest.trim() : undefined,
+            });
 
-        const dateLabel = selectedDate ? `${selectedDate.weekDay} ${selectedDate.day} ${selectedDate.month}` : selectedDateIso;
-        const reference = `#BK-${selectedDateIso?.split("-").join("").slice(-4)}-${(Math.random() * 900 + 100).toFixed(0)}`;
+            const dateLabel = formatFullDateLabel(selectedDate) || selectedMatch.dateIso;
+            const reference = response.reservation?.id || `#BK-${Date.now()}`;
 
-        setTimeout(() => {
             setIsSubmitting(false);
             navigation.navigate("TestReservationSuccess", {
-                venueName: selectedMatch ? `${selectedMatch.team1} vs ${selectedMatch.team2}` : "THE KOP BAR",
-                address: "12 Rue de la Soif, Paris",
+                venueName: selectedMatch.venueName,
+                address: selectedMatch.venueAddress,
                 dateLabel,
-                time: selectedMatch?.time ?? "--:--",
+                time: selectedMatch.time,
                 guestsLabel: `${guests} ${guests > 1 ? "personnes" : "personne"}`,
                 reference,
-                image: selectedMatch?.bgImage,
+                image: selectedMatch.bgImage,
             });
-        }, 1500);
-    };
+        } catch (error) {
+            setIsSubmitting(false);
+            setReservationError(extractErrorMessage(error));
+        }
+    }, [guests, isSubmitting, navigation, selectedDate, selectedMatch, specialRequest]);
+
+    const confirmDisabled = !selectedMatch || isSubmitting;
 
     return (
         <View style={styles.container}>
@@ -352,9 +476,9 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
             {/* Bottom Footer */}
             <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
                 <TouchableOpacity
-                    style={[styles.confirmButton, isSubmitting && styles.confirmButtonDisabled]}
+                    style={[styles.confirmButton, (isSubmitting || confirmDisabled) && styles.confirmButtonDisabled]}
                     onPress={handleConfirmReservation}
-                    disabled={isSubmitting}
+                    disabled={confirmDisabled}
                     activeOpacity={0.85}
                 >
                     {isSubmitting ? (
@@ -364,11 +488,14 @@ const TestReservationsScreen = ({ navigation }: { navigation: any }) => {
                         </View>
                     ) : (
                         <>
-                            <Text style={styles.confirmButtonText}>Confirmer la réservation</Text>
-                            <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} />
+                            <Text style={styles.confirmButtonText}>
+                                {selectedMatch ? "Confirmer la réservation" : "Sélectionne un match"}
+                            </Text>
+                            {selectedMatch ? <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} /> : null}
                         </>
                     )}
                 </TouchableOpacity>
+                {reservationError ? <Text style={styles.errorText}>{reservationError}</Text> : null}
             </View>
         </View>
     );
@@ -457,6 +584,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 12,
+    },
+    errorText: {
+        color: "#ff6b6b",
+        fontSize: 14,
+        marginTop: 12,
+        textAlign: "center",
     },
     dateCardUnselected: {
         backgroundColor: COLORS.surface,

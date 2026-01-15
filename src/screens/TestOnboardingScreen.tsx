@@ -19,7 +19,6 @@ import {
 } from "./testOnboarding/options";
 import {
     useTestOnboardingForm,
-    TEST_ONBOARDING_TOTAL_STEPS,
 } from "../store/useTestOnboardingForm";
 import { useStore } from "../store/useStore";
 
@@ -35,6 +34,20 @@ type TestOnboardingStackParamList = {
 };
 
 const Stack = createStackNavigator<TestOnboardingStackParamList>();
+
+const localStyles = StyleSheet.create({
+    errorText: {
+        color: "#ff6b6b",
+        textAlign: "center",
+        marginTop: 16,
+    },
+    loadingText: {
+        fontSize: 12,
+        textAlign: "center",
+        marginTop: 12,
+        color: "rgba(255,255,255,0.6)",
+    },
+});
 
 type StepScreenProps<RouteName extends keyof TestOnboardingStackParamList> = StackScreenProps<
     TestOnboardingStackParamList,
@@ -448,18 +461,29 @@ const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({ nav
 };
 
 const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({ navigation }) => {
-    const { data, updateField, buildRequestPayload } = useTestOnboardingForm();
-    const setOnboardingCompleted = useStore((state) => state.setOnboardingCompleted);
+    const { data, updateField, buildRequestPayload, reset } = useTestOnboardingForm();
+    const signup = useStore((state) => state.signup);
+    const isLoading = useStore((state) => state.isLoading);
+    const storeError = useStore((state) => state.error);
+    const [submissionError, setSubmissionError] = useState<string | null>(null);
     const rootNavigation = useNavigation<any>();
 
-    const handleNext = () => {
+    const handleNext = async () => {
+        if (!data.budget || isLoading) return;
+        setSubmissionError(null);
         const payload = buildRequestPayload();
-        console.log("TestOnboarding mock payload:", payload);
-        setOnboardingCompleted(true);
-        rootNavigation.reset({
-            index: 0,
-            routes: [{ name: "TestTab" }],
-        });
+        const success = await signup(payload);
+        if (success) {
+            reset();
+            rootNavigation.reset({
+                index: 0,
+                routes: [{ name: "TestTab" }],
+            });
+        } else {
+            setSubmissionError(
+                "Impossible de finaliser ton compte pour le moment. Réessaie dans un instant.",
+            );
+        }
     };
 
     return (
@@ -471,8 +495,8 @@ const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({ n
                 </>
             }
             subtitle="Nous trouverons les bars qui correspondent à tes attentes."
-            canContinue={Boolean(data.budget)}
-            nextLabel="Terminer"
+            canContinue={Boolean(data.budget) && !isLoading}
+            nextLabel={isLoading ? "Connexion..." : "Terminer"}
             onNext={handleNext}
             onBack={() => navigation.goBack()}
             footerNote="Choix modifiable plus tard dans les réglages."

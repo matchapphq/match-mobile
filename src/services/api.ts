@@ -47,12 +47,12 @@ api.interceptors.response.use(
 );
 
 // Transform API match response to mobile Match type
-const transformMatches = (rawMatches: any[]): Match[] => {
-    return rawMatches.map((m: any) => ({
+const transformMatches = (rawMatches: any[]): Match[] =>
+    rawMatches.map((m: any) => ({
         id: m.id,
         homeTeam: m.homeTeam?.name || m.home_team?.name || m.homeTeam || "TBD",
         awayTeam: m.awayTeam?.name || m.away_team?.name || m.awayTeam || "TBD",
-        sport: m.league?.sport?.name || m.sport || "Football",
+        sport: (m.league?.sport?.name || m.sport || "Football") as SportType,
         date: new Date(m.scheduled_at || m.date),
         time: m.scheduled_at
             ? new Date(m.scheduled_at).toLocaleTimeString("fr-FR", {
@@ -63,7 +63,47 @@ const transformMatches = (rawMatches: any[]): Match[] => {
         competition: m.league?.name || m.competition || "",
         thumbnail: m.thumbnail || m.image_url || undefined,
     }));
-};
+
+export interface MatchVenue {
+    venueMatchId: string;
+    venue: {
+        id: string;
+        name: string;
+        city?: string;
+        street_address?: string;
+        phone?: string;
+        latitude?: number;
+        longitude?: number;
+    };
+    totalCapacity: number;
+    availableCapacity: number;
+    maxGroupSize: number;
+    isFeatured: boolean;
+    allowsReservations: boolean;
+}
+
+export interface CreateReservationPayload {
+    venueMatchId: string;
+    partySize: number;
+    requiresAccessibility?: boolean;
+    specialRequests?: string;
+}
+
+export interface CreateReservationResponse {
+    message?: string;
+    reservation?: {
+        id: string;
+        status: string;
+        partySize: number;
+        venueMatchId: string;
+        venue?: string;
+        match?: {
+            scheduledAt?: string;
+        };
+    };
+    qr_code?: string;
+    qrCode?: string;
+}
 
 export const apiService = {
     // Auth
@@ -133,11 +173,19 @@ export const apiService = {
         return response.data;
     },
 
+    getMatchVenues: async (matchId: string): Promise<MatchVenue[]> => {
+        const response = await api.get(`/matches/${matchId}/venues`);
+        const data = Array.isArray(response.data)
+            ? response.data
+            : response.data?.data || [];
+        return data;
+    },
+
     // Reservations
     createReservation: async (
-        data: Partial<Reservation>,
-    ): Promise<Reservation> => {
-        const response = await api.post("/reservations", data);
+        payload: CreateReservationPayload,
+    ): Promise<CreateReservationResponse> => {
+        const response = await api.post("/reservations", payload);
         return response.data;
     },
 
