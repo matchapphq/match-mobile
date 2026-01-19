@@ -1,8 +1,21 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground, Animated, Dimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
-import { COLORS } from "../constants/colors";
+
+// Define strict colors from the HTML/Tailwind config
+const THEME = {
+    colors: {
+        primary: "#f47b25", // bg-primary
+        background: "#0b0b0f", // dark:bg-brand-bg
+        card: "#1c1c21", // dark:bg-brand-card
+        text: "#FFFFFF", // dark:text-white
+        textSecondary: "#9ca3af", // dark:text-gray-400 (approximate)
+        divider: "rgba(255, 255, 255, 0.1)", // dark:border-white/10
+        surfaceAlt: "rgba(255, 255, 255, 0.05)", // dark:bg-white/5
+        iconBg: "rgba(244, 123, 37, 0.1)", // bg-primary/10
+    },
+};
 
 type SuccessParams = {
     venueName?: string;
@@ -28,86 +41,122 @@ const TestReservationSuccessScreen = ({ navigation, route }: { navigation: any; 
         image = DEFAULT_IMAGE,
     } = route.params ?? {};
 
+    // Animation for the checkmark pop
+    const scaleAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.spring(scaleAnim, {
+            toValue: 1,
+            friction: 5,
+            tension: 40,
+            useNativeDriver: true,
+        }).start();
+    }, []);
+
     return (
         <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
             <View style={styles.container}>
+                {/* Header Section */}
                 <View style={styles.header}>
-                    <View style={styles.iconGlow}>
+                    <Animated.View style={[styles.iconWrapper, { transform: [{ scale: scaleAnim }] }]}>
+                        <View style={styles.iconGlow} />
                         <View style={styles.iconCircle}>
-                            <MaterialIcons name="check" size={42} color={COLORS.white} />
+                            <MaterialIcons name="check" size={48} color="#FFFFFF" />
                         </View>
-                    </View>
+                    </Animated.View>
+
                     <Text style={styles.title}>Réservation Confirmée !</Text>
                     <Text style={styles.subtitle}>Votre table vous attend.</Text>
                 </View>
 
-                <View style={styles.card}>
-                    <View style={styles.cardHeader}>
-                        <ImageBackground source={{ uri: image }} style={styles.cardImage} imageStyle={styles.cardImageInner} />
-                        <View style={styles.cardVenueInfo}>
-                            <Text style={styles.cardVenueLabel}>VENUE</Text>
-                            <Text style={styles.cardVenueName}>{venueName}</Text>
-                            <View style={styles.cardVenueAddressRow}>
-                                <MaterialIcons name="location-on" size={14} color={COLORS.textSecondary} />
-                                <Text style={styles.cardVenueAddress}>{address}</Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    <View style={styles.detailRow}>
-                        <View style={styles.detailItem}>
-                            <View style={styles.detailIcon}>
-                                <MaterialIcons name="calendar-month" size={20} color={COLORS.primary} />
-                            </View>
-                            <View>
-                                <Text style={styles.detailLabel}>Date</Text>
-                                <Text style={styles.detailValue}>{dateLabel}</Text>
+                {/* Main Card */}
+                <View style={styles.cardContainer}>
+                    <View style={styles.card}>
+                        {/* Venue Info Header */}
+                        <View style={styles.cardHeader}>
+                            <ImageBackground source={{ uri: image }} style={styles.venueImage} imageStyle={{ borderRadius: 8 }} />
+                            <View style={styles.venueInfo}>
+                                <Text style={styles.venueLabel}>VENUE</Text>
+                                <Text style={styles.venueName}>{venueName}</Text>
+                                <View style={styles.addressRow}>
+                                    <MaterialIcons name="location-on" size={16} color={THEME.colors.textSecondary} />
+                                    <Text style={styles.venueAddress}>{address}</Text>
+                                </View>
                             </View>
                         </View>
 
-                        <View style={[styles.detailItem, styles.detailItemRight]}>
-                            <View style={styles.detailIcon}>
-                                <MaterialIcons name="schedule" size={20} color={COLORS.primary} />
+                        {/* Date & Time Row */}
+                        <View style={styles.detailsRow}>
+                            <View style={styles.detailItem}>
+                                <View style={styles.detailIconContainer}>
+                                    <MaterialIcons name="calendar-month" size={20} color={THEME.colors.primary} />
+                                </View>
+                                <View>
+                                    <Text style={styles.detailLabel}>DATE</Text>
+                                    <Text style={styles.detailValue}>{dateLabel}</Text>
+                                </View>
                             </View>
-                            <View>
-                                <Text style={styles.detailLabel}>Heure</Text>
-                                <Text style={styles.detailValue}>{time}</Text>
+
+                            <View style={[styles.detailItem, { flexDirection: "row-reverse" }]}>
+                                <View style={styles.detailIconContainer}>
+                                    <MaterialIcons name="schedule" size={20} color={THEME.colors.primary} />
+                                </View>
+                                <View style={{ alignItems: "flex-end" }}>
+                                    <Text style={styles.detailLabel}>HEURE</Text>
+                                    <Text style={styles.detailValue}>{time}</Text>
+                                </View>
                             </View>
                         </View>
-                    </View>
 
-                    <View style={styles.divider} />
+                        <View style={styles.divider} />
 
-                    <View style={styles.detailItem}>
-                        <View style={styles.detailIcon}>
-                            <MaterialIcons name="group" size={20} color={COLORS.primary} />
+                        {/* Guests Row - Explicitly requested to be fixed */}
+                        <View style={styles.detailsRow}>
+                            <View style={styles.detailItem}>
+                                <View style={styles.detailIconContainer}>
+                                    <MaterialIcons name="group" size={20} color={THEME.colors.primary} />
+                                </View>
+                                <View>
+                                    <Text style={styles.detailLabel}>INVITÉS</Text>
+                                    <Text style={styles.detailValue}>{guestsLabel}</Text>
+                                </View>
+                            </View>
                         </View>
-                        <View>
-                            <Text style={styles.detailLabel}>Invités</Text>
-                            <Text style={styles.detailValue}>{guestsLabel}</Text>
+
+                        {/* Dashed Cut Line */}
+                        <View style={styles.cutLineContainer}>
+                            <View style={styles.cutNotchLeft} />
+                            <View style={styles.dashedLine} />
+                            <View style={styles.cutNotchRight} />
                         </View>
-                    </View>
 
-                    <View style={styles.ticketCut}>
-                        <View style={styles.cutCircle} />
-                        <View style={styles.dashedLine} />
-                        <View style={styles.cutCircle} />
-                    </View>
-
-                    <Text style={styles.reference}>Référence: {reference}</Text>
-
-                    <View style={styles.barcode}>
-                        {BAR_SEGMENTS.map((width, idx) => (
-                            <View key={idx} style={[styles.barSegment, { width }]} />
-                        ))}
+                        {/* Reference & Barcode */}
+                        <View style={styles.footerSection}>
+                            <Text style={styles.referenceText}>Reference: {reference}</Text>
+                            <View style={styles.barcodeContainer}>
+                                <View style={styles.barcodeBars}>
+                                    {BAR_SEGMENTS.map((width, idx) => (
+                                        <View
+                                            key={idx}
+                                            style={[
+                                                styles.barSegment,
+                                                { width, height: idx % 2 === 0 ? 24 : 16 }, // Vary height for visual flair
+                                            ]}
+                                        />
+                                    ))}
+                                </View>
+                            </View>
+                        </View>
                     </View>
                 </View>
 
+                {/* Bottom Actions */}
                 <View style={styles.actions}>
                     <TouchableOpacity style={styles.primaryButton}>
-                        <MaterialIcons name="qr-code-2" size={22} color={COLORS.white} />
+                        <MaterialIcons name="qr-code-2" size={24} color="#FFFFFF" />
                         <Text style={styles.primaryButtonText}>Voir mon QR Code</Text>
                     </TouchableOpacity>
+
                     <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.navigate("TestTab")}>
                         <Text style={styles.secondaryButtonText}>Retour à l'accueil</Text>
                     </TouchableOpacity>
@@ -117,216 +166,262 @@ const TestReservationSuccessScreen = ({ navigation, route }: { navigation: any; 
     );
 };
 
-const BAR_SEGMENTS = [4, 2, 1, 3, 1, 5, 2, 1, 4, 2, 1, 3, 1, 2, 4];
+const BAR_SEGMENTS = [4, 2, 1, 3, 1, 5, 2, 1, 4, 3, 2, 5, 1, 2, 4];
 
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: COLORS.background,
+        backgroundColor: THEME.colors.background,
     },
     container: {
         flex: 1,
-        paddingHorizontal: 20,
-        paddingTop: 32,
-        paddingBottom: 24,
         justifyContent: "space-between",
+        paddingBottom: 20,
     },
     header: {
         alignItems: "center",
-        gap: 12,
+        paddingTop: 40,
+        paddingHorizontal: 24,
+        marginBottom: 20,
+    },
+    iconWrapper: {
+        position: "relative",
+        alignItems: "center",
+        justifyContent: "center",
+        width: 120,
+        height: 120,
+        marginBottom: 16,
     },
     iconGlow: {
-        width: 110,
-        height: 110,
-        borderRadius: 55,
-        backgroundColor: "rgba(244, 123, 37, 0.15)",
-        alignItems: "center",
-        justifyContent: "center",
+        position: "absolute",
+        width: 96,
+        height: 96,
+        borderRadius: 48,
+        backgroundColor: "rgba(244, 123, 37, 0.2)",
+        // To simulate the blur-xl effect
+        shadowColor: THEME.colors.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 20,
     },
     iconCircle: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        backgroundColor: COLORS.primary,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: THEME.colors.primary,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: COLORS.primary,
-        shadowOpacity: 0.4,
+        shadowColor: THEME.colors.primary,
         shadowOffset: { width: 0, height: 10 },
-        shadowRadius: 18,
+        shadowOpacity: 0.4,
+        shadowRadius: 20,
+        elevation: 10,
     },
     title: {
-        color: COLORS.white,
-        fontSize: 30,
+        fontSize: 32,
         fontWeight: "bold",
+        color: THEME.colors.text,
         textAlign: "center",
+        marginBottom: 8,
+        lineHeight: 38,
     },
     subtitle: {
-        color: COLORS.textSecondary,
         fontSize: 16,
+        color: THEME.colors.textSecondary,
         textAlign: "center",
     },
+    cardContainer: {
+        flex: 1,
+        justifyContent: "center",
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+    },
     card: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 28,
-        padding: 20,
+        backgroundColor: THEME.colors.card,
+        borderRadius: 12,
         borderWidth: 1,
-        borderColor: COLORS.border,
+        borderColor: "rgba(255,255,255,0.05)",
+        overflow: "hidden",
         shadowColor: "#000",
-        shadowOpacity: 0.35,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
         shadowRadius: 20,
-        shadowOffset: { width: 0, height: 15 },
+        elevation: 8,
     },
     cardHeader: {
         flexDirection: "row",
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: THEME.colors.divider,
+        alignItems: "center",
         gap: 16,
-        marginBottom: 20,
     },
-    cardImage: {
-        width: 72,
-        height: 72,
-        borderRadius: 20,
-        overflow: "hidden",
+    venueImage: {
+        width: 64,
+        height: 64,
+        borderRadius: 8,
+        backgroundColor: "#333",
     },
-    cardImageInner: {
-        borderRadius: 20,
-    },
-    cardVenueInfo: {
+    venueInfo: {
         flex: 1,
-        justifyContent: "center",
-        gap: 4,
     },
-    cardVenueLabel: {
-        color: COLORS.primary,
+    venueLabel: {
         fontSize: 12,
+        color: THEME.colors.primary,
         fontWeight: "600",
-        letterSpacing: 1,
+        letterSpacing: 0.5,
+        marginBottom: 2,
+        textTransform: "uppercase",
     },
-    cardVenueName: {
-        color: COLORS.white,
+    venueName: {
         fontSize: 18,
         fontWeight: "bold",
+        color: THEME.colors.text,
+        marginBottom: 4,
     },
-    cardVenueAddressRow: {
+    addressRow: {
         flexDirection: "row",
         alignItems: "center",
         gap: 4,
     },
-    cardVenueAddress: {
-        color: COLORS.textSecondary,
-        fontSize: 13,
+    venueAddress: {
+        fontSize: 14,
+        color: THEME.colors.textSecondary,
     },
-    detailRow: {
+    detailsRow: {
         flexDirection: "row",
         justifyContent: "space-between",
-        gap: 12,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
     },
     detailItem: {
         flexDirection: "row",
         alignItems: "center",
         gap: 12,
-        flex: 1,
     },
-    detailItemRight: {
-        justifyContent: "flex-end",
-    },
-    detailIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: "rgba(244, 123, 37, 0.12)",
+    detailIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: THEME.colors.iconBg,
         alignItems: "center",
         justifyContent: "center",
     },
     detailLabel: {
-        color: COLORS.textSecondary,
         fontSize: 12,
+        color: THEME.colors.textSecondary,
         fontWeight: "600",
         textTransform: "uppercase",
+        marginBottom: 2,
     },
     detailValue: {
-        color: COLORS.white,
         fontSize: 16,
-        fontWeight: "bold",
+        fontWeight: "600",
+        color: THEME.colors.text,
     },
     divider: {
         height: 1,
-        backgroundColor: COLORS.divider,
-        marginVertical: 18,
+        backgroundColor: THEME.colors.divider,
+        marginHorizontal: 20,
     },
-    ticketCut: {
+    cutLineContainer: {
+        height: 24,
         flexDirection: "row",
         alignItems: "center",
-        marginVertical: 16,
-    },
-    cutCircle: {
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        backgroundColor: COLORS.background,
+        justifyContent: "center",
+        position: "relative",
+        marginVertical: 8,
     },
     dashedLine: {
         flex: 1,
         height: 1,
-        borderStyle: "dashed",
         borderWidth: 1,
-        borderColor: COLORS.divider,
-        marginHorizontal: 10,
+        borderColor: THEME.colors.divider,
+        borderStyle: "dashed",
+        marginHorizontal: 6,
     },
-    reference: {
-        color: COLORS.textSecondary,
-        textAlign: "center",
-        marginBottom: 16,
-        fontSize: 13,
-    },
-    barcode: {
-        height: 48,
+    cutNotchLeft: {
+        position: "absolute",
+        left: -12,
+        width: 24,
+        height: 24,
         borderRadius: 12,
-        backgroundColor: COLORS.surfaceAlt,
-        flexDirection: "row",
+        backgroundColor: THEME.colors.background,
+        zIndex: 1,
+    },
+    cutNotchRight: {
+        position: "absolute",
+        right: -12,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: THEME.colors.background,
+        zIndex: 1,
+    },
+    footerSection: {
+        alignItems: "center",
+        paddingBottom: 24,
+        paddingTop: 8,
+    },
+    referenceText: {
+        fontSize: 12,
+        color: THEME.colors.textSecondary,
+        marginBottom: 12,
+    },
+    barcodeContainer: {
+        width: "90%",
+        height: 48,
+        backgroundColor: THEME.colors.surfaceAlt,
+        borderRadius: 4,
         alignItems: "center",
         justifyContent: "center",
+    },
+    barcodeBars: {
+        flexDirection: "row",
+        alignItems: "center",
         gap: 4,
+        opacity: 0.6,
     },
     barSegment: {
-        height: "80%",
-        backgroundColor: COLORS.white,
-        borderRadius: 2,
+        backgroundColor: THEME.colors.text,
+        borderRadius: 1,
     },
     actions: {
+        paddingHorizontal: 20,
         gap: 12,
     },
     primaryButton: {
+        backgroundColor: THEME.colors.primary,
+        height: 60,
+        borderRadius: 12,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
-        gap: 10,
-        backgroundColor: COLORS.primary,
-        borderRadius: 18,
-        height: 58,
-        shadowColor: COLORS.primary,
-        shadowOpacity: 0.4,
-        shadowOffset: { width: 0, height: 10 },
-        shadowRadius: 20,
+        gap: 8,
+        shadowColor: THEME.colors.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 6,
     },
     primaryButtonText: {
-        color: COLORS.white,
+        color: "#FFFFFF",
         fontSize: 16,
         fontWeight: "bold",
     },
     secondaryButton: {
-        borderRadius: 16,
+        height: 56,
+        borderRadius: 12,
         borderWidth: 1,
-        borderColor: COLORS.surfaceGlass,
-        height: 52,
+        borderColor: "transparent", // or transparent
+        backgroundColor: THEME.colors.card, // brand-secondary
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: COLORS.surfaceDark,
     },
     secondaryButtonText: {
-        color: COLORS.white,
-        fontSize: 15,
-        fontWeight: "600",
+        color: "#FFFFFF",
+        fontSize: 16,
+        fontWeight: "500",
     },
 });
 
