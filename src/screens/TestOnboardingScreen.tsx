@@ -1,15 +1,17 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import {
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
 import type { StackScreenProps } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
 import TestOnboardingLayout from "./testOnboarding/TestOnboardingLayout";
-import {
-    sharedStyles,
-    BRAND_PRIMARY,
-    SUCCESS,
-} from "./testOnboarding/styles";
+import { sharedStyles, BRAND_PRIMARY, SUCCESS } from "./testOnboarding/styles";
 import {
     USERNAME_SUGGESTIONS,
     SPORTS_OPTIONS,
@@ -17,9 +19,7 @@ import {
     VENUE_OPTIONS,
     BUDGET_OPTIONS,
 } from "./testOnboarding/options";
-import {
-    useTestOnboardingForm,
-} from "../store/useTestOnboardingForm";
+import { useTestOnboardingForm } from "../store/useTestOnboardingForm";
 import { useStore } from "../store/useStore";
 
 type TestOnboardingStackParamList = {
@@ -49,16 +49,17 @@ const localStyles = StyleSheet.create({
     },
 });
 
-type StepScreenProps<RouteName extends keyof TestOnboardingStackParamList> = StackScreenProps<
-    TestOnboardingStackParamList,
-    RouteName
->;
+type StepScreenProps<RouteName extends keyof TestOnboardingStackParamList> =
+    StackScreenProps<TestOnboardingStackParamList, RouteName>;
 
 const accent = { color: BRAND_PRIMARY };
 
-const NameStepScreen: React.FC<StepScreenProps<"TestOnboardingName">> = ({ navigation }) => {
+const NameStepScreen: React.FC<StepScreenProps<"TestOnboardingName">> = ({
+    navigation,
+}) => {
     const { data, updateField } = useTestOnboardingForm();
-    const canContinue = data.firstName.trim().length > 0 && data.lastName.trim().length > 0;
+    const canContinue =
+        data.firstName.trim().length > 0 && data.lastName.trim().length > 0;
 
     return (
         <TestOnboardingLayout
@@ -82,9 +83,16 @@ const NameStepScreen: React.FC<StepScreenProps<"TestOnboardingName">> = ({ navig
                         placeholder="Ex: Thomas"
                         placeholderTextColor="rgba(255,255,255,0.2)"
                         value={data.firstName}
-                        onChangeText={(value) => updateField("firstName", value)}
+                        onChangeText={(value) =>
+                            updateField("firstName", value)
+                        }
                     />
-                    <MaterialIcons name="person" size={20} color="rgba(255,255,255,0.3)" style={sharedStyles.inputIcon} />
+                    <MaterialIcons
+                        name="person"
+                        size={20}
+                        color="rgba(255,255,255,0.3)"
+                        style={sharedStyles.inputIcon}
+                    />
                 </View>
             </View>
 
@@ -98,16 +106,24 @@ const NameStepScreen: React.FC<StepScreenProps<"TestOnboardingName">> = ({ navig
                         value={data.lastName}
                         onChangeText={(value) => updateField("lastName", value)}
                     />
-                    <MaterialIcons name="badge" size={20} color="rgba(255,255,255,0.3)" style={sharedStyles.inputIcon} />
+                    <MaterialIcons
+                        name="badge"
+                        size={20}
+                        color="rgba(255,255,255,0.3)"
+                        style={sharedStyles.inputIcon}
+                    />
                 </View>
             </View>
         </TestOnboardingLayout>
     );
 };
 
-const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({ navigation }) => {
+const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
+    navigation,
+}) => {
     const { data, updateField } = useTestOnboardingForm();
-    const canContinue = data.email.includes("@") && data.phone.trim().length >= 8;
+    const canContinue =
+        data.email.includes("@") && data.phone.trim().length >= 8;
 
     return (
         <TestOnboardingLayout
@@ -128,7 +144,10 @@ const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
                         style={sharedStyles.inputIconLeft}
                     />
                     <TextInput
-                        style={[sharedStyles.input, sharedStyles.inputWithLeftIcon]}
+                        style={[
+                            sharedStyles.input,
+                            sharedStyles.inputWithLeftIcon,
+                        ]}
                         placeholder="Entrez votre email"
                         placeholderTextColor="rgba(255,255,255,0.2)"
                         value={data.email}
@@ -137,7 +156,12 @@ const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
                         onChangeText={(value) => updateField("email", value)}
                     />
                     {data.email.includes("@") && (
-                        <MaterialIcons name="check-circle" size={20} color={SUCCESS} style={sharedStyles.inputIcon} />
+                        <MaterialIcons
+                            name="check-circle"
+                            size={20}
+                            color={SUCCESS}
+                            style={sharedStyles.inputIcon}
+                        />
                     )}
                 </View>
             </View>
@@ -148,31 +172,48 @@ const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
                     <View style={sharedStyles.countryCode}>
                         <Text style={sharedStyles.countryFlag}>🇫🇷</Text>
                         <Text style={sharedStyles.countryCodeText}>+33</Text>
-                        <MaterialIcons name="expand-more" size={16} color="rgba(255,255,255,0.3)" />
+                        <MaterialIcons
+                            name="expand-more"
+                            size={16}
+                            color="rgba(255,255,255,0.3)"
+                        />
                     </View>
-                    <View style={[sharedStyles.inputWrapper, sharedStyles.phoneInput]}>
+                    <View
+                        style={[
+                            sharedStyles.inputWrapper,
+                            sharedStyles.phoneInput,
+                        ]}
+                    >
                         <TextInput
                             style={sharedStyles.input}
                             placeholder="6 12 34 56 78"
                             placeholderTextColor="rgba(255,255,255,0.2)"
                             value={data.phone}
-                            onChangeText={(value) => updateField("phone", value)}
+                            onChangeText={(value) =>
+                                updateField("phone", value)
+                            }
                             keyboardType="phone-pad"
                         />
                     </View>
                 </View>
-                <Text style={sharedStyles.hint}>Un code de vérification te sera envoyé par SMS.</Text>
+                <Text style={sharedStyles.hint}>
+                    Un code de vérification te sera envoyé par SMS.
+                </Text>
             </View>
         </TestOnboardingLayout>
     );
 };
 
-const SecurityStepScreen: React.FC<StepScreenProps<"TestOnboardingSecurity">> = ({ navigation }) => {
+const SecurityStepScreen: React.FC<
+    StepScreenProps<"TestOnboardingSecurity">
+> = ({ navigation }) => {
     const { data, updateField } = useTestOnboardingForm();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const passwordsMatch =
-        data.password.trim().length >= 6 && data.password === data.confirmPassword && data.confirmPassword.length >= 6;
+        data.password.trim().length >= 6 &&
+        data.password === data.confirmPassword &&
+        data.confirmPassword.length >= 6;
 
     return (
         <TestOnboardingLayout
@@ -193,16 +234,24 @@ const SecurityStepScreen: React.FC<StepScreenProps<"TestOnboardingSecurity">> = 
                         style={sharedStyles.inputIconLeft}
                     />
                     <TextInput
-                        style={[sharedStyles.input, sharedStyles.inputWithLeftIcon]}
+                        style={[
+                            sharedStyles.input,
+                            sharedStyles.inputWithLeftIcon,
+                        ]}
                         placeholder="••••••••"
                         placeholderTextColor="rgba(255,255,255,0.2)"
                         value={data.password}
                         secureTextEntry={!showPassword}
                         onChangeText={(value) => updateField("password", value)}
                     />
-                    <TouchableOpacity style={sharedStyles.visibilityBtn} onPress={() => setShowPassword(!showPassword)}>
+                    <TouchableOpacity
+                        style={sharedStyles.visibilityBtn}
+                        onPress={() => setShowPassword(!showPassword)}
+                    >
                         <MaterialIcons
-                            name={showPassword ? "visibility-off" : "visibility"}
+                            name={
+                                showPassword ? "visibility-off" : "visibility"
+                            }
                             size={20}
                             color="rgba(255,255,255,0.4)"
                         />
@@ -211,7 +260,9 @@ const SecurityStepScreen: React.FC<StepScreenProps<"TestOnboardingSecurity">> = 
             </View>
 
             <View style={sharedStyles.formGroup}>
-                <Text style={sharedStyles.label}>Confirmer le mot de passe</Text>
+                <Text style={sharedStyles.label}>
+                    Confirmer le mot de passe
+                </Text>
                 <View style={sharedStyles.inputWrapper}>
                     <MaterialIcons
                         name="lock-reset"
@@ -220,19 +271,30 @@ const SecurityStepScreen: React.FC<StepScreenProps<"TestOnboardingSecurity">> = 
                         style={sharedStyles.inputIconLeft}
                     />
                     <TextInput
-                        style={[sharedStyles.input, sharedStyles.inputWithLeftIcon]}
+                        style={[
+                            sharedStyles.input,
+                            sharedStyles.inputWithLeftIcon,
+                        ]}
                         placeholder="••••••••"
                         placeholderTextColor="rgba(255,255,255,0.2)"
                         value={data.confirmPassword}
                         secureTextEntry={!showConfirmPassword}
-                        onChangeText={(value) => updateField("confirmPassword", value)}
+                        onChangeText={(value) =>
+                            updateField("confirmPassword", value)
+                        }
                     />
                     <TouchableOpacity
                         style={sharedStyles.visibilityBtn}
-                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                        onPress={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                        }
                     >
                         <MaterialIcons
-                            name={showConfirmPassword ? "visibility-off" : "visibility"}
+                            name={
+                                showConfirmPassword
+                                    ? "visibility-off"
+                                    : "visibility"
+                            }
                             size={20}
                             color="rgba(255,255,255,0.4)"
                         />
@@ -243,7 +305,9 @@ const SecurityStepScreen: React.FC<StepScreenProps<"TestOnboardingSecurity">> = 
     );
 };
 
-const UsernameStepScreen: React.FC<StepScreenProps<"TestOnboardingUsername">> = ({ navigation }) => {
+const UsernameStepScreen: React.FC<
+    StepScreenProps<"TestOnboardingUsername">
+> = ({ navigation }) => {
     const { data, updateField } = useTestOnboardingForm();
     const canContinue = data.username.trim().length >= 3;
 
@@ -267,10 +331,18 @@ const UsernameStepScreen: React.FC<StepScreenProps<"TestOnboardingUsername">> = 
                     autoCapitalize="none"
                     onChangeText={(value) => updateField("username", value)}
                 />
-                {data.username.length > 2 && <MaterialIcons name="check-circle" size={24} color={SUCCESS} />}
+                {data.username.length > 2 && (
+                    <MaterialIcons
+                        name="check-circle"
+                        size={24}
+                        color={SUCCESS}
+                    />
+                )}
             </View>
             {data.username.length > 2 && (
-                <Text style={sharedStyles.availableText}>Ce nom d'utilisateur est disponible !</Text>
+                <Text style={sharedStyles.availableText}>
+                    Ce nom d'utilisateur est disponible !
+                </Text>
             )}
 
             <View style={sharedStyles.suggestionsSection}>
@@ -282,7 +354,9 @@ const UsernameStepScreen: React.FC<StepScreenProps<"TestOnboardingUsername">> = 
                             style={sharedStyles.suggestionChip}
                             onPress={() => updateField("username", suggestion)}
                         >
-                            <Text style={sharedStyles.suggestionText}>{suggestion}</Text>
+                            <Text style={sharedStyles.suggestionText}>
+                                {suggestion}
+                            </Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -291,7 +365,9 @@ const UsernameStepScreen: React.FC<StepScreenProps<"TestOnboardingUsername">> = 
     );
 };
 
-const SportsStepScreen: React.FC<StepScreenProps<"TestOnboardingSports">> = ({ navigation }) => {
+const SportsStepScreen: React.FC<StepScreenProps<"TestOnboardingSports">> = ({
+    navigation,
+}) => {
     const { data, toggleArrayValue } = useTestOnboardingForm();
     const canContinue = data.fav_sports.length > 0;
 
@@ -315,33 +391,57 @@ const SportsStepScreen: React.FC<StepScreenProps<"TestOnboardingSports">> = ({ n
                     return (
                         <TouchableOpacity
                             key={sport.id}
-                            style={[sharedStyles.sportOption, isSelected && sharedStyles.sportOptionSelected]}
-                            onPress={() => toggleArrayValue("fav_sports", sport.id)}
+                            style={[
+                                sharedStyles.sportOption,
+                                isSelected && sharedStyles.sportOptionSelected,
+                            ]}
+                            onPress={() =>
+                                toggleArrayValue("fav_sports", sport.id)
+                            }
                             activeOpacity={0.9}
                         >
                             <View style={sharedStyles.sportLeft}>
                                 <View
                                     style={[
                                         sharedStyles.sportIconWrapper,
-                                        isSelected && sharedStyles.sportIconSelected,
+                                        isSelected &&
+                                            sharedStyles.sportIconSelected,
                                     ]}
                                 >
                                     <MaterialIcons
                                         name={sport.icon}
                                         size={28}
-                                        color={isSelected ? "#fff" : "rgba(255,255,255,0.4)"}
+                                        color={
+                                            isSelected
+                                                ? "#fff"
+                                                : "rgba(255,255,255,0.4)"
+                                        }
                                     />
                                 </View>
-                                <Text style={[sharedStyles.sportLabel, isSelected && sharedStyles.sportLabelSelected]}>
+                                <Text
+                                    style={[
+                                        sharedStyles.sportLabel,
+                                        isSelected &&
+                                            sharedStyles.sportLabelSelected,
+                                    ]}
+                                >
                                     {sport.label}
                                 </Text>
                             </View>
                             {isSelected ? (
                                 <View style={sharedStyles.checkCircle}>
-                                    <MaterialIcons name="check" size={20} color={BRAND_PRIMARY} />
+                                    <MaterialIcons
+                                        name="check"
+                                        size={20}
+                                        color={BRAND_PRIMARY}
+                                    />
                                 </View>
                             ) : (
-                                <MaterialIcons name="add-circle" size={24} color="rgba(255,255,255,0.3)" />
+                                <MaterialIcons
+                                    name="add-circle"
+                                    size={24}
+                                    color="rgba(255,255,255,0.3)"
+                                />
                             )}
                         </TouchableOpacity>
                     );
@@ -351,7 +451,9 @@ const SportsStepScreen: React.FC<StepScreenProps<"TestOnboardingSports">> = ({ n
     );
 };
 
-const MoodStepScreen: React.FC<StepScreenProps<"TestOnboardingMood">> = ({ navigation }) => {
+const MoodStepScreen: React.FC<StepScreenProps<"TestOnboardingMood">> = ({
+    navigation,
+}) => {
     const { data, updateField } = useTestOnboardingForm();
     const canContinue = Boolean(data.ambiances[0]);
 
@@ -374,19 +476,34 @@ const MoodStepScreen: React.FC<StepScreenProps<"TestOnboardingMood">> = ({ navig
                     return (
                         <TouchableOpacity
                             key={mood.id}
-                            style={[sharedStyles.moodCard, isSelected && sharedStyles.moodCardSelected]}
+                            style={[
+                                sharedStyles.moodCard,
+                                isSelected && sharedStyles.moodCardSelected,
+                            ]}
                             onPress={() => handleSelectMood(mood.id)}
                             activeOpacity={0.9}
                         >
                             <MaterialIcons
                                 name={mood.icon}
                                 size={48}
-                                color={isSelected ? BRAND_PRIMARY : "rgba(255,255,255,0.3)"}
+                                color={
+                                    isSelected
+                                        ? BRAND_PRIMARY
+                                        : "rgba(255,255,255,0.3)"
+                                }
                             />
-                            <Text style={[sharedStyles.moodLabel, isSelected && sharedStyles.moodLabelSelected]}>
+                            <Text
+                                style={[
+                                    sharedStyles.moodLabel,
+                                    isSelected &&
+                                        sharedStyles.moodLabelSelected,
+                                ]}
+                            >
                                 {mood.label}
                             </Text>
-                            <Text style={sharedStyles.moodSubtitle}>{mood.subtitle}</Text>
+                            <Text style={sharedStyles.moodSubtitle}>
+                                {mood.subtitle}
+                            </Text>
                         </TouchableOpacity>
                     );
                 })}
@@ -395,7 +512,9 @@ const MoodStepScreen: React.FC<StepScreenProps<"TestOnboardingMood">> = ({ navig
     );
 };
 
-const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({ navigation }) => {
+const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({
+    navigation,
+}) => {
     const { data, updateField } = useTestOnboardingForm();
     const canContinue = data.venue_types.length > 0;
 
@@ -423,7 +542,10 @@ const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({ nav
                     return (
                         <TouchableOpacity
                             key={venue.id}
-                            style={[sharedStyles.venueOption, isSelected && sharedStyles.venueOptionSelected]}
+                            style={[
+                                sharedStyles.venueOption,
+                                isSelected && sharedStyles.venueOptionSelected,
+                            ]}
                             onPress={() => handleSelectVenue(venue.id)}
                             activeOpacity={0.9}
                         >
@@ -431,26 +553,49 @@ const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({ nav
                                 <View
                                     style={[
                                         sharedStyles.venueIconWrapper,
-                                        isSelected && sharedStyles.venueIconSelected,
+                                        isSelected &&
+                                            sharedStyles.venueIconSelected,
                                     ]}
                                 >
                                     <MaterialIcons
                                         name={venue.icon}
                                         size={26}
-                                        color={isSelected ? "#000" : "rgba(255,255,255,0.4)"}
+                                        color={
+                                            isSelected
+                                                ? "#000"
+                                                : "rgba(255,255,255,0.4)"
+                                        }
                                     />
                                 </View>
                                 <View style={sharedStyles.venueTexts}>
                                     <Text
-                                        style={[sharedStyles.venueLabel, isSelected && sharedStyles.venueLabelSelected]}
+                                        style={[
+                                            sharedStyles.venueLabel,
+                                            isSelected &&
+                                                sharedStyles.venueLabelSelected,
+                                        ]}
                                     >
                                         {venue.label}
                                     </Text>
-                                    <Text style={sharedStyles.venueSubtitle}>{venue.subtitle}</Text>
+                                    <Text style={sharedStyles.venueSubtitle}>
+                                        {venue.subtitle}
+                                    </Text>
                                 </View>
                             </View>
-                            <View style={[sharedStyles.radioCircle, isSelected && sharedStyles.radioCircleSelected]}>
-                                {isSelected && <MaterialIcons name="check" size={16} color="#000" />}
+                            <View
+                                style={[
+                                    sharedStyles.radioCircle,
+                                    isSelected &&
+                                        sharedStyles.radioCircleSelected,
+                                ]}
+                            >
+                                {isSelected && (
+                                    <MaterialIcons
+                                        name="check"
+                                        size={16}
+                                        color="#000"
+                                    />
+                                )}
                             </View>
                         </TouchableOpacity>
                     );
@@ -460,8 +605,11 @@ const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({ nav
     );
 };
 
-const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({ navigation }) => {
-    const { data, updateField, buildRequestPayload, reset } = useTestOnboardingForm();
+const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({
+    navigation,
+}) => {
+    const { data, updateField, buildRequestPayload, reset } =
+        useTestOnboardingForm();
     const signup = useStore((state) => state.signup);
     const isLoading = useStore((state) => state.isLoading);
     const storeError = useStore((state) => state.error);
@@ -489,11 +637,7 @@ const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({ n
     return (
         <TestOnboardingLayout
             step={8}
-            title={
-                <>
-                    Quel est {"\n"}votre budget ?
-                </>
-            }
+            title={<>Quel est {"\n"}votre budget ?</>}
             subtitle="Nous trouverons les bars qui correspondent à tes attentes."
             canContinue={Boolean(data.budget) && !isLoading}
             nextLabel={isLoading ? "Connexion..." : "Terminer"}
@@ -507,17 +651,28 @@ const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({ n
                     return (
                         <TouchableOpacity
                             key={budget.id}
-                            style={[sharedStyles.budgetOption, isSelected && sharedStyles.budgetOptionSelected]}
+                            style={[
+                                sharedStyles.budgetOption,
+                                isSelected && sharedStyles.budgetOptionSelected,
+                            ]}
                             onPress={() => updateField("budget", budget.id)}
                             activeOpacity={0.9}
                         >
                             <View style={sharedStyles.budgetCenter}>
-                                <Text style={sharedStyles.budgetAmount}>{budget.label}</Text>
-                                <Text style={sharedStyles.budgetTier}>{budget.subtitle}</Text>
+                                <Text style={sharedStyles.budgetAmount}>
+                                    {budget.label}
+                                </Text>
+                                <Text style={sharedStyles.budgetTier}>
+                                    {budget.subtitle}
+                                </Text>
                             </View>
                             {isSelected && (
                                 <View style={sharedStyles.budgetCheck}>
-                                    <MaterialIcons name="check-circle" size={24} color={BRAND_PRIMARY} />
+                                    <MaterialIcons
+                                        name="check-circle"
+                                        size={24}
+                                        color={BRAND_PRIMARY}
+                                    />
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -531,14 +686,38 @@ const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({ n
 const TestOnboardingScreen = () => {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="TestOnboardingName" component={NameStepScreen} />
-            <Stack.Screen name="TestOnboardingContact" component={ContactStepScreen} />
-            <Stack.Screen name="TestOnboardingSecurity" component={SecurityStepScreen} />
-            <Stack.Screen name="TestOnboardingUsername" component={UsernameStepScreen} />
-            <Stack.Screen name="TestOnboardingSports" component={SportsStepScreen} />
-            <Stack.Screen name="TestOnboardingMood" component={MoodStepScreen} />
-            <Stack.Screen name="TestOnboardingVenue" component={VenueStepScreen} />
-            <Stack.Screen name="TestOnboardingBudget" component={BudgetStepScreen} />
+            <Stack.Screen
+                name="TestOnboardingName"
+                component={NameStepScreen}
+            />
+            <Stack.Screen
+                name="TestOnboardingContact"
+                component={ContactStepScreen}
+            />
+            <Stack.Screen
+                name="TestOnboardingSecurity"
+                component={SecurityStepScreen}
+            />
+            <Stack.Screen
+                name="TestOnboardingUsername"
+                component={UsernameStepScreen}
+            />
+            <Stack.Screen
+                name="TestOnboardingSports"
+                component={SportsStepScreen}
+            />
+            <Stack.Screen
+                name="TestOnboardingMood"
+                component={MoodStepScreen}
+            />
+            <Stack.Screen
+                name="TestOnboardingVenue"
+                component={VenueStepScreen}
+            />
+            <Stack.Screen
+                name="TestOnboardingBudget"
+                component={BudgetStepScreen}
+            />
         </Stack.Navigator>
     );
 };

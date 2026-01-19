@@ -25,6 +25,7 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
     const [venueResults, setVenueResults] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [showAllMatches, setShowAllMatches] = useState(false);
 
     const hasQuery = searchQuery.trim().length > 0;
     const filterWidth = filterAnim.interpolate({
@@ -85,7 +86,7 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
         [recentSearches]
     );
 
-        const renderState = (message: string, showRetry = false) => (
+    const renderState = (message: string, showRetry = false) => (
         <View style={styles.stateWrapper}>
             {showRetry ? (
                 <>
@@ -171,182 +172,188 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
             {isLoading
                 ? renderState("Chargement des suggestions…")
                 : error
-                ? renderState(error, true)
-                : (
-                    <ScrollView
-                        style={styles.scrollView}
-                        contentContainerStyle={styles.scrollContent}
-                        keyboardShouldPersistTaps="handled"
-                    >
-                        {hasQuery ? (
-                            <Animated.View
-                                style={{
-                                    opacity: activeContentAnim,
-                                    transform: [
-                                        {
-                                            translateY: activeContentAnim.interpolate({
-                                                inputRange: [0, 1],
-                                                outputRange: [16, 0],
-                                            }),
-                                        },
-                                    ],
-                                }}
-                            >
-                                <View style={styles.sectionHeaderRow}>
-                                    <Text style={styles.sectionTitle}>Matchs</Text>
-                                    <TouchableOpacity>
-                                        <Text style={styles.sectionAction}>Voir tout</Text>
-                                    </TouchableOpacity>
-                                </View>
-                                {matchResults.length > 0 ? (
-                                    matchResults.map((match) => (
-                                        <TouchableOpacity
-                                            key={match.id}
-                                            style={styles.matchCard}
-                                            activeOpacity={0.9}
-                                            onPress={() => navigation.navigate("TestMatchDetail", { matchId: match.id })}
-                                        >
-                                            <View style={styles.matchCardBackdrop} />
-                                            <View style={styles.matchMeta}>
-                                                <Text style={styles.leagueChip}>{match.league}</Text>
-                                                <View style={styles.matchTime}>
-                                                    <MaterialIcons
-                                                        name="schedule"
-                                                        size={16}
-                                                        color={COLORS.primary}
-                                                        style={{ marginRight: 4 }}
-                                                    />
-                                                    <Text style={styles.matchTimeText}>{match.timeLabel}</Text>
-                                                </View>
-                                            </View>
-
-                                            <View style={styles.teamsRow}>
-                                                <View style={styles.teamColumn}>
-                                                    <View style={[styles.teamBadge, { backgroundColor: match.home.color }]}>
-                                                        <Text style={styles.teamBadgeText}>{match.home.badge}</Text>
-                                                    </View>
-                                                    <Text style={styles.teamName}>{match.home.name}</Text>
-                                                </View>
-                                                <View style={styles.vsColumn}>
-                                                    <Text style={styles.vsLabel}>VS</Text>
-                                                </View>
-                                                <View style={styles.teamColumn}>
-                                                    <View style={[styles.teamBadge, { backgroundColor: match.away.color }]}>
-                                                        <Text style={styles.teamBadgeText}>{match.away.badge}</Text>
-                                                    </View>
-                                                    <Text style={styles.teamName}>{match.away.name}</Text>
-                                                </View>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))
-                                ) : (
-                                    <Text style={styles.emptyText}>Aucun match trouvé.</Text>
-                                )}
-
-                                <View style={[styles.sectionHeaderRow, { marginTop: 24 }]}>
-                                    <Text style={styles.sectionTitle}>Lieux</Text>
-                                </View>
-
-                                <View style={{ gap: 12 }}>
-                                    {venueResults.length > 0 ? (
-                                        venueResults.map((venue) => (
-                                            <TouchableOpacity key={venue.id} style={styles.venueRow} activeOpacity={0.85}>
-                                                <View style={styles.venueThumbnail}>
-                                                    <MaterialIcons
-                                                        name={(venue.isLive ? "sports-bar" : "location-on") as any}
-                                                        size={34}
-                                                        color="rgba(255,255,255,0.5)"
-                                                    />
-                                                    <View style={styles.ratingBadge}>
-                                                        <MaterialIcons
-                                                            name="star"
-                                                            size={12}
-                                                            color="#fbbf24"
-                                                            style={{ marginRight: 2 }}
-                                                        />
-                                                        <Text style={styles.ratingText}>{venue.rating.toFixed(1)}</Text>
-                                                    </View>
-                                                </View>
-
-                                                <View style={styles.venueInfo}>
-                                                <View style={styles.venueTitleRow}>
-                                                        <Text style={styles.venueName} numberOfLines={1}>
-                                                            {venue.name}
-                                                        </Text>
-                                                        <Text style={styles.venueBadge}>
-                                                            {venue.isLive ? "Ouvert" : "Fermé"}
-                                                        </Text>
-                                                    </View>
-                                                    <Text style={styles.venueTags}>{venue.tag}</Text>
-                                                    <View style={styles.venueMetaRow}>
-                                                        <View style={styles.venueMetaItem}>
-                                                            <MaterialIcons name="location-on" size={14} color={COLORS.muted} />
-                                                            <Text style={styles.venueMetaText}>{venue.distance}</Text>
-                                                        </View>
-                                                        <View style={styles.venueMetaItem}>
-                                                            <MaterialIcons name="euro" size={14} color={COLORS.muted} />
-                                                            <Text style={styles.venueMetaText}>{venue.priceLevel ?? "€€"}</Text>
-                                                        </View>
-                                                    </View>
-                                                </View>
-                                            </TouchableOpacity>
-                                        ))
-                                    ) : (
-                                        <Text style={styles.emptyText}>Aucun bar disponible.</Text>
-                                    )}
-                                </View>
-                            </Animated.View>
-                        ) : (
-                            <View>
-                                <Text style={styles.sectionTitle}>Tendances</Text>
-                                <View style={styles.trendsWrap}>
-                                    {trends.length > 0 ? (
-                                        trends.map((trend) => (
-                                            <TouchableOpacity key={trend.label} style={styles.trendChip}>
-                                                <MaterialIcons name={trend.icon as any} size={18} color={COLORS.primary} />
-                                                <Text style={styles.trendChipText}>{trend.label}</Text>
-                                            </TouchableOpacity>
-                                        ))
-                                    ) : (
-                                        <Text style={styles.emptyText}>Aucune tendance disponible.</Text>
-                                    )}
-                                </View>
-
-                                <View style={{ marginTop: 28 }}>
+                    ? renderState(error, true)
+                    : (
+                        <ScrollView
+                            style={styles.scrollView}
+                            contentContainerStyle={styles.scrollContent}
+                            keyboardShouldPersistTaps="handled"
+                        >
+                            {hasQuery ? (
+                                <Animated.View
+                                    style={{
+                                        opacity: activeContentAnim,
+                                        transform: [
+                                            {
+                                                translateY: activeContentAnim.interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: [16, 0],
+                                                }),
+                                            },
+                                        ],
+                                    }}
+                                >
                                     <View style={styles.sectionHeaderRow}>
-                                        <Text style={styles.sectionTitle}>Historique</Text>
-                                        <TouchableOpacity>
-                                            <Text style={styles.sectionAction}>Tout effacer</Text>
-                                        </TouchableOpacity>
+                                        <Text style={styles.sectionTitle}>Matchs</Text>
+                                        {matchResults.length > 3 && (
+                                            <TouchableOpacity onPress={() => setShowAllMatches((prev) => !prev)}>
+                                                <Text style={styles.sectionAction}>
+                                                    {showAllMatches ? "Voir moins" : "Voir tout"}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                    {matchResults.length > 0 ? (
+                                        matchResults
+                                            .slice(0, showAllMatches ? undefined : 3)
+                                            .map((match) => (
+                                                <TouchableOpacity
+                                                    key={match.id}
+                                                    style={styles.matchCard}
+                                                    activeOpacity={0.9}
+                                                    onPress={() => navigation.navigate("TestMatchDetail", { matchId: match.id })}
+                                                >
+                                                    <View style={styles.matchCardBackdrop} />
+                                                    <View style={styles.matchMeta}>
+                                                        <Text style={styles.leagueChip}>{match.league}</Text>
+                                                        <View style={styles.matchTime}>
+                                                            <MaterialIcons
+                                                                name="schedule"
+                                                                size={16}
+                                                                color={COLORS.primary}
+                                                                style={{ marginRight: 4 }}
+                                                            />
+                                                            <Text style={styles.matchTimeText}>{match.timeLabel}</Text>
+                                                        </View>
+                                                    </View>
+
+                                                    <View style={styles.teamsRow}>
+                                                        <View style={styles.teamColumn}>
+                                                            <View style={[styles.teamBadge, { backgroundColor: match.home.color }]}>
+                                                                <Text style={styles.teamBadgeText}>{match.home.badge}</Text>
+                                                            </View>
+                                                            <Text style={styles.teamName}>{match.home.name}</Text>
+                                                        </View>
+                                                        <View style={styles.vsColumn}>
+                                                            <Text style={styles.vsLabel}>VS</Text>
+                                                        </View>
+                                                        <View style={styles.teamColumn}>
+                                                            <View style={[styles.teamBadge, { backgroundColor: match.away.color }]}>
+                                                                <Text style={styles.teamBadgeText}>{match.away.badge}</Text>
+                                                            </View>
+                                                            <Text style={styles.teamName}>{match.away.name}</Text>
+                                                        </View>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            ))
+                                    ) : (
+                                        <Text style={styles.emptyText}>Aucun match trouvé.</Text>
+                                    )}
+
+                                    <View style={[styles.sectionHeaderRow, { marginTop: 24 }]}>
+                                        <Text style={styles.sectionTitle}>Lieux</Text>
                                     </View>
 
-                                    {recentItems.length > 0 ? (
-                                        <View style={styles.historyList}>
-                                            {recentItems.map((item) => (
-                                                <View key={item.id} style={styles.historyItem}>
-                                                    <View style={styles.historyLeft}>
-                                                        <View style={styles.historyIcon}>
-                                                            <MaterialIcons name="history" size={20} color={COLORS.muted} />
-                                                        </View>
-                                                        <View style={{ flex: 1 }}>
-                                                            <Text style={styles.historyTitle}>{item.title}</Text>
-                                                            <Text style={styles.historySubtitle}>{item.subtitle}</Text>
+                                    <View style={{ gap: 12 }}>
+                                        {venueResults.length > 0 ? (
+                                            venueResults.map((venue) => (
+                                                <TouchableOpacity key={venue.id} style={styles.venueRow} activeOpacity={0.85}>
+                                                    <View style={styles.venueThumbnail}>
+                                                        <MaterialIcons
+                                                            name={(venue.isLive ? "sports-bar" : "location-on") as any}
+                                                            size={34}
+                                                            color="rgba(255,255,255,0.5)"
+                                                        />
+                                                        <View style={styles.ratingBadge}>
+                                                            <MaterialIcons
+                                                                name="star"
+                                                                size={12}
+                                                                color="#fbbf24"
+                                                                style={{ marginRight: 2 }}
+                                                            />
+                                                            <Text style={styles.ratingText}>{venue.rating.toFixed(1)}</Text>
                                                         </View>
                                                     </View>
-                                                    <TouchableOpacity activeOpacity={0.6}>
-                                                        <MaterialIcons name="close" size={20} color={COLORS.muted} />
-                                                    </TouchableOpacity>
-                                                </View>
-                                            ))}
+
+                                                    <View style={styles.venueInfo}>
+                                                        <View style={styles.venueTitleRow}>
+                                                            <Text style={styles.venueName} numberOfLines={1}>
+                                                                {venue.name}
+                                                            </Text>
+                                                            <Text style={styles.venueBadge}>
+                                                                {venue.isLive ? "Ouvert" : "Fermé"}
+                                                            </Text>
+                                                        </View>
+                                                        <Text style={styles.venueTags}>{venue.tag}</Text>
+                                                        <View style={styles.venueMetaRow}>
+                                                            <View style={styles.venueMetaItem}>
+                                                                <MaterialIcons name="location-on" size={14} color={COLORS.muted} />
+                                                                <Text style={styles.venueMetaText}>{venue.distance}</Text>
+                                                            </View>
+                                                            <View style={styles.venueMetaItem}>
+                                                                <MaterialIcons name="euro" size={14} color={COLORS.muted} />
+                                                                <Text style={styles.venueMetaText}>{venue.priceLevel ?? "€€"}</Text>
+                                                            </View>
+                                                        </View>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            ))
+                                        ) : (
+                                            <Text style={styles.emptyText}>Aucun bar disponible.</Text>
+                                        )}
+                                    </View>
+                                </Animated.View>
+                            ) : (
+                                <View>
+                                    <Text style={styles.sectionTitle}>Tendances</Text>
+                                    <View style={styles.trendsWrap}>
+                                        {trends.length > 0 ? (
+                                            trends.map((trend) => (
+                                                <TouchableOpacity key={trend.label} style={styles.trendChip}>
+                                                    <MaterialIcons name={trend.icon as any} size={18} color={COLORS.primary} />
+                                                    <Text style={styles.trendChipText}>{trend.label}</Text>
+                                                </TouchableOpacity>
+                                            ))
+                                        ) : (
+                                            <Text style={styles.emptyText}>Aucune tendance disponible.</Text>
+                                        )}
+                                    </View>
+
+                                    <View style={{ marginTop: 28 }}>
+                                        <View style={styles.sectionHeaderRow}>
+                                            <Text style={styles.sectionTitle}>Historique</Text>
+                                            <TouchableOpacity>
+                                                <Text style={styles.sectionAction}>Tout effacer</Text>
+                                            </TouchableOpacity>
                                         </View>
-                                    ) : (
-                                        <Text style={styles.emptyText}>Aucune recherche récente.</Text>
-                                    )}
+
+                                        {recentItems.length > 0 ? (
+                                            <View style={styles.historyList}>
+                                                {recentItems.map((item) => (
+                                                    <View key={item.id} style={styles.historyItem}>
+                                                        <View style={styles.historyLeft}>
+                                                            <View style={styles.historyIcon}>
+                                                                <MaterialIcons name="history" size={20} color={COLORS.muted} />
+                                                            </View>
+                                                            <View style={{ flex: 1 }}>
+                                                                <Text style={styles.historyTitle}>{item.title}</Text>
+                                                                <Text style={styles.historySubtitle}>{item.subtitle}</Text>
+                                                            </View>
+                                                        </View>
+                                                        <TouchableOpacity activeOpacity={0.6}>
+                                                            <MaterialIcons name="close" size={20} color={COLORS.muted} />
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                ))}
+                                            </View>
+                                        ) : (
+                                            <Text style={styles.emptyText}>Aucune recherche récente.</Text>
+                                        )}
+                                    </View>
                                 </View>
-                            </View>
-                        )}
-                    </ScrollView>
-                )}
+                            )}
+                        </ScrollView>
+                    )}
         </SafeAreaView>
     );
 };

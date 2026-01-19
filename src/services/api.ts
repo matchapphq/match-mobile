@@ -219,7 +219,7 @@ export const apiService = {
     },
 
     signup: async (data: any) => {
-        const response = await api.post("/onboarding/complete", data);
+        const response = await api.post("/auth/register", data);
         return response.data;
     },
 

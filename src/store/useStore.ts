@@ -11,25 +11,38 @@ import {
 import { apiService, mockData, ApiReservation } from "../services/api";
 
 // Transform API reservation to mobile Reservation type
-const transformApiReservation = (apiRes: ApiReservation, qrCode?: string): Reservation => {
+const transformApiReservation = (
+    apiRes: ApiReservation,
+    qrCode?: string,
+): Reservation => {
     const venue = apiRes.venueMatch?.venue;
     const match = apiRes.venueMatch?.match;
-    const scheduledAt = match?.scheduled_at ? new Date(match.scheduled_at) : new Date();
-    
+    const scheduledAt = match?.scheduled_at
+        ? new Date(match.scheduled_at)
+        : new Date();
+
     let status: "pending" | "confirmed" | "cancelled" = "pending";
     if (apiRes.status === "confirmed") status = "confirmed";
-    else if (apiRes.status === "canceled" || apiRes.status === "cancelled") status = "cancelled";
-    
+    else if (apiRes.status === "canceled" || apiRes.status === "cancelled")
+        status = "cancelled";
+
     return {
         id: apiRes.id,
         venueId: venue?.id || apiRes.venue_match_id,
         venueName: venue?.name || "Venue",
-        venueAddress: [venue?.street_address, venue?.city].filter(Boolean).join(", ") || undefined,
+        venueAddress:
+            [venue?.street_address, venue?.city].filter(Boolean).join(", ") ||
+            undefined,
         date: scheduledAt,
-        time: scheduledAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        time: scheduledAt.toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+        }),
         numberOfPeople: apiRes.party_size,
         matchId: match?.id,
-        matchTitle: match ? `${match.homeTeam?.name || "TBD"} vs ${match.awayTeam?.name || "TBD"}` : undefined,
+        matchTitle: match
+            ? `${match.homeTeam?.name || "TBD"} vs ${match.awayTeam?.name || "TBD"}`
+            : undefined,
         status,
         conditions: apiRes.special_requests || undefined,
         qrCode: qrCode || apiRes.qr_code || undefined,
@@ -469,7 +482,9 @@ export const useStore = create<AppState>((set, get) => ({
         try {
             const response = await apiService.getUserReservations();
             const apiReservations = response.data || [];
-            const transformed = apiReservations.map((r) => transformApiReservation(r));
+            const transformed = apiReservations.map((r) =>
+                transformApiReservation(r),
+            );
             set({ reservations: transformed, isLoading: false });
             AsyncStorage.setItem("reservations", JSON.stringify(transformed));
         } catch (error) {
@@ -482,7 +497,9 @@ export const useStore = create<AppState>((set, get) => ({
         try {
             const response = await apiService.getUserReservations();
             const apiReservations = response.data || [];
-            const transformed = apiReservations.map((r) => transformApiReservation(r));
+            const transformed = apiReservations.map((r) =>
+                transformApiReservation(r),
+            );
             set({ reservations: transformed });
             AsyncStorage.setItem("reservations", JSON.stringify(transformed));
         } catch (error) {
@@ -511,7 +528,10 @@ export const useStore = create<AppState>((set, get) => ({
     getReservationWithQR: async (id) => {
         try {
             const response = await apiService.getReservationById(id);
-            return transformApiReservation(response.reservation, response.qrCode);
+            return transformApiReservation(
+                response.reservation,
+                response.qrCode,
+            );
         } catch (error) {
             console.error("Error fetching reservation with QR:", error);
             return null;
