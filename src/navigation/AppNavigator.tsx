@@ -10,8 +10,6 @@ import TestWelcomeScreen from "../screens/TestWelcomeScreen";
 import TestAuthEntryScreen from "../screens/TestAuthEntryScreen";
 import TestOnboardingScreen from "../screens/TestOnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
-import NotificationsScreen from "../screens/NotificationsScreen";
-import PreferencesScreen from "../screens/PreferencesScreen";
 import TestTabNavigator from "./TestTabNavigator";
 import TestReservationsScreen from "../screens/TestReservationsScreen";
 import TestVenueProfileScreen from "../screens/TestVenueProfileScreen";
@@ -56,8 +54,6 @@ export const AppNavigator = () => {
                         <Stack.Screen name="TestReservationsScreen" component={TestReservationsScreen} />
                         <Stack.Screen name="TestReservationSuccess" component={TestReservationSuccessScreen} />
                         <Stack.Screen name="TestMatchDetail" component={TestMatchDetailScreen} />
-                        <Stack.Screen name="Notifications" component={NotificationsScreen} />
-                        <Stack.Screen name="Preferences" component={PreferencesScreen} />
                         <Stack.Screen name="TestFaqSupport" component={TestFaqSupport} />
                     </>
                 )}

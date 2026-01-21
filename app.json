@@ -34,7 +34,8 @@
     "extra": {
       "eas": {
         "projectId": "1e086af0-e36f-4595-8a11-d3a89f870462"
-      }
+      },
+      "apiBase": "https://api.matchapp.fr/api"
     }
   }
 }

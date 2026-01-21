@@ -12,6 +12,7 @@ import {
     ActivityIndicator,
 } from "react-native";
 import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -130,6 +131,7 @@ const DARK_MAP_STYLE = [
 ];
 
 const TestMapScreen = ({ navigation }: { navigation: any }) => {
+    const mapRef = useRef<MapView>(null);
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
     const [venues, setVenues] = useState<Venue[]>([]);
     const [upcomingMatches, setUpcomingMatches] = useState<VenueMatch[]>([]);
@@ -137,6 +139,46 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
 
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerAnim = useRef(new Animated.Value(-width * 0.8)).current;
+
+    // Location Logic
+    useEffect(() => {
+        (async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                console.log('Permission to access location was denied');
+                return;
+            }
+
+            let location = await Location.getCurrentPositionAsync({});
+            if (mapRef.current && location) {
+                mapRef.current.animateToRegion({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                }, 1000);
+            }
+        })();
+    }, []);
+
+    const handleCenterOnUser = async () => {
+        let { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted') {
+             status = (await Location.requestForegroundPermissionsAsync()).status;
+        }
+        
+        if (status === 'granted') {
+             const location = await Location.getCurrentPositionAsync({});
+             if (mapRef.current && location) {
+                mapRef.current.animateToRegion({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                }, 1000);
+            }
+        }
+    };
 
     // Bottom Sheet Animation
     const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -294,6 +336,9 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
 
             {/* Map Custom */}
             <MapView
+                ref={mapRef}
+                showsUserLocation={true}
+                showsMyLocationButton={false}
                 provider={PROVIDER_DEFAULT}
                 style={StyleSheet.absoluteFillObject}
                 customMapStyle={DARK_MAP_STYLE}
@@ -467,7 +512,11 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
             </Animated.View>
 
             {/* Near Me Button */}
-            <TouchableOpacity style={styles.nearMeButton} activeOpacity={0.8}>
+            <TouchableOpacity 
+                style={styles.nearMeButton} 
+                activeOpacity={0.8}
+                onPress={handleCenterOnUser}
+            >
                 <MaterialIcons name="near-me" size={24} color={COLORS.white} />
             </TouchableOpacity>
 

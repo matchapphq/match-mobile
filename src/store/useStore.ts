@@ -137,7 +137,7 @@ interface AppState {
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
 
-    logout: () => void;
+    logout: () => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -558,7 +558,13 @@ export const useStore = create<AppState>((set, get) => ({
         set({ notifications: [], unreadNotificationCount: 0 });
     },
 
-    logout: () => {
+    logout: async () => {
+        try {
+            await apiService.logout();
+        } catch (error) {
+            console.error("Logout API error:", error);
+        }
+
         set({
             user: null,
             isAuthenticated: false,

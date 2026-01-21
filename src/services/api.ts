@@ -8,9 +8,9 @@ import {
     VenueType,
     SportType,
 } from "../types";
+import Constants from "expo-constants";
 
-const API_BASE_URL =
-    process.env.EXPO_PUBLIC_API_URL || "http://localhost:8008/api";
+const API_BASE_URL = Constants.expoConfig?.extra?.apiBase || "http://localhost:8008/api";
 
 //const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://opportunely-untrinitarian-tommie.ngrok-free.dev';
 
@@ -216,6 +216,14 @@ export const apiService = {
         const response = await api.post("/auth/login", { email, password });
         if (!response) throw new Error("Login failed");
         return response.data;
+    },
+
+    logout: async () => {
+        try {
+            await api.post("/auth/logout");
+        } catch (error) {
+            console.warn("Logout API call failed", error);
+        }
     },
 
     signup: async (data: any) => {
