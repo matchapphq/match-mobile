@@ -5,6 +5,8 @@ import {
     TextInput,
     TouchableOpacity,
     StyleSheet,
+    Modal,
+    FlatList,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
@@ -35,6 +37,32 @@ type TestOnboardingStackParamList = {
 
 const Stack = createStackNavigator<TestOnboardingStackParamList>();
 
+const COUNTRY_OPTIONS = [
+    { code: "FR", flag: "🇫🇷", name: "France", dialCode: "+33", maxLength: 9, pattern: "# ## ## ## ##" },
+    { code: "CN", flag: "🇨🇳", name: "Chine", dialCode: "+86", maxLength: 11, pattern: "### #### ####" },
+    { code: "US", flag: "🇺🇸", name: "États-Unis", dialCode: "+1", maxLength: 10, pattern: "(###) ###-####" },
+    { code: "GB", flag: "🇬🇧", name: "Royaume-Uni", dialCode: "+44", maxLength: 10, pattern: "#### ######" },
+    { code: "ES", flag: "🇪🇸", name: "Espagne", dialCode: "+34", maxLength: 9, pattern: "### ### ###" },
+    { code: "DE", flag: "🇩🇪", name: "Allemagne", dialCode: "+49", maxLength: 11, pattern: "#### #######" },
+    { code: "BE", flag: "🇧🇪", name: "Belgique", dialCode: "+32", maxLength: 9, pattern: "### ## ## ##" },
+];
+
+const formatPhoneNumber = (value: string, pattern: string) => {
+    const cleaned = value.replace(/\D/g, "");
+    let result = "";
+    let vIndex = 0;
+    
+    for (let i = 0; i < pattern.length; i++) {
+        if (vIndex >= cleaned.length) break;
+        if (pattern[i] === "#") {
+            result += cleaned[vIndex++];
+        } else {
+            result += pattern[i];
+        }
+    }
+    return result;
+};
+
 const localStyles = StyleSheet.create({
     errorText: {
         color: "#ff6b6b",
@@ -45,6 +73,44 @@ const localStyles = StyleSheet.create({
         fontSize: 12,
         textAlign: "center",
         marginTop: 12,
+        color: "rgba(255,255,255,0.6)",
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.8)",
+        justifyContent: "flex-end",
+    },
+    modalContent: {
+        backgroundColor: "#1c1c21",
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        maxHeight: "70%",
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#fff",
+        marginBottom: 16,
+    },
+    countryItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: "rgba(255,255,255,0.08)",
+    },
+    countryItemFlag: {
+        fontSize: 24,
+        marginRight: 12,
+    },
+    countryItemName: {
+        fontSize: 16,
+        color: "#fff",
+        flex: 1,
+    },
+    countryItemCode: {
+        fontSize: 16,
         color: "rgba(255,255,255,0.6)",
     },
 });
@@ -122,8 +188,22 @@ const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
     navigation,
 }) => {
     const { data, updateField } = useTestOnboardingForm();
+    const [selectedCountry, setSelectedCountry] = useState(COUNTRY_OPTIONS[0]);
+    const [modalVisible, setModalVisible] = useState(false);
+
     const canContinue =
-        data.email.includes("@") && data.phone.trim().length >= 8;
+        data.email.includes("@") && 
+        data.phone.replace(/\D/g, "").length === selectedCountry.maxLength;
+
+    const handlePhoneChange = (text: string) => {
+        // Strip non-digits
+        const cleaned = text.replace(/\D/g, "");
+        // Truncate to max digits
+        const truncated = cleaned.slice(0, selectedCountry.maxLength);
+        // Format
+        const formatted = formatPhoneNumber(truncated, selectedCountry.pattern);
+        updateField("phone", formatted);
+    };
 
     return (
         <TestOnboardingLayout
@@ -169,15 +249,18 @@ const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
             <View style={sharedStyles.formGroup}>
                 <Text style={sharedStyles.label}>Numéro de téléphone</Text>
                 <View style={sharedStyles.phoneRow}>
-                    <View style={sharedStyles.countryCode}>
-                        <Text style={sharedStyles.countryFlag}>🇫🇷</Text>
-                        <Text style={sharedStyles.countryCodeText}>+33</Text>
+                    <TouchableOpacity
+                        style={sharedStyles.countryCode}
+                        onPress={() => setModalVisible(true)}
+                    >
+                        <Text style={sharedStyles.countryFlag}>{selectedCountry.flag}</Text>
+                        <Text style={sharedStyles.countryCodeText}>{selectedCountry.dialCode}</Text>
                         <MaterialIcons
                             name="expand-more"
                             size={16}
                             color="rgba(255,255,255,0.3)"
                         />
-                    </View>
+                    </TouchableOpacity>
                     <View
                         style={[
                             sharedStyles.inputWrapper,
@@ -186,13 +269,12 @@ const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
                     >
                         <TextInput
                             style={sharedStyles.input}
-                            placeholder="6 12 34 56 78"
+                            placeholder={selectedCountry.pattern.replace(/#/g, "0")}
                             placeholderTextColor="rgba(255,255,255,0.2)"
                             value={data.phone}
-                            onChangeText={(value) =>
-                                updateField("phone", value)
-                            }
+                            onChangeText={handlePhoneChange}
                             keyboardType="phone-pad"
+                            maxLength={selectedCountry.pattern.length}
                         />
                     </View>
                 </View>
@@ -200,6 +282,42 @@ const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
                     Un code de vérification te sera envoyé par SMS.
                 </Text>
             </View>
+
+            <Modal
+                visible={modalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <TouchableOpacity
+                    style={localStyles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setModalVisible(false)}
+                >
+                    <View style={localStyles.modalContent}>
+                        <Text style={localStyles.modalTitle}>Choisir un pays</Text>
+                        <FlatList
+                            data={COUNTRY_OPTIONS}
+                            keyExtractor={(item) => item.code}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={localStyles.countryItem}
+                                    onPress={() => {
+                                        setSelectedCountry(item);
+                                        // Reset phone when country changes to avoid mismatched formats
+                                        updateField("phone", "");
+                                        setModalVisible(false);
+                                    }}
+                                >
+                                    <Text style={localStyles.countryItemFlag}>{item.flag}</Text>
+                                    <Text style={localStyles.countryItemName}>{item.name}</Text>
+                                    <Text style={localStyles.countryItemCode}>{item.dialCode}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </TestOnboardingLayout>
     );
 };
