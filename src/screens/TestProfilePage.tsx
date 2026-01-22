@@ -24,6 +24,7 @@ type SectionRow = {
   meta?: string;
   toggle?: boolean;
   accent?: string;
+  badge?: string | number;
 };
 
 const DEFAULT_PROFILE: UserProfile = {
@@ -41,6 +42,23 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
     rows: [
       { icon: 'person', color: '#60a5fa', label: 'Modifier le profil' },
       { icon: 'favorite', color: '#f472b6', label: 'Mes favoris' },
+    ],
+  },
+  {
+    title: 'Paiement & Avantages',
+    rows: [
+      {
+        icon: 'account-balance-wallet',
+        color: '#f59e0b', // Amber-ish
+        label: 'Mon Portefeuille',
+        meta: '12.50 €'
+      },
+      {
+        icon: 'local-activity',
+        color: '#f43f5e', // Rose-ish
+        label: 'Mes Coupons',
+        badge: 2
+      },
     ],
   },
   {
@@ -197,7 +215,7 @@ const TestProfilePage = () => {
                     );
                   }
 
-                  const showMeta = row.meta || row.accent;
+                  const showMeta = row.meta || row.accent || row.badge;
                   const handlePress = () => {
                     if (row.label === 'Questions fréquentes') {
                       navigation.navigate('TestFaqSupport');
@@ -205,6 +223,10 @@ const TestProfilePage = () => {
                     }
                     if (row.label === 'Langue') {
                       navigation.navigate('LanguageSelection');
+                      return;
+                    }
+                    if (row.label === 'Thème') {
+                      navigation.navigate('ThemeSelection');
                       return;
                     }
                     if (row.label === 'Parler à un conseiller') {
@@ -240,6 +262,13 @@ const TestProfilePage = () => {
                       {row.meta ? (
                         <View style={styles.metaContainer}>
                           <Text style={styles.metaText}>{row.meta}</Text>
+                          <MaterialIcons name="chevron-right" size={20} color={COLORS.subtext} />
+                        </View>
+                      ) : row.badge ? (
+                        <View style={styles.metaContainer}>
+                          <View style={styles.badgeContainer}>
+                            <Text style={styles.badgeText}>{row.badge}</Text>
+                          </View>
                           <MaterialIcons name="chevron-right" size={20} color={COLORS.subtext} />
                         </View>
                       ) : showMeta ? null : (
@@ -431,6 +460,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 12,
     marginBottom: 16,
+  },
+  badgeContainer: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });
 
