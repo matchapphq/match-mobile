@@ -203,6 +203,10 @@ const TestProfilePage = () => {
                       navigation.navigate('TestFaqSupport');
                       return;
                     }
+                    if (row.label === 'Langue') {
+                      navigation.navigate('LanguageSelection');
+                      return;
+                    }
                     if (row.label === 'Parler à un conseiller') {
                       Alert.alert('Support', 'Nous connectons cette option prochainement.');
                       return;

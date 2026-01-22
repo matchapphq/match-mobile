@@ -16,6 +16,7 @@ import TestVenueProfileScreen from "../screens/TestVenueProfileScreen";
 import TestFaqSupport from "../screens/TestFaqSupport";
 import TestReservationSuccessScreen from "../screens/TestReservationSuccessScreen";
 import TestMatchDetailScreen from "../screens/TestMatchDetailScreen";
+import LanguageSelectionScreen from "../screens/LanguageSelectionScreen";
 
 const Stack = createStackNavigator();
 
@@ -55,6 +56,7 @@ export const AppNavigator = () => {
                         <Stack.Screen name="TestReservationSuccess" component={TestReservationSuccessScreen} />
                         <Stack.Screen name="TestMatchDetail" component={TestMatchDetailScreen} />
                         <Stack.Screen name="TestFaqSupport" component={TestFaqSupport} />
+                        <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
                     </>
                 )}
             </Stack.Navigator>
