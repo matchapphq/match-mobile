@@ -9,6 +9,7 @@ import {
     SportType,
 } from "../types";
 import Constants from "expo-constants";
+import { cacheService } from "./cache";
 
 const API_BASE_URL = Constants.expoConfig?.extra?.apiBase || "http://localhost:8008/api";
 
@@ -326,11 +327,21 @@ export const apiService = {
     },
 
     getUpcomingMatches: async (): Promise<Match[]> => {
+        const cacheKey = "matches_upcoming";
+        const cached = await cacheService.get<Match[]>(cacheKey);
+        if (cached) {
+            // Need to convert date strings back to Date objects because JSON.stringify converts dates to strings
+            return cached.map(m => ({ ...m, date: new Date(m.date) }));
+        }
+
         const response = await api.get("/matches/upcoming");
         const rawMatches = Array.isArray(response.data)
             ? response.data
             : response.data?.data || [];
-        return transformMatches(rawMatches);
+        const transformed = transformMatches(rawMatches);
+        
+        await cacheService.set(cacheKey, transformed, 15); // Cache for 15 minutes
+        return transformed;
     },
 
     getMatchesByVenue: async (venueId: string): Promise<Match[]> => {
@@ -339,15 +350,28 @@ export const apiService = {
     },
 
     getMatchById: async (matchId: string): Promise<MatchDetails> => {
+        const cacheKey = `match_${matchId}`;
+        const cached = await cacheService.get<MatchDetails>(cacheKey);
+        if (cached) return cached;
+
         const response = await api.get(`/matches/${matchId}`);
-        return response.data?.data || response.data;
+        const data = response.data?.data || response.data;
+        
+        await cacheService.set(cacheKey, data, 30); // Cache for 30 minutes
+        return data;
     },
 
     getMatchVenues: async (matchId: string): Promise<MatchVenue[]> => {
+        const cacheKey = `match_venues_${matchId}`;
+        const cached = await cacheService.get<MatchVenue[]>(cacheKey);
+        if (cached) return cached;
+
         const response = await api.get(`/matches/${matchId}/venues`);
         const data = Array.isArray(response.data)
             ? response.data
             : response.data?.data || [];
+            
+        await cacheService.set(cacheKey, data, 15); // Cache for 15 minutes
         return data;
     },
 
