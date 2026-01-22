@@ -95,8 +95,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
 const TestProfilePage = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const logout = useStore((state) => state.logout);
-  const user = useStore((state) => state.user);
+  const { logout, user, themeMode, colors } = useStore();
   const userData = user?.user ?? user ?? null;
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
@@ -134,20 +133,20 @@ const TestProfilePage = () => {
   };
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-          <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack?.()}>
-            <MaterialIcons name="arrow-back" size={22} color={COLORS.text} />
+          <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surface }]} onPress={() => navigation.goBack?.()}>
+            <MaterialIcons name="arrow-back" size={22} color={colors.text} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Paramètres</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Paramètres</Text>
           <View style={{ width: 40 }} />
         </View>
 
         <View style={styles.avatarSection}>
           {isLoading ? (
-            <ActivityIndicator color={COLORS.primary} size="large" style={{ marginVertical: 40 }} />
+            <ActivityIndicator color={colors.primary} size="large" style={{ marginVertical: 40 }} />
           ) : (
             <>
               <View style={styles.avatarWrapper}>
@@ -158,16 +157,16 @@ const TestProfilePage = () => {
                   style={styles.avatar}
                   imageStyle={{ borderRadius: 64 }}
                 />
-                <TouchableOpacity style={styles.avatarEditBadge} activeOpacity={0.9}>
-                  <MaterialIcons name="edit" size={22} color={COLORS.text} />
+                <TouchableOpacity style={[styles.avatarEditBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} activeOpacity={0.9}>
+                  <MaterialIcons name="edit" size={22} color={colors.text} />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.name}>
+              <Text style={[styles.name, { color: colors.text }]}>
                 {profile.first_name && profile.last_name
                   ? `${profile.first_name} ${profile.last_name}`
                   : profile.name}
               </Text>
-              <Text style={styles.memberSince}>{profile.email}</Text>
+              <Text style={[styles.memberSince, { color: colors.subtext }]}>{profile.email}</Text>
               <TouchableOpacity
                 style={styles.badge}
                 activeOpacity={0.85}
@@ -175,8 +174,8 @@ const TestProfilePage = () => {
                   Alert.alert(`Avantages Membre ${profile.tier}`, "Accédez à vos avantages exclusifs prochainement.")
                 }
               >
-                <MaterialIcons name="emoji-events" size={16} color={COLORS.primary} style={{ marginRight: 6 }} />
-                <Text style={styles.badgeLabel}>{profile.badgeLabel}</Text>
+                <MaterialIcons name="emoji-events" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+                <Text style={[styles.badgeLabel, { color: colors.primary }]}>{profile.badgeLabel}</Text>
               </TouchableOpacity>
             </>
           )}
@@ -185,18 +184,21 @@ const TestProfilePage = () => {
         <View style={styles.sectionsWrapper}>
           {SECTION_DATA.map((section) => (
             <View key={section.title} style={styles.sectionBlock}>
-              <Text style={styles.sectionHeader}>{section.title}</Text>
-              <View style={styles.sectionCard}>
+              <Text style={[styles.sectionHeader, { color: colors.subtext }]}>{section.title}</Text>
+              <View style={[styles.sectionCard, {
+                borderColor: colors.border,
+                backgroundColor: themeMode === 'light' ? 'white' : 'rgba(255,255,255,0.04)'
+              }]}>
                 {section.rows.map((row, index) => {
                   const isLast = index === section.rows.length - 1;
                   if (row.toggle) {
                     return (
-                      <View key={row.label} style={[styles.row, !isLast && styles.rowDivider]}>
+                      <View key={row.label} style={[styles.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider }]}>
                         <View style={styles.rowLeft}>
                           <View style={[styles.rowIcon, { backgroundColor: `${row.color}1A` }]}>
                             <MaterialIcons name={row.icon as any} size={20} color={row.color} />
                           </View>
-                          <Text style={styles.rowLabel}>{row.label}</Text>
+                          <Text style={[styles.rowLabel, { color: colors.text }]}>{row.label}</Text>
                         </View>
                         <TouchableOpacity
                           activeOpacity={0.8}
@@ -242,7 +244,7 @@ const TestProfilePage = () => {
                   return (
                     <TouchableOpacity
                       key={row.label}
-                      style={[styles.row, !isLast && styles.rowDivider]}
+                      style={[styles.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider }]}
                       activeOpacity={0.85}
                       onPress={handlePress}
                     >
@@ -253,6 +255,7 @@ const TestProfilePage = () => {
                         <Text
                           style={[
                             styles.rowLabel,
+                            { color: colors.text },
                             row.accent && { color: row.accent, fontWeight: '600' },
                           ]}
                         >
@@ -261,18 +264,18 @@ const TestProfilePage = () => {
                       </View>
                       {row.meta ? (
                         <View style={styles.metaContainer}>
-                          <Text style={styles.metaText}>{row.meta}</Text>
-                          <MaterialIcons name="chevron-right" size={20} color={COLORS.subtext} />
+                          <Text style={[styles.metaText, { color: colors.subtext }]}>{row.meta}</Text>
+                          <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
                         </View>
                       ) : row.badge ? (
                         <View style={styles.metaContainer}>
-                          <View style={styles.badgeContainer}>
+                          <View style={[styles.badgeContainer, { backgroundColor: colors.primary }]}>
                             <Text style={styles.badgeText}>{row.badge}</Text>
                           </View>
-                          <MaterialIcons name="chevron-right" size={20} color={COLORS.subtext} />
+                          <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
                         </View>
                       ) : showMeta ? null : (
-                        <MaterialIcons name="chevron-right" size={20} color={COLORS.subtext} />
+                        <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
                       )}
                     </TouchableOpacity>
                   );
@@ -282,7 +285,7 @@ const TestProfilePage = () => {
           ))}
         </View>
 
-        <Text style={styles.versionText}>Version 2.4.0 • Build 192</Text>
+        <Text style={[styles.versionText, { color: colors.subtext }]}>Version 2.4.0 • Build 192</Text>
       </ScrollView>
     </View>
   );

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { BlurView } from "expo-blur";
 import { MaterialIcons } from "@expo/vector-icons";
-import { COLORS } from "../constants/colors";
+import { useStore } from "../store/useStore";
 
 interface TestPillProps {
     state: any;
@@ -11,8 +11,14 @@ interface TestPillProps {
 }
 
 const TestPill = ({ state, descriptors, navigation }: TestPillProps) => {
+    const { colors, themeMode } = useStore();
+
     return (
-        <BlurView intensity={80} tint="dark" style={styles.navBar}>
+        <BlurView
+            intensity={80}
+            tint={themeMode === 'light' ? 'light' : 'dark'}
+            style={[styles.navBar, { borderColor: colors.border }]}
+        >
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
                 const label =
@@ -62,6 +68,7 @@ const TestPill = ({ state, descriptors, navigation }: TestPillProps) => {
                         label={displayText}
                         active={isFocused}
                         onPress={onPress}
+                        colors={colors}
                     />
                 );
             })}
@@ -69,7 +76,7 @@ const TestPill = ({ state, descriptors, navigation }: TestPillProps) => {
     );
 };
 
-const NavBarItem = ({ icon, label, active, onPress }: any) => {
+const NavBarItem = ({ icon, label, active, onPress, colors }: any) => {
     // Animation for scale
     const scaleAnim = useRef(new Animated.Value(1)).current;
 
@@ -85,8 +92,8 @@ const NavBarItem = ({ icon, label, active, onPress }: any) => {
     return (
         <TouchableOpacity style={styles.navItem} onPress={onPress} activeOpacity={0.7}>
             <Animated.View style={{ alignItems: 'center', gap: 4, transform: [{ scale: scaleAnim }] }}>
-                <MaterialIcons name={icon} size={26} color={active ? COLORS.primary : COLORS.slate400} />
-                <Text style={[styles.navItemLabel, active && styles.navItemLabelActive]}>{label}</Text>
+                <MaterialIcons name={icon} size={26} color={active ? colors.primary : colors.slate400} />
+                <Text style={[styles.navItemLabel, { color: colors.slate400 }, active && { color: colors.primary, fontWeight: 'bold' }]}>{label}</Text>
             </Animated.View>
         </TouchableOpacity>
     );
@@ -104,11 +111,10 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         paddingHorizontal: 24,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.5,
-        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
         zIndex: 50,
         maxWidth: 384,
         alignSelf: 'center',
@@ -122,11 +128,6 @@ const styles = StyleSheet.create({
     navItemLabel: {
         fontSize: 10,
         fontWeight: '500',
-        color: COLORS.slate400,
-    },
-    navItemLabelActive: {
-        color: COLORS.primary,
-        fontWeight: 'bold',
     },
 });
 

@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Appearance, ColorSchemeName } from 'react-native';
+import { DARK_THEME, LIGHT_THEME, ThemeColors } from "../constants/colors";
 import {
     User,
     UserPreferences,
@@ -55,6 +57,11 @@ interface AppState {
     isAuthenticated: boolean;
     onboardingCompleted: boolean;
 
+    // Theme
+    themeMode: 'light' | 'dark' | 'system';
+    computedTheme: 'light' | 'dark';
+    colors: ThemeColors;
+
     // Venues
     venues: Venue[];
     selectedVenue: Venue | null;
@@ -89,6 +96,8 @@ interface AppState {
     setUser: (user: User | null) => void;
     setOnboardingCompleted: (completed: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
+    setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
+    updateComputedTheme: () => void;
 
     setVenues: (venues: Venue[]) => void;
     setSelectedVenue: (venue: Venue | null) => void;
@@ -145,6 +154,9 @@ export const useStore = create<AppState>((set, get) => ({
     user: null,
     isAuthenticated: false,
     onboardingCompleted: false,
+    themeMode: 'dark', // Default to dark initially
+    computedTheme: 'dark',
+    colors: DARK_THEME,
     venues: [],
     selectedVenue: null,
     filteredVenues: [],
@@ -311,6 +323,29 @@ export const useStore = create<AppState>((set, get) => ({
             "onboardingCompleted",
             JSON.stringify(completed),
         );
+    },
+
+    setThemeMode: (mode) => {
+        const systemTheme = Appearance.getColorScheme() || 'dark';
+        const newComputed = mode === 'system' ? systemTheme : mode;
+
+        set({
+            themeMode: mode,
+            computedTheme: newComputed,
+            colors: newComputed === 'light' ? LIGHT_THEME : DARK_THEME
+        });
+        AsyncStorage.setItem("themeMode", mode);
+    },
+
+    updateComputedTheme: () => {
+        const { themeMode } = get();
+        if (themeMode === 'system') {
+            const systemTheme = Appearance.getColorScheme() || 'dark';
+            set({
+                computedTheme: systemTheme,
+                colors: systemTheme === 'light' ? LIGHT_THEME : DARK_THEME
+            });
+        }
     },
 
     updateUserPreferences: (preferences) => {
@@ -569,6 +604,9 @@ export const useStore = create<AppState>((set, get) => ({
             user: null,
             isAuthenticated: false,
             onboardingCompleted: false,
+            themeMode: 'dark',
+            computedTheme: 'dark',
+            colors: DARK_THEME,
             venues: [],
             selectedVenue: null,
             filteredVenues: [],
@@ -603,6 +641,7 @@ export const initializeStore = async () => {
             "onboardingCompleted",
             "reservations",
             "authToken",
+            "themeMode"
         ]);
 
         const userStr = values.find(([key]) => key === "user")?.[1] || null;
@@ -611,6 +650,16 @@ export const initializeStore = async () => {
         const reservationsStr =
             values.find(([key]) => key === "reservations")?.[1] || null;
         const token = values.find(([key]) => key === "authToken")?.[1] || null;
+        const themeModeStr = values.find(([key]) => key === "themeMode")?.[1] || 'dark';
+
+        // Resolve theme
+        const themeMode = (themeModeStr === 'light' || themeModeStr === 'dark' || themeModeStr === 'system')
+            ? themeModeStr
+            : 'dark';
+
+        const systemTheme = Appearance.getColorScheme() || 'dark';
+        const computedTheme = themeMode === 'system' ? systemTheme : themeMode;
+        const colors = computedTheme === 'light' ? LIGHT_THEME : DARK_THEME;
 
         const user = userStr ? JSON.parse(userStr) : null;
         const onboarding = onboardingStr ? JSON.parse(onboardingStr) : false;
@@ -627,6 +676,9 @@ export const initializeStore = async () => {
             isAuthenticated: !!token && !!user,
             onboardingCompleted: onboarding,
             reservations: parsedReservations,
+            themeMode: themeMode as 'light' | 'dark' | 'system',
+            computedTheme,
+            colors,
         });
     } catch (error) {
         console.error("Error initializing store:", error);

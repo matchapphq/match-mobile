@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useStore } from '../store/useStore';
 import { COLORS } from '../constants/colors';
 
 type ThemeOption = 'dark' | 'light' | 'system';
@@ -17,7 +18,8 @@ type ThemeOption = 'dark' | 'light' | 'system';
 const ThemeSelectionScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
-    const [selectedTheme, setSelectedTheme] = useState<ThemeOption>('dark'); // Default to dark as per design
+    const { themeMode, setThemeMode, colors } = useStore();
+    const selectedTheme = themeMode;
 
     const ThemeCard = ({
         type,
@@ -122,7 +124,7 @@ const ThemeSelectionScreen = () => {
                     )}
                 </View>
 
-                <Text style={[styles.label, isSelected && styles.labelSelected]}>
+                <Text style={[styles.label, { color: colors.subtext }, isSelected && { color: colors.primary }]}>
                     {label}
                 </Text>
             </TouchableOpacity>
@@ -130,23 +132,27 @@ const ThemeSelectionScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle={themeMode === 'light' ? "dark-content" : "light-content"} />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+            <View style={[styles.header, {
+                paddingTop: insets.top + 8,
+                backgroundColor: colors.background === '#ffffff' ? 'rgba(255,255,255,0.9)' : 'rgba(11, 11, 15, 0.9)',
+                borderBottomColor: colors.border
+            }]}>
                 <TouchableOpacity
-                    style={styles.backButton}
+                    style={[styles.backButton, { backgroundColor: colors.surfaceGlass }]}
                     onPress={() => navigation.goBack()}
                 >
-                    <MaterialIcons name="arrow-back" size={24} color={COLORS.text} />
+                    <MaterialIcons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Thème</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Thème</Text>
                 <View style={styles.placeholder} />
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.description}>
+                <Text style={[styles.description, { color: colors.subtext }]}>
                     Choisissez l'apparence de l'application.
                 </Text>
 
@@ -155,19 +161,19 @@ const ThemeSelectionScreen = () => {
                         type="dark"
                         label="Sombre"
                         isSelected={selectedTheme === 'dark'}
-                        onPress={() => setSelectedTheme('dark')}
+                        onPress={() => setThemeMode('dark')}
                     />
                     <ThemeCard
                         type="light"
                         label="Clair"
                         isSelected={selectedTheme === 'light'}
-                        onPress={() => setSelectedTheme('light')}
+                        onPress={() => setThemeMode('light')}
                     />
                     <ThemeCard
                         type="system"
                         label="Système"
                         isSelected={selectedTheme === 'system'}
-                        onPress={() => setSelectedTheme('system')}
+                        onPress={() => setThemeMode('system')}
                     />
                 </View>
             </ScrollView>
@@ -178,7 +184,6 @@ const ThemeSelectionScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
     },
     header: {
         flexDirection: 'row',
@@ -187,8 +192,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.05)',
-        backgroundColor: 'rgba(11, 11, 15, 0.9)',
     },
     backButton: {
         width: 40,
@@ -196,12 +199,10 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(255,255,255,0.08)',
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: '700',
-        color: COLORS.text,
         textAlign: 'center',
     },
     placeholder: {
@@ -211,7 +212,6 @@ const styles = StyleSheet.create({
         padding: 24,
     },
     description: {
-        color: COLORS.subtext,
         fontSize: 14,
         textAlign: 'center',
         marginBottom: 32,
@@ -297,10 +297,8 @@ const styles = StyleSheet.create({
         marginTop: 12,
         fontSize: 18,
         fontWeight: '500',
-        color: COLORS.subtext,
     },
     labelSelected: {
-        color: COLORS.primary,
         fontWeight: '600',
     },
 });

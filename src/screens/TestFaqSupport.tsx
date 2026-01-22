@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { COLORS } from '../constants/colors';
+import { useStore } from '../store/useStore';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -22,8 +22,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 const FAQ_ITEMS = [
   {
     id: 'faq-1',
-    question: 'Comment réserver une table ?'
-,
+    question: 'Comment réserver une table ?',
     answer:
       "Pour réserver, accédez à la page du bar, sélectionnez votre date et l'heure, choisissez le nombre de personnes, puis confirmez votre réservation. Vous recevrez un e-mail de confirmation.",
   },
@@ -48,6 +47,7 @@ const FAQ_ITEMS = [
 ];
 
 const TestFaqSupport = ({ navigation }: { navigation: any }) => {
+  const { colors, themeMode } = useStore();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState<string | null>(FAQ_ITEMS[0]?.id ?? null);
@@ -62,11 +62,11 @@ const TestFaqSupport = ({ navigation }: { navigation: any }) => {
   };
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={22} color={COLORS.text} />
+          <MaterialIcons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Aide & Support</Text>
         <View style={{ width: 40 }} />
@@ -74,37 +74,37 @@ const TestFaqSupport = ({ navigation }: { navigation: any }) => {
 
       <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
         <View style={styles.searchWrapper}>
-          <View style={styles.searchField}>
-            <MaterialIcons name="search" size={22} color={COLORS.muted} style={{ marginHorizontal: 12 }} />
+          <View style={[styles.searchField, { backgroundColor: colors.surface, borderColor: colors.divider }]}>
+            <MaterialIcons name="search" size={22} color={colors.textMuted} style={{ marginHorizontal: 12 }} />
             <TextInput
               placeholder="Rechercher une solution..."
-              placeholderTextColor={COLORS.muted}
+              placeholderTextColor={colors.textMuted}
               value={search}
               onChangeText={setSearch}
-              style={styles.searchInput}
-              selectionColor={COLORS.primary}
+              style={[styles.searchInput, { color: colors.text }]}
+              selectionColor={colors.primary}
             />
           </View>
         </View>
 
         <View style={styles.sectionBlock}>
-          <Text style={styles.sectionTitle}>Questions Fréquentes</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Questions Fréquentes</Text>
           {filteredFaq.map((item) => {
             const isOpen = openId === item.id;
             return (
-              <View key={item.id} style={[styles.accordion, isOpen && styles.accordionActive]}>
+              <View key={item.id} style={[styles.accordion, { backgroundColor: colors.surface }, isOpen && styles.accordionActive]}>
                 <TouchableOpacity style={styles.accordionHeader} onPress={() => toggleFaq(item.id)}>
-                  <Text style={[styles.accordionTitle, isOpen && styles.accordionTitleActive]}>{item.question}</Text>
+                  <Text style={[styles.accordionTitle, { color: colors.text }, isOpen && { color: colors.primary }]}>{item.question}</Text>
                   <MaterialIcons
                     name="expand-more"
                     size={22}
-                    color={isOpen ? COLORS.primary : COLORS.muted}
+                    color={isOpen ? colors.primary : colors.textMuted}
                     style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
                   />
                 </TouchableOpacity>
                 {isOpen && (
-                  <View style={styles.accordionBody}>
-                    <Text style={styles.accordionText}>{item.answer}</Text>
+                  <View style={[styles.accordionBody, { borderTopColor: colors.divider }]}>
+                    <Text style={[styles.accordionText, { color: colors.textMuted }]}>{item.answer}</Text>
                   </View>
                 )}
               </View>
@@ -113,31 +113,31 @@ const TestFaqSupport = ({ navigation }: { navigation: any }) => {
         </View>
 
         <View style={styles.sectionBlock}>
-          <Text style={styles.sectionTitle}>Besoin d'aide supplémentaire ?</Text>
-          <TouchableOpacity style={[styles.helpCard, styles.liveChatCard]} activeOpacity={0.85}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Besoin d'aide supplémentaire ?</Text>
+          <TouchableOpacity style={[styles.helpCard, styles.liveChatCard, { borderColor: colors.primary }]} activeOpacity={0.85}>
             <View style={styles.helpCardLeft}>
-              <View style={[styles.helpIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}> 
-                <MaterialIcons name="chat" size={22} color={COLORS.text} />
+              <View style={[styles.helpIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <MaterialIcons name="chat" size={22} color={colors.white} />
               </View>
               <View>
-                <Text style={styles.helpCardTitle}>Chat en direct</Text>
+                <Text style={[styles.helpCardTitle, { color: colors.white }]}>Chat en direct</Text>
                 <Text style={styles.helpCardSubtitle}>Réponse en moins de 2 min</Text>
               </View>
             </View>
-            <MaterialIcons name="chevron-right" size={24} color={COLORS.text} />
+            <MaterialIcons name="chevron-right" size={24} color={colors.white} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.helpCard} activeOpacity={0.85}>
+          <TouchableOpacity style={[styles.helpCard, { backgroundColor: colors.surface, borderColor: colors.divider }]} activeOpacity={0.85}>
             <View style={styles.helpCardLeft}>
-              <View style={[styles.helpIcon, { backgroundColor: 'rgba(255,255,255,0.08)' }]}> 
-                <MaterialIcons name="mail" size={22} color={COLORS.primary} />
+              <View style={[styles.helpIcon, { backgroundColor: colors.surfaceAlt }]}>
+                <MaterialIcons name="mail" size={22} color={colors.primary} />
               </View>
               <View>
-                <Text style={[styles.helpCardTitle, { color: COLORS.text }]}>Envoyer un email</Text>
-                <Text style={[styles.helpCardSubtitle, { color: COLORS.muted }]}>Réponse sous 24h</Text>
+                <Text style={[styles.helpCardTitle, { color: colors.text }]}>Envoyer un email</Text>
+                <Text style={[styles.helpCardSubtitle, { color: colors.textMuted }]}>Réponse sous 24h</Text>
               </View>
             </View>
-            <MaterialIcons name="chevron-right" size={24} color={COLORS.muted} />
+            <MaterialIcons name="chevron-right" size={24} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -148,7 +148,6 @@ const TestFaqSupport = ({ navigation }: { navigation: any }) => {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.background,
   },
   header: {
     paddingHorizontal: 16,
@@ -167,7 +166,6 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    color: COLORS.text,
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: -0.3,
@@ -179,15 +177,12 @@ const styles = StyleSheet.create({
   searchField: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.surface,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: COLORS.divider,
     height: 52,
   },
   searchInput: {
     flex: 1,
-    color: COLORS.text,
     fontSize: 15,
     paddingRight: 16,
   },
@@ -196,14 +191,12 @@ const styles = StyleSheet.create({
     paddingTop: 24,
   },
   sectionTitle: {
-    color: COLORS.text,
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 16,
   },
   accordion: {
     borderRadius: 22,
-    backgroundColor: COLORS.surface,
     marginBottom: 12,
     paddingHorizontal: 18,
     paddingVertical: 6,
@@ -221,40 +214,31 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   accordionTitle: {
-    color: COLORS.text,
     fontSize: 14,
     fontWeight: '600',
     flex: 1,
     marginRight: 16,
   },
-  accordionTitleActive: {
-    color: COLORS.primary,
-  },
   accordionBody: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: COLORS.divider,
     paddingTop: 12,
     paddingBottom: 10,
   },
   accordionText: {
-    color: COLORS.muted,
     fontSize: 14,
     lineHeight: 20,
   },
   helpCard: {
     borderRadius: 24,
     padding: 16,
-    backgroundColor: COLORS.surface,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: COLORS.divider,
   },
   liveChatCard: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
+    backgroundColor: '#F47B25',
   },
   helpCardLeft: {
     flexDirection: 'row',
@@ -269,7 +253,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   helpCardTitle: {
-    color: COLORS.text,
     fontSize: 16,
     fontWeight: '700',
   },

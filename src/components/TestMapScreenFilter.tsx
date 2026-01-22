@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS } from "../constants/colors";
+import { useStore } from "../store/useStore";
 
 const { height } = Dimensions.get("window");
 
@@ -47,6 +47,7 @@ type Props = {
 };
 
 const TestMapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props) => {
+    const { colors, themeMode } = useStore();
     const sheetAnim = useRef(new Animated.Value(0)).current;
     const [rendered, setRendered] = useState(visible);
     const [selections, setSelections] = useState<FilterSelections>(
@@ -153,14 +154,23 @@ const TestMapScreenFilter = ({ visible, initialSelections, onClose, onApply }: P
             <Animated.View style={[styles.backdrop, { opacity: backdropOpacity }]}>
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
             </Animated.View>
-            <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
-                <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-                    <TouchableOpacity style={styles.headerButton} onPress={onClose}>
-                        <MaterialIcons name="close" size={22} color={COLORS.text} />
+            <Animated.View style={[
+                styles.sheet,
+                {
+                    transform: [{ translateY }],
+                    backgroundColor: colors.background // Dynamic background
+                }
+            ]}>
+                <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.divider }]}>
+                    <TouchableOpacity
+                        style={[styles.headerButton, { backgroundColor: colors.surfaceAlt }]}
+                        onPress={onClose}
+                    >
+                        <MaterialIcons name="close" size={22} color={colors.text} />
                     </TouchableOpacity>
-                    <Text style={styles.title}>Filtres</Text>
+                    <Text style={[styles.title, { color: colors.text }]}>Filtres</Text>
                     <TouchableOpacity onPress={handleReset}>
-                        <Text style={styles.reset}>Réinitialiser</Text>
+                        <Text style={[styles.reset, { color: colors.textMuted }]}>Réinitialiser</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -170,7 +180,7 @@ const TestMapScreenFilter = ({ visible, initialSelections, onClose, onApply }: P
                 >
                     {filterOptions.map((section) => (
                         <View key={section.title} style={styles.section}>
-                            <Text style={styles.sectionTitle}>{section.title}</Text>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
                             <View style={styles.chipWrap}>
                                 {section.options.map((option) => {
                                     const active = (selections[section.key] as string[]).includes(option);
@@ -180,8 +190,21 @@ const TestMapScreenFilter = ({ visible, initialSelections, onClose, onApply }: P
                                             key={option}
                                             style={[
                                                 styles.chip,
-                                                highlighted && !active && styles.chipHighlighted,
-                                                active && styles.chipActive,
+                                                {
+                                                    backgroundColor: active ? colors.primary : colors.surfaceAlt,
+                                                    borderColor: active ? colors.primary : colors.border
+                                                },
+                                                highlighted && !active && {
+                                                    backgroundColor: themeMode === 'light' ? 'rgba(244,123,37,0.1)' : 'rgba(244,123,37,0.15)',
+                                                    borderColor: 'rgba(244,123,37,0.4)'
+                                                },
+                                                active && {
+                                                    shadowColor: colors.primary,
+                                                    shadowOpacity: 0.3,
+                                                    shadowRadius: 10,
+                                                    shadowOffset: { width: 0, height: 6 },
+                                                    elevation: 6
+                                                }
                                             ]}
                                             onPress={() => toggleSelection(section.key, option)}
                                             activeOpacity={0.85}
@@ -189,8 +212,8 @@ const TestMapScreenFilter = ({ visible, initialSelections, onClose, onApply }: P
                                             <Text
                                                 style={[
                                                     styles.chipLabel,
-                                                    highlighted && !active && styles.chipLabelHighlighted,
-                                                    active && styles.chipLabelActive,
+                                                    { color: active ? colors.white : colors.textMuted },
+                                                    highlighted && !active && { color: colors.primary },
                                                 ]}
                                             >
                                                 {option}
@@ -203,19 +226,35 @@ const TestMapScreenFilter = ({ visible, initialSelections, onClose, onApply }: P
                     ))}
 
                     <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Prix</Text>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Prix</Text>
                         <View style={styles.priceRow}>
                             {PRICE_OPTIONS.map((price) => {
                                 const active = selections.price === price;
                                 return (
                                     <TouchableOpacity
                                         key={price}
-                                        style={[styles.priceButton, active && styles.priceButtonActive]}
+                                        style={[
+                                            styles.priceButton,
+                                            {
+                                                backgroundColor: active ? colors.primary : colors.surfaceAlt,
+                                                borderColor: active ? colors.primary : colors.border
+                                            },
+                                            active && {
+                                                shadowColor: colors.primary,
+                                                shadowOpacity: 0.3,
+                                                shadowRadius: 12,
+                                                shadowOffset: { width: 0, height: 6 },
+                                                elevation: 6
+                                            }
+                                        ]}
                                         onPress={() => toggleSelection("price", price)}
                                         activeOpacity={0.85}
                                     >
                                         <Text
-                                            style={[styles.priceLabel, active && styles.priceLabelActive]}
+                                            style={[
+                                                styles.priceLabel,
+                                                { color: active ? colors.white : colors.textMuted }
+                                            ]}
                                         >
                                             {price}
                                         </Text>
@@ -226,9 +265,23 @@ const TestMapScreenFilter = ({ visible, initialSelections, onClose, onApply }: P
                     </View>
                 </ScrollView>
 
-                <View style={[styles.footer, { paddingBottom: insets.bottom + 24 }]}>
-                    <TouchableOpacity style={styles.applyButton} activeOpacity={0.9} onPress={handleApply}>
-                        <Text style={styles.applyLabel}>VALIDER</Text>
+                <View style={[styles.footer, {
+                    paddingBottom: insets.bottom + 24,
+                    borderTopColor: colors.divider,
+                    backgroundColor: themeMode === 'light' ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.7)'
+                }]}>
+                    <TouchableOpacity
+                        style={[
+                            styles.applyButton,
+                            {
+                                backgroundColor: colors.primary,
+                                shadowColor: colors.primary
+                            }
+                        ]}
+                        activeOpacity={0.9}
+                        onPress={handleApply}
+                    >
+                        <Text style={[styles.applyLabel, { color: colors.white }]}>VALIDER</Text>
                     </TouchableOpacity>
                 </View>
             </Animated.View>
@@ -241,7 +294,7 @@ export default TestMapScreenFilter;
 const styles = StyleSheet.create({
     backdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: "#09090b",
+        backgroundColor: "rgba(0,0,0,0.6)",
         zIndex: 80,
     },
     sheet: {
@@ -250,7 +303,7 @@ const styles = StyleSheet.create({
         right: 0,
         top: 0,
         bottom: 0,
-        backgroundColor: COLORS.backgroundDark,
+        // backgroundColor handled dynamically
         zIndex: 90,
     },
     header: {
@@ -261,7 +314,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: "rgba(255,255,255,0.08)",
+        // borderBottomColor handled dynamically
     },
     headerButton: {
         width: 36,
@@ -269,17 +322,17 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(255,255,255,0.08)",
+        // backgroundColor handled dynamically
     },
     title: {
-        color: COLORS.text,
         fontSize: 18,
         fontWeight: "700",
+        // color handled dynamically
     },
     reset: {
-        color: COLORS.textMuted,
         fontSize: 14,
         fontWeight: "600",
+        // color handled dynamically
     },
     content: {
         padding: 20,
@@ -290,9 +343,9 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     sectionTitle: {
-        color: COLORS.text,
         fontSize: 16,
         fontWeight: "700",
+        // color handled dynamically
     },
     chipWrap: {
         flexDirection: "row",
@@ -304,30 +357,11 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderRadius: 999,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        backgroundColor: COLORS.surfaceDark,
-    },
-    chipActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-        shadowColor: COLORS.primary,
-        shadowOpacity: 0.3,
-        shadowRadius: 10,
-        shadowOffset: { width: 0, height: 6 },
-    },
-    chipHighlighted: {
-        backgroundColor: "rgba(244,123,37,0.15)",
-        borderColor: "rgba(244,123,37,0.4)",
+        // colors handled dynamically
     },
     chipLabel: {
-        color: COLORS.textMuted,
         fontWeight: "600",
-    },
-    chipLabelActive: {
-        color: COLORS.text,
-    },
-    chipLabelHighlighted: {
-        color: COLORS.primary,
+        // color handled dynamically
     },
     priceRow: {
         flexDirection: "row",
@@ -337,26 +371,14 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        backgroundColor: COLORS.surfaceDark,
         paddingVertical: 14,
         alignItems: "center",
-    },
-    priceButtonActive: {
-        backgroundColor: COLORS.primary,
-        borderColor: COLORS.primary,
-        shadowColor: COLORS.primary,
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 6 },
+        // colors handled dynamically
     },
     priceLabel: {
-        color: COLORS.textMuted,
         fontWeight: "700",
         fontSize: 14,
-    },
-    priceLabelActive: {
-        color: COLORS.text,
+        // color handled dynamically
     },
     footer: {
         position: "absolute",
@@ -366,24 +388,22 @@ const styles = StyleSheet.create({
         padding: 20,
         paddingBottom: 32,
         borderTopWidth: StyleSheet.hairlineWidth,
-        borderTopColor: "rgba(255,255,255,0.08)",
-        backgroundColor: "rgba(0,0,0,0.7)",
+        // colors handled dynamically
     },
     applyButton: {
         height: 56,
         borderRadius: 16,
-        backgroundColor: COLORS.primary,
         alignItems: "center",
         justifyContent: "center",
-        shadowColor: COLORS.primary,
         shadowOpacity: 0.4,
         shadowRadius: 12,
         shadowOffset: { width: 0, height: 10 },
+        elevation: 8,
     },
     applyLabel: {
-        color: COLORS.text,
         fontSize: 16,
         fontWeight: "800",
         letterSpacing: 1,
+        // color handled dynamically
     },
 });

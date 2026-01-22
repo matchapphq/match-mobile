@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../constants/colors";
+import { useStore } from "../store/useStore";
 import { SearchMatchResult, Venue, testApi } from "../services/testApi";
 
 type MatchDetailRoute = {
@@ -29,6 +30,7 @@ const TestMatchDetailScreen = ({
     navigation: any;
     route: MatchDetailRoute;
 }) => {
+    const { colors, themeMode } = useStore();
     const matchId = route.params?.matchId;
     const [match, setMatch] = useState<SearchMatchResult | null>(null);
     const [venues, setVenues] = useState<Venue[]>([]);
@@ -76,15 +78,15 @@ const TestMatchDetailScreen = ({
             {showRetry ? (
                 <>
                     <Text style={styles.stateText}>{message}</Text>
-                    <TouchableOpacity style={styles.retryButton} onPress={loadData} activeOpacity={0.85}>
-                        <MaterialIcons name="refresh" size={18} color={COLORS.white} />
-                        <Text style={styles.retryButtonText}>Réessayer</Text>
+                    <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadData} activeOpacity={0.85}>
+                        <MaterialIcons name="refresh" size={18} color={colors.white} />
+                        <Text style={[styles.retryButtonText, { color: colors.background }]}>Réessayer</Text>
                     </TouchableOpacity>
                 </>
             ) : (
                 <>
-                    <ActivityIndicator color={COLORS.primary} />
-                    <Text style={[styles.stateText, { marginTop: 12 }]}>{message}</Text>
+                    <ActivityIndicator color={colors.primary} />
+                    <Text style={[styles.stateText, { marginTop: 12, color: colors.text }]}>{message}</Text>
                 </>
             )}
         </View>
@@ -92,8 +94,8 @@ const TestMatchDetailScreen = ({
 
     if (isLoading) {
         return (
-            <View style={[styles.container, { justifyContent: "center" }]}>
-                <StatusBar barStyle="light-content" />
+            <View style={[styles.container, { justifyContent: "center", backgroundColor: colors.background }]}>
+                <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
                 {renderState("Chargement des détails du match…")}
             </View>
         );
@@ -101,15 +103,15 @@ const TestMatchDetailScreen = ({
 
     if (error || !match) {
         return (
-            <View style={[styles.container, { justifyContent: "center" }]}>
+            <View style={[styles.container, { justifyContent: "center", backgroundColor: colors.background }]}>
                 {renderState(error ?? "Match introuvable", true)}
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
             <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
                 <View style={styles.heroWrapper}>
                     <ImageBackground source={{ uri: match.heroImage }} style={styles.heroImage}>
@@ -124,7 +126,7 @@ const TestMatchDetailScreen = ({
                                     onPress={() => navigation.goBack?.()}
                                     activeOpacity={0.85}
                                 >
-                                    <MaterialIcons name="chevron-left" size={24} color={COLORS.white} />
+                                    <MaterialIcons name="chevron-left" size={24} color={colors.white} />
                                 </TouchableOpacity>
 
                                 <View style={styles.leaguePill}>
@@ -132,7 +134,7 @@ const TestMatchDetailScreen = ({
                                 </View>
 
                                 <TouchableOpacity style={styles.circleButton} activeOpacity={0.85}>
-                                    <MaterialIcons name="share" size={20} color={COLORS.white} />
+                                    <MaterialIcons name="share" size={20} color={colors.white} />
                                 </TouchableOpacity>
                             </View>
 
@@ -140,19 +142,19 @@ const TestMatchDetailScreen = ({
                                 <View style={styles.heroCard}>
                                     <View style={styles.teamColumn}>
                                         <View style={styles.teamBadge}>
-                                            <MaterialIcons name="shield" size={30} color={COLORS.white} />
+                                            <MaterialIcons name="shield" size={30} color={colors.white} />
                                         </View>
                                         <Text style={styles.teamLabel}>{match.home.name}</Text>
                                     </View>
 
                                     <View style={styles.heroCenter}>
                                         <Text style={styles.heroTime}>{match.kickoffTime}</Text>
-                                        <Text style={styles.heroStatus}>{match.statusLabel}</Text>
+                                        <Text style={[styles.heroStatus, { color: colors.primary }]}>{match.statusLabel}</Text>
                                     </View>
 
                                     <View style={styles.teamColumn}>
                                         <View style={styles.teamBadge}>
-                                            <MaterialIcons name="shield" size={30} color={COLORS.white} />
+                                            <MaterialIcons name="shield" size={30} color={colors.white} />
                                         </View>
                                         <Text style={styles.teamLabel}>{match.away.name}</Text>
                                     </View>
@@ -163,32 +165,32 @@ const TestMatchDetailScreen = ({
                 </View>
 
                 <View style={styles.contentWrapper}>
-                    <View style={styles.infoCard}>
+                    <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         <View style={styles.infoHeader}>
-                            <View style={styles.infoIcon}>
-                                <MaterialIcons name="stadium" size={20} color={COLORS.primary} />
+                            <View style={[styles.infoIcon, { backgroundColor: 'rgba(244,123,37,0.12)', borderColor: 'rgba(244,123,37,0.3)' }]}>
+                                <MaterialIcons name="stadium" size={20} color={colors.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.infoLabel}>Lieu du match</Text>
-                                <Text style={styles.infoValue}>
+                                <Text style={[styles.infoValue, { color: colors.text }]}>
                                     {match.stadium}, {match.city}
                                 </Text>
                             </View>
-                            <TouchableOpacity style={styles.outlineButton}>
-                                <Text style={styles.outlineButtonText}>Itinéraire</Text>
+                            <TouchableOpacity style={[styles.outlineButton, { borderColor: colors.border }]}>
+                                <Text style={[styles.outlineButtonText, { color: colors.text }]}>Itinéraire</Text>
                             </TouchableOpacity>
                         </View>
 
-                        <View style={styles.divider} />
+                        <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
                         <View style={styles.actionRow}>
-                            <TouchableOpacity style={[styles.primaryAction, styles.glowPrimary]}>
-                                <MaterialIcons name="calendar-today" size={20} color={COLORS.background} />
-                                <Text style={styles.primaryActionText}>Calendrier</Text>
+                            <TouchableOpacity style={[styles.primaryAction, styles.glowPrimary, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+                                <MaterialIcons name="calendar-today" size={20} color={colors.white} />
+                                <Text style={[styles.primaryActionText, { color: colors.white }]}>Calendrier</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.secondaryAction}>
-                                <MaterialIcons name="notifications-active" size={20} color={COLORS.white} />
-                                <Text style={styles.secondaryActionText}>Rappel</Text>
+                            <TouchableOpacity style={[styles.secondaryAction, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}>
+                                <MaterialIcons name="notifications-active" size={20} color={colors.text} />
+                                <Text style={[styles.secondaryActionText, { color: colors.text }]}>Rappel</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -197,11 +199,11 @@ const TestMatchDetailScreen = ({
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <View>
-                            <Text style={styles.sectionTitle}>Bars à proximité</Text>
-                            <Text style={styles.sectionSubtitle}>Lieux diffusant le match en direct</Text>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Bars à proximité</Text>
+                            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Lieux diffusant le match en direct</Text>
                         </View>
                         <TouchableOpacity activeOpacity={0.7}>
-                            <Text style={styles.sectionAction}>Voir tout</Text>
+                            <Text style={[styles.sectionAction, { color: colors.primary }]}>Voir tout</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -212,17 +214,17 @@ const TestMatchDetailScreen = ({
                         style={{ marginHorizontal: -16 }}
                     >
                         {recommendedVenues.map((venue) => (
-                            <View key={venue.id} style={styles.venueCard}>
+                            <View key={venue.id} style={[styles.venueCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                                 <View style={styles.venueImageWrapper}>
                                     <Image source={{ uri: venue.image }} style={styles.venueImage} />
                                     <View style={styles.ratingChip}>
                                         <MaterialIcons
                                             name="star"
                                             size={12}
-                                            color={COLORS.primary}
+                                            color={colors.primary}
                                             style={{ marginRight: 4 }}
                                         />
-                                        <Text style={styles.ratingChipText}>{venue.rating.toFixed(1)}</Text>
+                                        <Text style={[styles.ratingChipText, { color: colors.white }]}>{venue.rating.toFixed(1)}</Text>
                                     </View>
                                     <View style={styles.statusChip}>
                                         <Text style={styles.statusChipText}>
@@ -232,16 +234,16 @@ const TestMatchDetailScreen = ({
                                 </View>
                                 <View style={styles.venueBody}>
                                     <View style={styles.venueTitleRow}>
-                                        <Text style={styles.venueName} numberOfLines={1}>
+                                        <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>
                                             {venue.name}
                                         </Text>
-                                        <Text style={styles.venueDistance}>{venue.distance}</Text>
+                                        <Text style={[styles.venueDistance, { color: colors.primary }]}>{venue.distance}</Text>
                                     </View>
-                                    <Text style={styles.venueMeta} numberOfLines={2}>
+                                    <Text style={[styles.venueMeta, { color: colors.textSecondary }]} numberOfLines={2}>
                                         {venue.address}
                                     </Text>
                                     <TouchableOpacity
-                                        style={styles.venueButton}
+                                        style={[styles.venueButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
                                         onPress={() =>
                                             navigation.navigate("TestReservationsScreen", {
                                                 venue,
@@ -251,7 +253,7 @@ const TestMatchDetailScreen = ({
                                             })
                                         }
                                     >
-                                        <Text style={styles.venueButtonText}>RÉSERVER UNE TABLE</Text>
+                                        <Text style={[styles.venueButtonText, { color: colors.text }]}>RÉSERVER UNE TABLE</Text>
                                     </TouchableOpacity>
                                 </View>
                             </View>
@@ -305,7 +307,7 @@ const styles = StyleSheet.create({
         borderColor: "rgba(255,255,255,0.15)",
     },
     leaguePillText: {
-        color: COLORS.white,
+        color: '#FFFFFF',
         fontSize: 12,
         fontWeight: "700",
         letterSpacing: 1,
@@ -341,7 +343,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     teamLabel: {
-        color: COLORS.white,
+        color: '#FFFFFF',
         fontWeight: "700",
         fontSize: 13,
         letterSpacing: 0.5,
@@ -353,7 +355,7 @@ const styles = StyleSheet.create({
     heroTime: {
         fontSize: 28,
         fontWeight: "800",
-        color: COLORS.white,
+        color: '#FFFFFF',
     },
     heroStatus: {
         marginTop: 4,
@@ -361,7 +363,6 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         textTransform: "uppercase",
         letterSpacing: 2,
-        color: COLORS.primary,
     },
     contentWrapper: {
         marginTop: -30,
@@ -397,7 +398,6 @@ const styles = StyleSheet.create({
         textTransform: "uppercase",
     },
     infoValue: {
-        color: COLORS.white,
         fontSize: 16,
         fontWeight: "600",
         marginTop: 4,
@@ -545,7 +545,6 @@ const styles = StyleSheet.create({
     },
     venueName: {
         flex: 1,
-        color: COLORS.white,
         fontSize: 16,
         fontWeight: "700",
     },
@@ -578,7 +577,6 @@ const styles = StyleSheet.create({
         padding: 24,
     },
     stateText: {
-        color: COLORS.text,
         textAlign: "center",
         fontSize: 14,
         marginTop: 6,

@@ -5,11 +5,14 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
+// removing static COLORS import if possible, or keeping for types if needed (but prefer store)
 import { testApi, Venue, VenueMatch } from '../services/testApi';
 
+import { useStore } from '../store/useStore';
 const { width } = Dimensions.get('window');
 
 const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
+    const { colors, themeMode } = useStore();
     const insets = useSafeAreaInsets();
     const venueId: string | undefined = route?.params?.venueId;
     const [venue, setVenue] = useState<Venue | null>(null);
@@ -44,61 +47,61 @@ const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route:
     }, [venue]);
 
     const renderMatchCard = (match: VenueMatch) => (
-        <View key={match.id} style={styles.matchCard}>
+        <View key={match.id} style={[styles.matchCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.matchCardLeft}>
                 <View style={styles.matchTeams}>
-                    <View style={styles.teamLogo}>
-                        <Text style={styles.teamLogoText}>{match.team1.slice(0, 3).toUpperCase()}</Text>
+                    <View style={[styles.teamLogo, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+                        <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team1.slice(0, 3).toUpperCase()}</Text>
                     </View>
-                    <Text style={styles.vsText}>VS</Text>
-                    <View style={styles.teamLogo}>
-                        <Text style={styles.teamLogoText}>{match.team2.slice(0, 3).toUpperCase()}</Text>
+                    <Text style={[styles.vsText, { color: colors.textSecondary }]}>VS</Text>
+                    <View style={[styles.teamLogo, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+                        <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team2.slice(0, 3).toUpperCase()}</Text>
                     </View>
                 </View>
                 <View style={styles.matchDetails}>
-                    <Text style={styles.leagueText}>{match.league.toUpperCase()}</Text>
-                    <Text style={styles.matchName}>{match.team1} vs {match.team2}</Text>
-                    <Text style={styles.stadiumText}>{venue?.name}</Text>
+                    <Text style={[styles.leagueText, { color: colors.primary }]}>{match.league.toUpperCase()}</Text>
+                    <Text style={[styles.matchName, { color: colors.text }]}>{match.team1} vs {match.team2}</Text>
+                    <Text style={[styles.stadiumText, { color: colors.textSecondary }]}>{venue?.name}</Text>
                 </View>
             </View>
-            <View style={styles.matchCardRight}>
-                <Text style={styles.matchTime}>{match.time}</Text>
-                <Text style={styles.tomorrowText}>{match.month} {match.date}</Text>
+            <View style={[styles.matchCardRight, { borderLeftColor: colors.border }]}>
+                <Text style={[styles.matchTime, { color: colors.text }]}>{match.time}</Text>
+                <Text style={[styles.tomorrowText, { color: colors.textSecondary }]}>{match.month} {match.date}</Text>
             </View>
         </View>
     );
 
     if (isLoading) {
         return (
-            <View style={[styles.container, styles.centerState]}>
-                <ActivityIndicator color={COLORS.primary} />
-                <Text style={styles.stateText}>Chargement du bar...</Text>
+            <View style={[styles.container, styles.centerState, { backgroundColor: colors.background }]}>
+                <ActivityIndicator color={colors.primary} />
+                <Text style={[styles.stateText, { color: colors.textSecondary }]}>Chargement du bar...</Text>
             </View>
         );
     }
 
     if (error || !venue) {
         return (
-            <View style={[styles.container, styles.centerState]}>
-                <Text style={styles.stateText}>{error ?? "Ce bar n'est pas disponible."}</Text>
-                <TouchableOpacity style={styles.retryButton} onPress={loadVenue} activeOpacity={0.85}>
-                    <MaterialIcons name="refresh" size={18} color={COLORS.white} />
-                    <Text style={styles.retryButtonText}>Réessayer</Text>
+            <View style={[styles.container, styles.centerState, { backgroundColor: colors.background }]}>
+                <Text style={[styles.stateText, { color: colors.textSecondary }]}>{error ?? "Ce bar n'est pas disponible."}</Text>
+                <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadVenue} activeOpacity={0.85}>
+                    <MaterialIcons name="refresh" size={18} color={colors.white} />
+                    <Text style={[styles.retryButtonText, { color: colors.white }]}>Réessayer</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.retryButton, { marginTop: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: COLORS.primary }]}
+                    style={[styles.retryButton, { marginTop: 12, backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.primary }]}
                     onPress={handleBack}
                     activeOpacity={0.85}
                 >
-                    <MaterialIcons name="arrow-back" size={18} color={COLORS.primary} />
-                    <Text style={[styles.retryButtonText, { color: COLORS.primary }]}>Retour</Text>
+                    <MaterialIcons name="arrow-back" size={18} color={colors.primary} />
+                    <Text style={[styles.retryButtonText, { color: colors.primary }]}>Retour</Text>
                 </TouchableOpacity>
             </View>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar barStyle="light-content" />
             <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 180 }}>
                 {/* Header Image Section */}
@@ -124,37 +127,37 @@ const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route:
                     <View style={styles.headerInfo}>
                         <Text style={styles.venueTitle}>{venue.name}</Text>
                         <View style={styles.venueAddressRow}>
-                            <MaterialIcons name="location-on" size={16} color={COLORS.primary} />
+                            <MaterialIcons name="location-on" size={16} color={colors.primary} />
                             <Text style={styles.venueAddress}>{venue.address}</Text>
                         </View>
                     </View>
 
                     {/* Chips Row */}
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll} contentContainerStyle={styles.chipsContainer}>
-                        <View style={styles.chip}>
-                            <Text style={styles.chipText}>{venue.priceLevel}</Text>
+                        <View style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <Text style={[styles.chipText, { color: colors.text }]}>{venue.priceLevel}</Text>
                         </View>
                         {venue.tags.slice(0, 2).map((tag) => (
-                            <View key={tag} style={styles.chip}>
-                                <MaterialIcons name="local-fire-department" size={16} color={COLORS.primary} />
-                                <Text style={styles.chipText}>{tag}</Text>
+                            <View key={tag} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                <MaterialIcons name="local-fire-department" size={16} color={colors.primary} />
+                                <Text style={[styles.chipText, { color: colors.text }]}>{tag}</Text>
                             </View>
                         ))}
-                        <View style={styles.chip}>
-                            <MaterialIcons name="star" size={16} color={COLORS.primary} />
-                            <Text style={styles.chipText}>{renderRatingLabel}</Text>
+                        <View style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <MaterialIcons name="star" size={16} color={colors.primary} />
+                            <Text style={[styles.chipText, { color: colors.text }]}>{renderRatingLabel}</Text>
                         </View>
                     </ScrollView>
 
                     {/* Action Buttons */}
                     <View style={styles.actionsRow}>
-                        <TouchableOpacity style={styles.actionButton}>
-                            <MaterialIcons name="sports-soccer" size={20} color={COLORS.white} />
-                            <Text style={styles.actionButtonText}>Voir les matchs</Text>
+                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <MaterialIcons name="sports-soccer" size={20} color={colors.text} />
+                            <Text style={[styles.actionButtonText, { color: colors.text }]}>Voir les matchs</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.actionButton}>
-                            <MaterialIcons name="rate-review" size={20} color={COLORS.white} />
-                            <Text style={styles.actionButtonText}>Voir les avis</Text>
+                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <MaterialIcons name="rate-review" size={20} color={colors.text} />
+                            <Text style={[styles.actionButtonText, { color: colors.text }]}>Voir les avis</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -162,14 +165,14 @@ const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route:
 
                     {/* Matchs Recommandés */}
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Matchs recommandés</Text>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Matchs recommandés</Text>
                         <TouchableOpacity>
-                            <Text style={styles.seeAllText}>Voir tout</Text>
+                            <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
                         </TouchableOpacity>
                     </View>
 
                     <View style={styles.matchesContainer}>
-                        {venue.matches.length > 0 ? (
+                        {venue.matches && venue.matches.length > 0 ? (
                             venue.matches.map(renderMatchCard)
                         ) : (
                             <Text style={styles.stateText}>Aucun match n'est programmé pour ce bar.</Text>
@@ -177,12 +180,12 @@ const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route:
                     </View>
 
                     {/* Informations Pratiques */}
-                    <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 16 }]}>Informations Pratiques</Text>
-                    <View style={styles.infoContainer}>
-                        <InfoRow icon="schedule" title="Heures d'ouverture" subtitle="17:00 - 02:00 (Tous les jours)" />
-                        <InfoRow icon="train" title="Transports" subtitle="Métro Parmentier (Ligne 3)" />
-                        <InfoRow icon="local-drink" title="Happy Hour" subtitle="17h - 20h sur toutes les pintes" iconColor={COLORS.primary} highlighted />
-                        <InfoRow icon="wifi" title="Équipements" subtitle="Wi-Fi gratuit, Climatisation" />
+                    <Text style={[styles.sectionTitle, { marginTop: 24, marginBottom: 16, color: colors.text }]}>Informations Pratiques</Text>
+                    <View style={[styles.infoContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <InfoRow icon="schedule" title="Heures d'ouverture" subtitle="17:00 - 02:00 (Tous les jours)" colors={colors} />
+                        <InfoRow icon="train" title="Transports" subtitle="Métro Parmentier (Ligne 3)" colors={colors} />
+                        <InfoRow icon="local-drink" title="Happy Hour" subtitle="17h - 20h sur toutes les pintes" iconColor={colors.primary} highlighted colors={colors} />
+                        <InfoRow icon="wifi" title="Équipements" subtitle="Wi-Fi gratuit, Climatisation" colors={colors} />
                     </View>
 
                     {/* Map Preview */}
@@ -211,12 +214,13 @@ const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route:
                     {
                         bottom: insets.bottom + 32,
                         left: 20,
-                        right: 20
+                        right: 20,
+                        backgroundColor: colors.primary
                     }
                 ]}
                 onPress={() => navigation.navigate("TestReservationsScreen")}
             >
-                <MaterialIcons name="calendar-today" size={20} color={COLORS.white} />
+                <MaterialIcons name="calendar-today" size={20} color={colors.white} />
                 <Text style={styles.reserveButtonText}>Réserver une table</Text>
             </TouchableOpacity>
 
@@ -224,14 +228,14 @@ const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route:
     );
 };
 
-const InfoRow = ({ icon, title, subtitle, iconColor, highlighted }: any) => (
+const InfoRow = ({ icon, title, subtitle, iconColor, highlighted, colors }: any) => (
     <View style={styles.infoRow}>
-        <View style={[styles.iconBox, highlighted && { backgroundColor: 'rgba(244, 123, 37, 0.1)', borderColor: 'rgba(244, 123, 37, 0.2)' }]}>
-            <MaterialIcons name={icon} size={20} color={iconColor || COLORS.textSecondary} />
+        <View style={[styles.iconBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }, highlighted && { backgroundColor: 'rgba(244, 123, 37, 0.1)', borderColor: 'rgba(244, 123, 37, 0.2)' }]}>
+            <MaterialIcons name={icon} size={20} color={iconColor || colors.textSecondary} />
         </View>
         <View style={styles.infoTextContainer}>
-            <Text style={styles.infoTitle}>{title}</Text>
-            <Text style={[styles.infoSubtitle, highlighted && { color: COLORS.primary }]}>{subtitle}</Text>
+            <Text style={[styles.infoTitle, { color: colors.text }]}>{title}</Text>
+            <Text style={[styles.infoSubtitle, { color: colors.textSecondary }, highlighted && { color: colors.primary }]}>{subtitle}</Text>
         </View>
     </View>
 );
@@ -239,7 +243,7 @@ const InfoRow = ({ icon, title, subtitle, iconColor, highlighted }: any) => (
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.backgroundDark,
+        // backgroundColor: COLORS.backgroundDark, // removed in favor of dynamic
     },
     centerState: {
         flex: 1,
@@ -326,7 +330,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         height: 36,
         borderRadius: 18,
-        backgroundColor: COLORS.surfaceGlass,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
     },
@@ -347,7 +350,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 8,
-        backgroundColor: COLORS.surfaceGlass,
         borderRadius: 16,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
@@ -384,7 +386,6 @@ const styles = StyleSheet.create({
     matchCard: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        backgroundColor: COLORS.surfaceGlass,
         borderRadius: 16,
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.05)',
@@ -472,7 +473,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
     infoContainer: {
-        backgroundColor: COLORS.surfaceGlass,
         borderRadius: 24,
         padding: 24,
         borderWidth: 1,

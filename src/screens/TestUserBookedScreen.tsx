@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
+import { useStore } from '../store/useStore';
 import { testApi, Booking } from '../services/testApi';
 import { apiService } from '../services/api';
 
@@ -24,6 +25,7 @@ const STATUS_STYLES: Record<string, { label: string; color: string }> = {
 };
 
 const TestUserBookedScreen = () => {
+  const { colors, themeMode } = useStore();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -112,12 +114,12 @@ const TestUserBookedScreen = () => {
             </View>
             <View style={styles.metaRow}>
               <View style={styles.metaItem}>
-                <MaterialIcons name="calendar-today" size={18} color={COLORS.subtext} />
-                <Text style={styles.metaText}>{booking.date}</Text>
+                <MaterialIcons name="calendar-today" size={18} color={colors.subtext} />
+                <Text style={[styles.metaText, { color: colors.subtext }]}>{booking.date}</Text>
               </View>
               <View style={styles.metaItem}>
-                <MaterialIcons name="group" size={18} color={COLORS.subtext} />
-                <Text style={styles.metaText}>{booking.people}</Text>
+                <MaterialIcons name="group" size={18} color={colors.subtext} />
+                <Text style={[styles.metaText, { color: colors.subtext }]}>{booking.people}</Text>
               </View>
             </View>
           </View>
@@ -142,46 +144,46 @@ const TestUserBookedScreen = () => {
   };
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}> 
-        <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={22} color={COLORS.text} />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
+      <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
+        <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surfaceAlt }]} onPress={() => navigation.goBack()}>
+          <MaterialIcons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>MES RÉSERVATIONS</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>MES RÉSERVATIONS</Text>
         <View style={{ width: 32 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {isLoading ? (
-          <View style={styles.stateWrapper}>
-            <ActivityIndicator color={COLORS.primary} />
-            <Text style={styles.stateText}>Chargement de vos réservations...</Text>
+          <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={[styles.stateText, { color: colors.text }]}>Chargement de vos réservations...</Text>
           </View>
         ) : error ? (
-          <View style={styles.stateWrapper}>
-            <Text style={styles.stateText}>{error}</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={loadBookings} activeOpacity={0.85}>
-              <MaterialIcons name="refresh" size={18} color={COLORS.white} />
-              <Text style={styles.retryButtonText}>Réessayer</Text>
+          <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Text style={[styles.stateText, { color: colors.text }]}>{error}</Text>
+            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadBookings} activeOpacity={0.85}>
+              <MaterialIcons name="refresh" size={18} color={colors.white} />
+              <Text style={[styles.retryButtonText, { color: colors.white }]}>Réessayer</Text>
             </TouchableOpacity>
           </View>
         ) : bookings.length === 0 ? (
-          <View style={styles.stateWrapper}>
-            <MaterialIcons name="event-busy" size={36} color={COLORS.textSecondary} />
-            <Text style={styles.stateText}>Vous n'avez aucune réservation pour le moment.</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={() => navigation.navigate('TestMapScreen' as never)} activeOpacity={0.85}>
-              <MaterialIcons name="search" size={18} color={COLORS.white} />
-              <Text style={styles.retryButtonText}>Explorer les bars</Text>
+          <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <MaterialIcons name="event-busy" size={36} color={colors.textSecondary} />
+            <Text style={[styles.stateText, { color: colors.text }]}>Vous n'avez aucune réservation pour le moment.</Text>
+            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('TestMapScreen' as never)} activeOpacity={0.85}>
+              <MaterialIcons name="search" size={18} color={colors.white} />
+              <Text style={[styles.retryButtonText, { color: colors.white }]}>Explorer les bars</Text>
             </TouchableOpacity>
           </View>
         ) : (
           bookings.map(renderBookingCard)
         )}
 
-        <TouchableOpacity style={styles.findButton} onPress={() => navigation.navigate('TestMapScreen' as never)}>
-          <MaterialIcons name="add-circle" size={20} color={COLORS.primary} />
-          <Text style={styles.findButtonText}>Trouver un autre bar</Text>
+        <TouchableOpacity style={[styles.findButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]} onPress={() => navigation.navigate('TestMapScreen' as never)}>
+          <MaterialIcons name="add-circle" size={20} color={colors.primary} />
+          <Text style={[styles.findButtonText, { color: colors.text }]}>Trouver un autre bar</Text>
         </TouchableOpacity>
 
         <View style={{ height: 80 }} />
@@ -189,23 +191,23 @@ const TestUserBookedScreen = () => {
 
       <Modal visible={!!activeQrBooking} transparent animationType="fade" onRequestClose={handleCloseModal}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalSheet}>
-            <View style={styles.modalHandle} />
-            <Text style={styles.modalLabel}>Votre Réservation</Text>
+          <View style={[styles.modalSheet, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <View style={[styles.modalHandle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.modalLabel, { color: colors.text }]}>Votre Réservation</Text>
             {activeQrBooking && (
-              <View style={styles.ticketCard}>
-                <View style={styles.ticketCutoutLeft} />
-                <View style={styles.ticketCutoutRight} />
+              <View style={[styles.ticketCard, { backgroundColor: themeMode === 'light' ? '#f8fafc' : '#27272a' }]}>
+                <View style={[styles.ticketCutoutLeft, { backgroundColor: colors.surface }]} />
+                <View style={[styles.ticketCutoutRight, { backgroundColor: colors.surface }]} />
 
                 <View style={styles.ticketUpper}>
                   <View style={[styles.modalStatusBadge, { backgroundColor: 'rgba(74, 222, 128, 0.15)' }]}>
                     <MaterialIcons name="check-circle" size={16} color="#16a34a" />
                     <Text style={styles.modalStatusText}>{activeQrBooking.status === 'pending' ? 'En attente' : 'Confirmé'}</Text>
                   </View>
-                  <Text style={styles.modalVenue}>{activeQrBooking.venue.toUpperCase()}</Text>
+                  <Text style={[styles.modalVenue, { color: colors.text }]}>{activeQrBooking.venue.toUpperCase()}</Text>
                   <View style={styles.modalLocationRow}>
-                    <MaterialIcons name="location-on" size={18} color="#6b7280" />
-                    <Text style={styles.modalLocationText}>{activeQrBooking.location}</Text>
+                    <MaterialIcons name="location-on" size={18} color={colors.subtext} />
+                    <Text style={[styles.modalLocationText, { color: colors.subtext }]}>{activeQrBooking.location}</Text>
                   </View>
                   <View style={styles.qrPreview}>
                     {isQrLoading ? (
@@ -224,33 +226,33 @@ const TestUserBookedScreen = () => {
 
                 <View style={styles.ticketDivider} />
 
-                <View style={styles.ticketLower}>
+                <View style={[styles.ticketLower, { backgroundColor: themeMode === 'light' ? '#f1f5f9' : '#18181b' }]}>
                   <View style={styles.ticketStat}>
-                    <Text style={styles.ticketStatLabel}>Date</Text>
-                    <MaterialIcons name="calendar-today" size={20} color={COLORS.primary} />
-                    <Text style={styles.ticketStatValue}>{activeQrBooking.dateShort}</Text>
+                    <Text style={[styles.ticketStatLabel, { color: colors.subtext }]}>Date</Text>
+                    <MaterialIcons name="calendar-today" size={20} color={colors.primary} />
+                    <Text style={[styles.ticketStatValue, { color: colors.text }]}>{activeQrBooking.dateShort}</Text>
                   </View>
                   <View style={styles.ticketStat}>
-                    <Text style={styles.ticketStatLabel}>Heure</Text>
-                    <MaterialIcons name="schedule" size={20} color={COLORS.primary} />
-                    <Text style={styles.ticketStatValue}>{activeQrBooking.time}</Text>
+                    <Text style={[styles.ticketStatLabel, { color: colors.subtext }]}>Heure</Text>
+                    <MaterialIcons name="schedule" size={20} color={colors.primary} />
+                    <Text style={[styles.ticketStatValue, { color: colors.text }]}>{activeQrBooking.time}</Text>
                   </View>
                   <View style={styles.ticketStat}>
-                    <Text style={styles.ticketStatLabel}>Personnes</Text>
-                    <MaterialIcons name="group" size={20} color={COLORS.primary} />
-                    <Text style={styles.ticketStatValue}>{activeQrBooking.peopleCount}</Text>
+                    <Text style={[styles.ticketStatLabel, { color: colors.subtext }]}>Personnes</Text>
+                    <MaterialIcons name="group" size={20} color={colors.primary} />
+                    <Text style={[styles.ticketStatValue, { color: colors.text }]}>{activeQrBooking.peopleCount}</Text>
                   </View>
                 </View>
 
-                <View style={styles.ticketTip}>
-                  <MaterialIcons name="brightness-high" size={18} color={COLORS.primary} />
-                  <Text style={styles.ticketTipText}>Luminosité max recommandée</Text>
+                <View style={[styles.ticketTip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <MaterialIcons name="brightness-high" size={18} color={colors.primary} />
+                  <Text style={[styles.ticketTipText, { color: colors.subtext }]}>Luminosité max recommandée</Text>
                 </View>
               </View>
             )}
 
-            <Pressable style={styles.modalCloseButton} onPress={handleCloseModal}>
-              <Text style={styles.modalCloseText}>Fermer</Text>
+            <Pressable style={[styles.modalCloseButton, { backgroundColor: colors.primary }]} onPress={handleCloseModal}>
+              <Text style={[styles.modalCloseText, { color: colors.white }]}>Fermer</Text>
             </Pressable>
           </View>
         </View>

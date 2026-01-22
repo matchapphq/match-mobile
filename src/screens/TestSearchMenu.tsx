@@ -14,8 +14,10 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import { testApi, SearchMatchResult, SearchResult, SearchTrend } from "../services/testApi";
+import { useStore } from "../store/useStore";
 
 const TestSearchMenu = ({ navigation }: { navigation: any }) => {
+    const { colors, themeMode } = useStore();
     const [searchQuery, setSearchQuery] = useState("");
     const filterAnim = useRef(new Animated.Value(0)).current;
     const activeContentAnim = useRef(new Animated.Value(0)).current;
@@ -90,49 +92,49 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
         <View style={styles.stateWrapper}>
             {showRetry ? (
                 <>
-                    <Text style={styles.stateText}>{message}</Text>
-                    <TouchableOpacity style={styles.retryButton} onPress={loadSearchData} activeOpacity={0.85}>
-                        <MaterialIcons name="refresh" size={18} color={COLORS.white} />
-                        <Text style={styles.retryButtonText}>Réessayer</Text>
+                    <Text style={[styles.stateText, { color: colors.textMuted }]}>{message}</Text>
+                    <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadSearchData} activeOpacity={0.85}>
+                        <MaterialIcons name="refresh" size={18} color={colors.white} />
+                        <Text style={[styles.retryButtonText, { color: colors.white }]}>Réessayer</Text>
                     </TouchableOpacity>
                 </>
             ) : (
                 <>
-                    <ActivityIndicator color={COLORS.primary} />
-                    <Text style={[styles.stateText, { marginTop: 12 }]}>{message}</Text>
+                    <ActivityIndicator color={colors.primary} />
+                    <Text style={[styles.stateText, { color: colors.textMuted, marginTop: 12 }]}>{message}</Text>
                 </>
             )}
         </View>
     );
 
     return (
-        <SafeAreaView style={styles.container} edges={["top"]}>
-            <StatusBar barStyle="light-content" />
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={["top"]}>
+            <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
 
-            <View style={styles.header}>
+            <View style={[styles.header, { backgroundColor: themeMode === 'light' ? 'rgba(248,247,245,0.95)' : 'rgba(8,8,10,0.95)', borderBottomColor: colors.divider }]}>
                 <View style={styles.searchRow}>
                     <TouchableOpacity
-                        style={styles.iconPill}
+                        style={[styles.iconPill, { backgroundColor: colors.surface }]}
                         onPress={() => navigation.goBack?.()}
                         activeOpacity={0.8}
                     >
-                        <MaterialIcons name="arrow-back" size={20} color={COLORS.text} />
+                        <MaterialIcons name="arrow-back" size={20} color={colors.text} />
                     </TouchableOpacity>
 
                     <Animated.View style={[styles.searchAnimatedWrap, { transform: [{ scaleX: searchScale }] }]}>
-                        <View style={styles.searchContainer}>
-                            <MaterialIcons name="search" size={20} color={COLORS.muted} />
+                        <View style={[styles.searchContainer, { backgroundColor: colors.surface }]}>
+                            <MaterialIcons name="search" size={20} color={colors.textMuted} />
                             <TextInput
-                                style={styles.searchInput}
+                                style={[styles.searchInput, { color: colors.text }]}
                                 placeholder="Rechercher un match, un bar..."
-                                placeholderTextColor={COLORS.muted}
+                                placeholderTextColor={colors.textMuted}
                                 value={searchQuery}
                                 onChangeText={setSearchQuery}
-                                selectionColor={COLORS.primary}
+                                selectionColor={colors.primary}
                             />
                             {hasQuery && (
                                 <TouchableOpacity onPress={clearQuery} activeOpacity={0.7}>
-                                    <MaterialIcons name="close" size={20} color={COLORS.muted} />
+                                    <MaterialIcons name="close" size={20} color={colors.textMuted} />
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -141,11 +143,12 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
                     <Animated.View
                         style={[
                             styles.iconPill,
-                            styles.filterButton,
+                            // styles.filterButton, // Removing filterButton style to avoid conflict or just style inline
                             {
                                 width: filterWidth,
                                 marginLeft: filterMarginLeft,
                                 opacity: filterAnim,
+                                backgroundColor: colors.surfaceAlt, // Dynamic background
                                 transform: [
                                     {
                                         translateX: filterAnim.interpolate({
@@ -160,11 +163,16 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
                                         }),
                                     },
                                 ],
+                                shadowColor: "#000",
+                                shadowOpacity: 0.4,
+                                shadowRadius: 6,
+                                shadowOffset: { width: 0, height: 4 },
+                                elevation: 8,
                             },
                         ]}
                         pointerEvents={hasQuery ? "auto" : "none"}
                     >
-                        <MaterialIcons name="tune" size={20} color={COLORS.text} />
+                        <MaterialIcons name="tune" size={20} color={colors.text} />
                     </Animated.View>
                 </View>
             </View>
@@ -194,7 +202,7 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
                                     }}
                                 >
                                     <View style={styles.sectionHeaderRow}>
-                                        <Text style={styles.sectionTitle}>Matchs</Text>
+                                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Matchs</Text>
                                         {matchResults.length > 3 && (
                                             <TouchableOpacity onPress={() => setShowAllMatches((prev) => !prev)}>
                                                 <Text style={styles.sectionAction}>
@@ -209,145 +217,145 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
                                             .map((match) => (
                                                 <TouchableOpacity
                                                     key={match.id}
-                                                    style={styles.matchCard}
+                                                    style={[styles.matchCard, { backgroundColor: colors.surfaceAlt, borderColor: colors.divider }]}
                                                     activeOpacity={0.9}
                                                     onPress={() => navigation.navigate("TestMatchDetail", { matchId: match.id })}
                                                 >
-                                                    <View style={styles.matchCardBackdrop} />
+                                                    <View style={[styles.matchCardBackdrop, { backgroundColor: "rgba(244,123,37,0.1)" }]} />
                                                     <View style={styles.matchMeta}>
-                                                        <Text style={styles.leagueChip}>{match.league}</Text>
+                                                        <Text style={[styles.leagueChip, { color: colors.textMuted, backgroundColor: colors.surface }]}>{match.league}</Text>
                                                         <View style={styles.matchTime}>
                                                             <MaterialIcons
                                                                 name="schedule"
                                                                 size={16}
-                                                                color={COLORS.primary}
+                                                                color={colors.primary}
                                                                 style={{ marginRight: 4 }}
                                                             />
-                                                            <Text style={styles.matchTimeText}>{match.timeLabel}</Text>
+                                                            <Text style={[styles.matchTimeText, { color: colors.primary }]}>{match.timeLabel}</Text>
                                                         </View>
                                                     </View>
 
                                                     <View style={styles.teamsRow}>
                                                         <View style={styles.teamColumn}>
-                                                            <View style={[styles.teamBadge, { backgroundColor: match.home.color }]}>
-                                                                <Text style={styles.teamBadgeText}>{match.home.badge}</Text>
+                                                            <View style={[styles.teamBadge, { backgroundColor: match.home.color, borderColor: colors.white }]}>
+                                                                <Text style={[styles.teamBadgeText, { color: colors.text }]}>{match.home.badge}</Text>
                                                             </View>
-                                                            <Text style={styles.teamName}>{match.home.name}</Text>
+                                                            <Text style={[styles.teamName, { color: colors.text }]}>{match.home.name}</Text>
                                                         </View>
                                                         <View style={styles.vsColumn}>
-                                                            <Text style={styles.vsLabel}>VS</Text>
+                                                            <Text style={[styles.vsLabel, { color: colors.textMuted }]}>VS</Text>
                                                         </View>
                                                         <View style={styles.teamColumn}>
-                                                            <View style={[styles.teamBadge, { backgroundColor: match.away.color }]}>
-                                                                <Text style={styles.teamBadgeText}>{match.away.badge}</Text>
+                                                            <View style={[styles.teamBadge, { backgroundColor: match.away.color, borderColor: colors.white }]}>
+                                                                <Text style={[styles.teamBadgeText, { color: colors.text }]}>{match.away.badge}</Text>
                                                             </View>
-                                                            <Text style={styles.teamName}>{match.away.name}</Text>
+                                                            <Text style={[styles.teamName, { color: colors.text }]}>{match.away.name}</Text>
                                                         </View>
                                                     </View>
                                                 </TouchableOpacity>
                                             ))
                                     ) : (
-                                        <Text style={styles.emptyText}>Aucun match trouvé.</Text>
+                                        <Text style={[styles.emptyText, { color: colors.textMuted }]}>Aucun match trouvé.</Text>
                                     )}
 
                                     <View style={[styles.sectionHeaderRow, { marginTop: 24 }]}>
-                                        <Text style={styles.sectionTitle}>Lieux</Text>
+                                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Lieux</Text>
                                     </View>
 
                                     <View style={{ gap: 12 }}>
                                         {venueResults.length > 0 ? (
                                             venueResults.map((venue) => (
-                                                <TouchableOpacity key={venue.id} style={styles.venueRow} activeOpacity={0.85}>
-                                                    <View style={styles.venueThumbnail}>
+                                                <TouchableOpacity key={venue.id} style={[styles.venueRow, { backgroundColor: colors.surface, borderColor: colors.divider }]} activeOpacity={0.85}>
+                                                    <View style={[styles.venueThumbnail, { backgroundColor: colors.surfaceAlt }]}>
                                                         <MaterialIcons
                                                             name={(venue.isLive ? "sports-bar" : "location-on") as any}
                                                             size={34}
-                                                            color="rgba(255,255,255,0.5)"
+                                                            color={colors.textMuted} // Was rgba white 0.5
                                                         />
-                                                        <View style={styles.ratingBadge}>
+                                                        <View style={[styles.ratingBadge, { backgroundColor: colors.text }]}>
                                                             <MaterialIcons
                                                                 name="star"
                                                                 size={12}
                                                                 color="#fbbf24"
                                                                 style={{ marginRight: 2 }}
                                                             />
-                                                            <Text style={styles.ratingText}>{venue.rating.toFixed(1)}</Text>
+                                                            <Text style={[styles.ratingText, { color: '#000' }]}>{venue.rating.toFixed(1)}</Text>
                                                         </View>
                                                     </View>
 
                                                     <View style={styles.venueInfo}>
                                                         <View style={styles.venueTitleRow}>
-                                                            <Text style={styles.venueName} numberOfLines={1}>
+                                                            <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>
                                                                 {venue.name}
                                                             </Text>
-                                                            <Text style={styles.venueBadge}>
+                                                            <Text style={[styles.venueBadge, { color: colors.text }]}>
                                                                 {venue.isLive ? "Ouvert" : "Fermé"}
                                                             </Text>
                                                         </View>
-                                                        <Text style={styles.venueTags}>{venue.tag}</Text>
+                                                        <Text style={[styles.venueTags, { color: colors.textMuted }]}>{venue.tag}</Text>
                                                         <View style={styles.venueMetaRow}>
                                                             <View style={styles.venueMetaItem}>
-                                                                <MaterialIcons name="location-on" size={14} color={COLORS.muted} />
-                                                                <Text style={styles.venueMetaText}>{venue.distance}</Text>
+                                                                <MaterialIcons name="location-on" size={14} color={colors.textMuted} />
+                                                                <Text style={[styles.venueMetaText, { color: colors.textMuted }]}>{venue.distance}</Text>
                                                             </View>
                                                             <View style={styles.venueMetaItem}>
-                                                                <MaterialIcons name="euro" size={14} color={COLORS.muted} />
-                                                                <Text style={styles.venueMetaText}>{venue.priceLevel ?? "€€"}</Text>
+                                                                <MaterialIcons name="euro" size={14} color={colors.textMuted} />
+                                                                <Text style={[styles.venueMetaText, { color: colors.textMuted }]}>{venue.priceLevel ?? "€€"}</Text>
                                                             </View>
                                                         </View>
                                                     </View>
                                                 </TouchableOpacity>
                                             ))
                                         ) : (
-                                            <Text style={styles.emptyText}>Aucun bar disponible.</Text>
+                                            <Text style={[styles.emptyText, { color: colors.textMuted }]}>Aucun bar disponible.</Text>
                                         )}
                                     </View>
                                 </Animated.View>
                             ) : (
                                 <View>
-                                    <Text style={styles.sectionTitle}>Tendances</Text>
+                                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Tendances</Text>
                                     <View style={styles.trendsWrap}>
                                         {trends.length > 0 ? (
                                             trends.map((trend) => (
-                                                <TouchableOpacity key={trend.label} style={styles.trendChip}>
-                                                    <MaterialIcons name={trend.icon as any} size={18} color={COLORS.primary} />
-                                                    <Text style={styles.trendChipText}>{trend.label}</Text>
+                                                <TouchableOpacity key={trend.label} style={[styles.trendChip, { backgroundColor: colors.surfaceAlt, borderColor: colors.divider }]}>
+                                                    <MaterialIcons name={trend.icon as any} size={18} color={colors.primary} />
+                                                    <Text style={[styles.trendChipText, { color: colors.text }]}>{trend.label}</Text>
                                                 </TouchableOpacity>
                                             ))
                                         ) : (
-                                            <Text style={styles.emptyText}>Aucune tendance disponible.</Text>
+                                            <Text style={[styles.emptyText, { color: colors.textMuted }]}>Aucune tendance disponible.</Text>
                                         )}
                                     </View>
 
                                     <View style={{ marginTop: 28 }}>
                                         <View style={styles.sectionHeaderRow}>
-                                            <Text style={styles.sectionTitle}>Historique</Text>
+                                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Historique</Text>
                                             <TouchableOpacity>
                                                 <Text style={styles.sectionAction}>Tout effacer</Text>
                                             </TouchableOpacity>
                                         </View>
 
                                         {recentItems.length > 0 ? (
-                                            <View style={styles.historyList}>
+                                            <View style={[styles.historyList, { borderColor: colors.divider, backgroundColor: colors.surface }]}>
                                                 {recentItems.map((item) => (
-                                                    <View key={item.id} style={styles.historyItem}>
+                                                    <View key={item.id} style={[styles.historyItem, { borderBottomColor: colors.divider }]}>
                                                         <View style={styles.historyLeft}>
-                                                            <View style={styles.historyIcon}>
-                                                                <MaterialIcons name="history" size={20} color={COLORS.muted} />
+                                                            <View style={[styles.historyIcon, { backgroundColor: colors.surfaceAlt }]}>
+                                                                <MaterialIcons name="history" size={20} color={colors.textMuted} />
                                                             </View>
                                                             <View style={{ flex: 1 }}>
-                                                                <Text style={styles.historyTitle}>{item.title}</Text>
-                                                                <Text style={styles.historySubtitle}>{item.subtitle}</Text>
+                                                                <Text style={[styles.historyTitle, { color: colors.text }]}>{item.title}</Text>
+                                                                <Text style={[styles.historySubtitle, { color: colors.textMuted }]}>{item.subtitle}</Text>
                                                             </View>
                                                         </View>
                                                         <TouchableOpacity activeOpacity={0.6}>
-                                                            <MaterialIcons name="close" size={20} color={COLORS.muted} />
+                                                            <MaterialIcons name="close" size={20} color={colors.textMuted} />
                                                         </TouchableOpacity>
                                                     </View>
                                                 ))}
                                             </View>
                                         ) : (
-                                            <Text style={styles.emptyText}>Aucune recherche récente.</Text>
+                                            <Text style={[styles.emptyText, { color: colors.textMuted }]}>Aucune recherche récente.</Text>
                                         )}
                                     </View>
                                 </View>
@@ -366,9 +374,9 @@ const styles = StyleSheet.create({
     header: {
         paddingHorizontal: 16,
         paddingVertical: 18,
-        backgroundColor: "rgba(8,8,10,0.95)",
+        // backgroundColor: "rgba(8,8,10,0.95)", // Removed hardcoded color
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: COLORS.divider,
+        // borderBottomColor: COLORS.divider, // Removed hardcoded color
     },
     searchRow: {
         flexDirection: "row",
@@ -379,7 +387,7 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 12,
-        backgroundColor: COLORS.surface,
+        // backgroundColor: COLORS.surface, // Removed hardcoded color
         alignItems: "center",
         justifyContent: "center",
     },
@@ -397,7 +405,7 @@ const styles = StyleSheet.create({
         height: 48,
     },
     filterButton: {
-        backgroundColor: COLORS.surfaceAlt,
+        // backgroundColor: COLORS.surfaceAlt, // Removed hardcoded color. Note: Inline style will override if needed, but safer to rely on dynamic color in JSX
         shadowColor: "#000",
         shadowOpacity: 0.4,
         shadowRadius: 6,
@@ -406,7 +414,7 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         flex: 1,
-        color: COLORS.text,
+        // color: COLORS.text, // Removed hardcoded color
         fontSize: 16,
         fontWeight: "500",
         paddingVertical: 0,
@@ -461,7 +469,7 @@ const styles = StyleSheet.create({
         marginBottom: 18,
     },
     leagueChip: {
-        color: COLORS.muted,
+        color: COLORS.textMuted,
         fontSize: 12,
         backgroundColor: "rgba(255,255,255,0.05)",
         paddingHorizontal: 10,
@@ -524,15 +532,15 @@ const styles = StyleSheet.create({
         gap: 14,
         padding: 14,
         borderRadius: 20,
-        backgroundColor: COLORS.surface,
+        // backgroundColor: COLORS.surface, // Removed hardcoded color
         borderWidth: 1,
-        borderColor: COLORS.divider,
+        // borderColor: COLORS.divider, // Removed hardcoded color
     },
     venueThumbnail: {
         width: 72,
         height: 72,
         borderRadius: 18,
-        backgroundColor: COLORS.surfaceAlt,
+        // backgroundColor: COLORS.surfaceAlt, // Removed hardcoded color
         alignItems: "center",
         justifyContent: "center",
         position: "relative",
@@ -579,7 +587,7 @@ const styles = StyleSheet.create({
         borderRadius: 999,
     },
     venueTags: {
-        color: COLORS.muted,
+        color: COLORS.textMuted,
         fontSize: 12,
         marginTop: 4,
     },
@@ -594,7 +602,7 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     venueMetaText: {
-        color: COLORS.muted,
+        color: COLORS.textMuted,
         fontSize: 12,
     },
     trendsWrap: {
@@ -610,9 +618,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 10,
         borderRadius: 999,
-        backgroundColor: COLORS.surfaceAlt,
+        // backgroundColor: COLORS.surfaceAlt, // Removed hardcoded color
         borderWidth: 1,
-        borderColor: COLORS.divider,
+        // borderColor: COLORS.divider, // Removed hardcoded color
     },
     trendChipText: {
         color: COLORS.text,
@@ -623,8 +631,8 @@ const styles = StyleSheet.create({
         marginTop: 10,
         borderRadius: 20,
         borderWidth: 1,
-        borderColor: COLORS.divider,
-        backgroundColor: COLORS.surface,
+        // borderColor: COLORS.divider, // Removed hardcoded color
+        // backgroundColor: COLORS.surface, // Removed hardcoded color
     },
     historyItem: {
         flexDirection: "row",
@@ -633,7 +641,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 14,
         borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: COLORS.divider,
+        // borderBottomColor: COLORS.divider, // Removed hardcoded color
     },
     historyLeft: {
         flexDirection: "row",
@@ -645,7 +653,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 12,
-        backgroundColor: COLORS.surfaceAlt,
+        // backgroundColor: COLORS.surfaceAlt, // Removed hardcoded color
         alignItems: "center",
         justifyContent: "center",
     },
@@ -654,7 +662,7 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     historySubtitle: {
-        color: COLORS.muted,
+        color: COLORS.textMuted,
         fontSize: 12,
         marginTop: 2,
     },

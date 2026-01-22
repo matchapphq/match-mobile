@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
-import { theme } from "../constants/theme";
+// import { theme } from "../constants/theme"; // Removed static theme import to avoid confusion
 import { useStore } from "../store/useStore";
 
 // Import screens
@@ -22,7 +22,7 @@ import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
 const Stack = createStackNavigator();
 
 export const AppNavigator = () => {
-    const { isAuthenticated } = useStore();
+    const { isAuthenticated, colors } = useStore();
     const [isLoading, setIsLoading] = React.useState(true);
 
     useEffect(() => {
@@ -39,7 +39,7 @@ export const AppNavigator = () => {
             <Stack.Navigator
                 screenOptions={{
                     headerShown: false,
-                    cardStyle: { backgroundColor: theme.colors.background },
+                    cardStyle: { backgroundColor: colors.background },
                 }}
             >
                 {!isAuthenticated ? (

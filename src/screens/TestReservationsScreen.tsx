@@ -15,6 +15,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
+import { useStore } from "../store/useStore";
 import { apiService, MatchVenue } from "../services/api";
 import type { Match } from "../types";
 
@@ -94,6 +95,7 @@ const FILTERS = [
 ];
 
 const TestReservationsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
+    const { colors, themeMode } = useStore();
     const insets = useSafeAreaInsets();
     const [guests, setGuests] = useState(4);
     const [specialRequest, setSpecialRequest] = useState("");
@@ -147,7 +149,7 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
                 if (matchesForDate.length === 0) {
                     setAvailableMatches([]);
                     if (!preselectedMatchIdFromRoute) { // Only reset if not preselected
-                         setSelectedMatchId(null);
+                        setSelectedMatchId(null);
                     }
                     return;
                 }
@@ -310,15 +312,15 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
     const confirmDisabled = !selectedMatch || isSubmitting;
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor={COLORS.background} />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} backgroundColor={colors.background} />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top, height: 60 + insets.top }]}>
+            <View style={[styles.header, { paddingTop: insets.top, height: 60 + insets.top, backgroundColor: colors.background }]}>
                 <TouchableOpacity style={styles.headerButton} onPress={handleBack}>
-                    <MaterialIcons name="arrow-back" size={24} color={COLORS.white} />
+                    <MaterialIcons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Réserver une table</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Réserver une table</Text>
                 <View style={{ width: 48 }} />
             </View>
 
@@ -327,24 +329,24 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
                 {/* Date Section */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
-                        <Text style={styles.sectionTitle}>Date</Text>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Date</Text>
                         <TouchableOpacity style={styles.seeMoreButton} onPress={handleRetryDates}>
-                            <Text style={styles.seeMoreText}>Rafraîchir</Text>
-                            <MaterialIcons name="refresh" size={14} color={COLORS.primary} />
+                            <Text style={[styles.seeMoreText, { color: colors.primary }]}>Rafraîchir</Text>
+                            <MaterialIcons name="refresh" size={14} color={colors.primary} />
                         </TouchableOpacity>
                     </View>
 
                     {datesLoading ? (
                         <View style={styles.stateWrapper}>
-                            <ActivityIndicator color={COLORS.primary} />
-                            <Text style={styles.stateText}>Chargement des dates...</Text>
+                            <ActivityIndicator color={colors.primary} />
+                            <Text style={[styles.stateText, { color: colors.textSecondary }]}>Chargement des dates...</Text>
                         </View>
                     ) : datesError ? (
                         <View style={styles.stateWrapper}>
-                            <Text style={styles.stateText}>{datesError}</Text>
-                            <TouchableOpacity style={styles.retryButton} onPress={handleRetryDates}>
-                                <MaterialIcons name="refresh" size={18} color={COLORS.white} />
-                                <Text style={styles.retryButtonText}>Réessayer</Text>
+                            <Text style={[styles.stateText, { color: colors.textSecondary }]}>{datesError}</Text>
+                            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={handleRetryDates}>
+                                <MaterialIcons name="refresh" size={18} color={colors.white} />
+                                <Text style={[styles.retryButtonText, { color: colors.white }]}>Réessayer</Text>
                             </TouchableOpacity>
                         </View>
                     ) : (
@@ -354,12 +356,17 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
                                 return (
                                     <TouchableOpacity
                                         key={index}
-                                        style={[styles.dateCard, isSelected ? styles.dateCardSelected : styles.dateCardUnselected]}
+                                        style={[
+                                            styles.dateCard,
+                                            isSelected
+                                                ? { backgroundColor: colors.primary, shadowColor: colors.primary, ...styles.dateCardSelected }
+                                                : { backgroundColor: colors.surface, borderColor: colors.border }
+                                        ]}
                                         onPress={() => setSelectedDateIso(date.isoDate)}
                                     >
-                                        <Text style={[styles.dateMonth, isSelected ? styles.textWhite : styles.textSecondary]}>{date.month}</Text>
-                                        <Text style={[styles.dateDay, isSelected ? styles.textWhite : styles.textWhite]}>{date.day}</Text>
-                                        <Text style={[styles.dateWeekDay, isSelected ? styles.textWhite : styles.textSecondary]}>{date.weekDay}</Text>
+                                        <Text style={[styles.dateMonth, isSelected ? { color: colors.white } : { color: colors.textSecondary }]}>{date.month}</Text>
+                                        <Text style={[styles.dateDay, isSelected ? { color: colors.white } : { color: colors.text }]}>{date.day}</Text>
+                                        <Text style={[styles.dateWeekDay, isSelected ? { color: colors.white } : { color: colors.textSecondary }]}>{date.weekDay}</Text>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -371,37 +378,42 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
                         {FILTERS.map((filter, index) => (
                             <TouchableOpacity
                                 key={index}
-                                style={[styles.filterChip, filter.selected ? styles.filterChipSelected : styles.filterChipUnselected]}
+                                style={[
+                                    styles.filterChip,
+                                    filter.selected
+                                        ? { backgroundColor: colors.primary, borderColor: colors.primary, borderWidth: 0 }
+                                        : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }
+                                ]}
                             >
                                 <MaterialIcons
                                     name={filter.icon as any}
                                     size={18}
-                                    color={filter.selected ? COLORS.white : COLORS.textSecondary}
+                                    color={filter.selected ? colors.white : colors.textSecondary}
                                 />
-                                <Text style={[styles.filterText, filter.selected ? styles.textWhite : styles.textSecondary]}>{filter.label}</Text>
+                                <Text style={[styles.filterText, filter.selected ? { color: colors.white } : { color: colors.textSecondary }]}>{filter.label}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
-                                        </View>
+                </View>
 
                 {/* Matchs Section */}
                 <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { marginBottom: 12 }]}>Matchs diffusés</Text>
+                    <Text style={[styles.sectionTitle, { marginBottom: 12, color: colors.text }]}>Matchs diffusés</Text>
                     {matchesLoading ? (
                         <View style={styles.stateWrapper}>
-                            <ActivityIndicator color={COLORS.primary} />
-                            <Text style={styles.stateText}>Chargement des matchs...</Text>
+                            <ActivityIndicator color={colors.primary} />
+                            <Text style={[styles.stateText, { color: colors.textSecondary }]}>Chargement des matchs...</Text>
                         </View>
                     ) : matchesError ? (
                         <View style={styles.stateWrapper}>
-                            <Text style={styles.stateText}>{matchesError}</Text>
-                            <TouchableOpacity style={styles.retryButton} onPress={handleRetryMatches}>
-                                <MaterialIcons name="refresh" size={18} color={COLORS.white} />
-                                <Text style={styles.retryButtonText}>Réessayer</Text>
+                            <Text style={[styles.stateText, { color: colors.textSecondary }]}>{matchesError}</Text>
+                            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={handleRetryMatches}>
+                                <MaterialIcons name="refresh" size={18} color={colors.white} />
+                                <Text style={[styles.retryButtonText, { color: colors.white }]}>Réessayer</Text>
                             </TouchableOpacity>
                         </View>
                     ) : availableMatches.length === 0 ? (
-                        <Text style={styles.stateText}>Aucun match prévu pour cette date.</Text>
+                        <Text style={[styles.stateText, { color: colors.textSecondary }]}>Aucun match prévu pour cette date.</Text>
                     ) : (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchScroll} snapToInterval={296} snapToAlignment="start" decelerationRate="fast">
                             {availableMatches.map((match) => {
@@ -409,7 +421,11 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
                                 return (
                                     <TouchableOpacity
                                         key={match.id}
-                                        style={[styles.matchCard, isSelected ? styles.matchCardSelected : styles.matchCardUnselected]}
+                                        style={[
+                                            styles.matchCard,
+                                            { backgroundColor: colors.surface },
+                                            isSelected ? { borderColor: colors.primary, borderWidth: 2 } : { borderColor: colors.border, borderWidth: 1, opacity: 0.9 }
+                                        ]}
                                         onPress={() => toggleMatchSelection(match.id)}
                                     >
                                         <ImageBackground source={{ uri: match.bgImage }} style={styles.matchImage} imageStyle={{ borderRadius: 12 }}>
@@ -423,19 +439,19 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
                                                 </View>
                                                 <Text style={styles.matchTeams}>{match.team1} vs {match.team2}</Text>
                                             </View>
-                                            <View style={styles.matchTimeBadge}>
+                                            <View style={[styles.matchTimeBadge, { backgroundColor: colors.primary }]}>
                                                 <Text style={styles.matchTimeText}>{match.time}</Text>
                                             </View>
                                         </ImageBackground>
 
-                                        <View style={[styles.matchFooter, isSelected ? styles.matchFooterSelected : styles.matchFooterUnselected]}>
+                                        <View style={[styles.matchFooter, isSelected ? { backgroundColor: 'rgba(244, 123, 37, 0.12)' } : { backgroundColor: 'transparent' }]}>
                                             <View style={styles.matchStatusRow}>
                                                 <MaterialIcons
                                                     name={isSelected ? "check-circle" : "sports-soccer"}
                                                     size={18}
-                                                    color={isSelected ? COLORS.primary : COLORS.textSecondary}
+                                                    color={isSelected ? colors.primary : colors.textSecondary}
                                                 />
-                                                <Text style={[styles.matchStatusText, isSelected ? { color: COLORS.primary } : { color: COLORS.textSecondary }]}>
+                                                <Text style={[styles.matchStatusText, isSelected ? { color: colors.primary } : { color: colors.textSecondary }]}>
                                                     {isSelected ? "Sélectionné" : "Réserver"}
                                                 </Text>
                                             </View>
@@ -449,56 +465,56 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
 
                 {/* Arrival Time */}
                 <View style={styles.section}>
-                    <View style={styles.arrivalCard}>
+                    <View style={[styles.arrivalCard, { backgroundColor: colors.surface, borderColor: 'rgba(244, 123, 37, 0.3)' }]}>
                         <View style={styles.arrivalInfo}>
                             <View style={styles.arrivalIconBox}>
-                                <MaterialIcons name="access-time" size={20} color={COLORS.primary} />
+                                <MaterialIcons name="access-time" size={20} color={colors.primary} />
                             </View>
                             <View>
-                                <Text style={styles.arrivalLabel}>Heure d'arrivée</Text>
-                                <Text style={styles.arrivalSubLabel}>30 min avant le match</Text>
+                                <Text style={[styles.arrivalLabel, { color: colors.text }]}>Heure d'arrivée</Text>
+                                <Text style={[styles.arrivalSubLabel, { color: colors.textSecondary }]}>30 min avant le match</Text>
                             </View>
                         </View>
-                        <Text style={styles.arrivalTime}>{arrivalTime}</Text>
+                        <Text style={[styles.arrivalTime, { color: colors.primary }]}>{arrivalTime}</Text>
                     </View>
                 </View>
 
                 {/* Guest Counter */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Nombre d'invités</Text>
-                    <View style={styles.guestCard}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Nombre d'invités</Text>
+                    <View style={[styles.guestCard, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
                         <View>
-                            <Text style={styles.guestLabel}>Personnes</Text>
-                            <Text style={styles.guestSubLabel}>Table standard</Text>
+                            <Text style={[styles.guestLabel, { color: colors.text, fontSize: 16, fontWeight: 'bold' }]}>Personnes</Text>
+                            <Text style={[styles.guestSubLabel, { color: colors.textSecondary, fontSize: 13 }]}>Table standard</Text>
                         </View>
                         <View style={styles.counterContainer}>
-                            <TouchableOpacity style={styles.counterButton} onPress={decrementGuests}>
-                                <MaterialIcons name="remove" size={20} color={COLORS.white} />
-                                </TouchableOpacity>
-                            <Text style={styles.guestCount}>{guests}</Text>
-                            <TouchableOpacity style={styles.counterButton} onPress={incrementGuests}>
-                                <MaterialIcons name="add" size={20} color={COLORS.white} />
-                                </TouchableOpacity>
-                            </View>
+                            <TouchableOpacity style={[styles.counterButton, { backgroundColor: colors.surfaceAlt }]} onPress={decrementGuests}>
+                                <MaterialIcons name="remove" size={20} color={colors.text} />
+                            </TouchableOpacity>
+                            <Text style={[styles.guestCount, { color: colors.text, fontSize: 18, fontWeight: 'bold', marginHorizontal: 16 }]}>{guests}</Text>
+                            <TouchableOpacity style={[styles.counterButton, { backgroundColor: colors.primary }]} onPress={incrementGuests}>
+                                <MaterialIcons name="add" size={20} color={colors.white} />
+                            </TouchableOpacity>
                         </View>
                     </View>
+                </View>
 
                 {/* Info Note */}
-                <View style={styles.infoNote}>
-                    <MaterialIcons name="info" size={20} color={COLORS.primary} style={{ marginTop: 2 }} />
-                    <Text style={styles.infoNoteText}>
-                        <Text style={{ fontWeight: 'bold', color: COLORS.primary }}>Note: </Text>
+                <View style={[styles.infoNote, { backgroundColor: 'rgba(244,123,37,0.1)', padding: 12, borderRadius: 12, flexDirection: 'row', gap: 10 }]}>
+                    <MaterialIcons name="info" size={20} color={colors.primary} style={{ marginTop: 2 }} />
+                    <Text style={[styles.infoNoteText, { color: colors.textSecondary, flex: 1, fontSize: 13, lineHeight: 18 }]}>
+                        <Text style={{ fontWeight: 'bold', color: colors.primary }}>Note: </Text>
                         Pour les groupes de plus de 8 personnes, un dépôt de garantie de 10€ par personne est requis.
                     </Text>
                 </View>
 
                 {/* Special Request */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Demande spéciale</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Demande spéciale</Text>
                     <TextInput
-                        style={styles.textArea}
+                        style={[styles.textArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 12, height: 100 }]}
                         placeholder="Ex: Une table près de l'écran, accès PMR..."
-                        placeholderTextColor={COLORS.textMuted}
+                        placeholderTextColor={colors.textMuted}
                         multiline
                         textAlignVertical="top"
                         value={specialRequest}
@@ -509,24 +525,24 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
             </ScrollView>
 
             {/* Bottom Footer */}
-            <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+            <View style={[styles.footer, { paddingBottom: insets.bottom + 16, backgroundColor: colors.background, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: colors.border }]}>
                 <TouchableOpacity
-                    style={[styles.confirmButton, (isSubmitting || confirmDisabled) && styles.confirmButtonDisabled]}
+                    style={[styles.confirmButton, (isSubmitting || confirmDisabled) && styles.confirmButtonDisabled, { backgroundColor: confirmDisabled ? colors.surfaceAlt : colors.primary }]}
                     onPress={handleConfirmReservation}
                     disabled={confirmDisabled}
                     activeOpacity={0.85}
                 >
                     {isSubmitting ? (
                         <View style={styles.confirmLoadingRow}>
-                            <ActivityIndicator color={COLORS.white} />
-                            <Text style={styles.confirmButtonText}>Confirmation...</Text>
+                            <ActivityIndicator color={colors.white} />
+                            <Text style={[styles.confirmButtonText, { color: colors.white }]}>Confirmation...</Text>
                         </View>
                     ) : (
                         <>
-                            <Text style={styles.confirmButtonText}>
+                            <Text style={[styles.confirmButtonText, { color: confirmDisabled ? colors.textMuted : colors.white }]}>
                                 {selectedMatch ? "Confirmer la réservation" : "Sélectionne un match"}
                             </Text>
-                            {selectedMatch ? <MaterialIcons name="arrow-forward" size={20} color={COLORS.white} /> : null}
+                            {selectedMatch ? <MaterialIcons name="arrow-forward" size={20} color={colors.white} /> : null}
                         </>
                     )}
                 </TouchableOpacity>
@@ -586,7 +602,6 @@ const styles = StyleSheet.create({
         gap: 4,
     },
     seeMoreText: {
-        color: COLORS.primary,
         fontSize: 14,
         fontWeight: 'bold',
     },
@@ -603,14 +618,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 2,
+        borderWidth: 1,
     },
     dateCardSelected: {
-        backgroundColor: COLORS.primary,
-        shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
         elevation: 6,
+        borderWidth: 0,
     },
     confirmButtonDisabled: {
         opacity: 0.7,
@@ -627,9 +642,7 @@ const styles = StyleSheet.create({
         textAlign: "center",
     },
     dateCardUnselected: {
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: COLORS.border,
+        // Removed static colors, handled inline
     },
     dateMonth: {
         fontSize: 12,
@@ -662,12 +675,10 @@ const styles = StyleSheet.create({
         borderRadius: 99,
     },
     filterChipSelected: {
-        backgroundColor: COLORS.primary,
+        // dynamic
     },
     filterChipUnselected: {
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: COLORS.border,
+        // dynamic
     },
     filterText: {
         fontSize: 14,
@@ -682,7 +693,6 @@ const styles = StyleSheet.create({
     matchCard: {
         width: 280,
         borderRadius: 16,
-        backgroundColor: COLORS.surface,
         overflow: 'hidden',
     },
     matchCardSelected: {
@@ -768,11 +778,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: COLORS.surface,
         padding: 16,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(244, 123, 37, 0.3)', // Slight orange tint border
     },
     arrivalInfo: {
         flexDirection: 'row',

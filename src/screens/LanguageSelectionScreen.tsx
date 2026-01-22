@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
+import { useStore } from '../store/useStore';
 
 type LanguageOption = {
     code: string;
@@ -34,13 +35,15 @@ const OTHER_LANGUAGES: LanguageOption[] = [
 const LanguageSelectionScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
+    const { colors, themeMode } = useStore();
     const [selectedLang, setSelectedLang] = useState('fr'); // Default to French as per design
 
     const RadioButton = ({ selected }: { selected: boolean }) => (
         <View
             style={[
                 styles.radioCircle,
-                selected && styles.radioCircleSelected,
+                { borderColor: selected ? colors.primary : colors.subtext },
+                selected && { backgroundColor: colors.primary },
             ]}
         >
             {selected && <View style={styles.radioInnerCircle} />}
@@ -58,7 +61,8 @@ const LanguageSelectionScreen = () => {
                 <Text
                     style={[
                         styles.languageLabel,
-                        isSelected && styles.languageLabelSelected,
+                        { color: isSelected ? colors.text : colors.textMuted },
+                        isSelected && { fontWeight: '600' },
                     ]}
                 >
                     {item.label}
@@ -69,46 +73,58 @@ const LanguageSelectionScreen = () => {
     };
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle={themeMode === 'light' ? "dark-content" : "light-content"} />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+            <View style={[styles.header, {
+                paddingTop: insets.top + 8,
+                backgroundColor: colors.background === '#ffffff' ? 'rgba(255,255,255,0.9)' : 'rgba(11, 11, 15, 0.9)',
+                borderBottomColor: colors.border
+            }]}>
                 <TouchableOpacity
-                    style={styles.backButton}
+                    style={[styles.backButton, { backgroundColor: colors.surfaceGlass }]}
                     onPress={() => navigation.goBack()}
                 >
-                    <MaterialIcons name="arrow-back" size={24} color={COLORS.text} />
+                    <MaterialIcons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Langue</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Langue</Text>
                 <View style={styles.placeholder} />
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
                 {/* Suggested Languages */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>LANGUES SUGGÉRÉES</Text>
-                    <View style={styles.card}>
+                    <Text style={[styles.sectionTitle, { color: colors.subtext }]}>LANGUES SUGGÉRÉES</Text>
+                    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         {SUGGESTED_LANGUAGES.map((lang, index) => (
-                            <LanguageItem
-                                key={lang.code}
-                                item={lang}
-                                isLast={index === SUGGESTED_LANGUAGES.length - 1}
-                            />
+                            <View key={lang.code}>
+                                <LanguageItem
+                                    item={lang}
+                                    isLast={index === SUGGESTED_LANGUAGES.length - 1}
+                                />
+                                {index !== SUGGESTED_LANGUAGES.length - 1 && (
+                                    <View style={{ height: 1, backgroundColor: colors.divider }} />
+                                )}
+                            </View>
                         ))}
                     </View>
                 </View>
 
                 {/* Other Languages */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>AUTRES LANGUES</Text>
-                    <View style={styles.card}>
+                    <Text style={[styles.sectionTitle, { color: colors.subtext }]}>AUTRES LANGUES</Text>
+                    <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         {OTHER_LANGUAGES.map((lang, index) => (
-                            <LanguageItem
-                                key={lang.code}
-                                item={lang}
-                                isLast={index === OTHER_LANGUAGES.length - 1}
-                            />
+                            <View key={lang.code}>
+                                <LanguageItem
+                                    item={lang}
+                                    isLast={index === OTHER_LANGUAGES.length - 1}
+                                />
+                                {index !== OTHER_LANGUAGES.length - 1 && (
+                                    <View style={{ height: 1, backgroundColor: colors.divider }} />
+                                )}
+                            </View>
                         ))}
                     </View>
                 </View>

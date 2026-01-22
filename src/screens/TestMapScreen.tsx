@@ -22,6 +22,7 @@ import TestMapScreenFilter, {
     FilterSelections,
 } from "../components/TestMapScreenFilter";
 import { COLORS } from "../constants/colors";
+import { useStore } from "../store/useStore";
 import { testApi, Venue, VenueMatch } from "../services/testApi";
 
 
@@ -130,7 +131,185 @@ const DARK_MAP_STYLE = [
     }
 ];
 
+const LIGHT_MAP_STYLE = [
+    {
+        "featureType": "water",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#e9e9e9"
+            },
+            {
+                "lightness": 17
+            }
+        ]
+    },
+    {
+        "featureType": "landscape",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#f5f5f5"
+            },
+            {
+                "lightness": 20
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 17
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 29
+            },
+            {
+                "weight": 0.2
+            }
+        ]
+    },
+    {
+        "featureType": "road.arterial",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 18
+            }
+        ]
+    },
+    {
+        "featureType": "road.local",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 16
+            }
+        ]
+    },
+    {
+        "featureType": "poi",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#f5f5f5"
+            },
+            {
+                "lightness": 21
+            }
+        ]
+    },
+    {
+        "featureType": "poi.park",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#dedede"
+            },
+            {
+                "lightness": 21
+            }
+        ]
+    },
+    {
+        "elementType": "labels.text.stroke",
+        "stylers": [
+            {
+                "visibility": "on"
+            },
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 16
+            }
+        ]
+    },
+    {
+        "elementType": "labels.text.fill",
+        "stylers": [
+            {
+                "saturation": 36
+            },
+            {
+                "color": "#333333"
+            },
+            {
+                "lightness": 40
+            }
+        ]
+    },
+    {
+        "elementType": "labels.icon",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "transit",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#f2f2f2"
+            },
+            {
+                "lightness": 19
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#fefefe"
+            },
+            {
+                "lightness": 20
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#fefefe"
+            },
+            {
+                "lightness": 17
+            },
+            {
+                "weight": 1.2
+            }
+        ]
+    }
+];
+
 const TestMapScreen = ({ navigation }: { navigation: any }) => {
+    const { colors, themeMode } = useStore();
     const mapRef = useRef<MapView>(null);
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
     const [venues, setVenues] = useState<Venue[]>([]);
@@ -164,12 +343,12 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
     const handleCenterOnUser = async () => {
         let { status } = await Location.getForegroundPermissionsAsync();
         if (status !== 'granted') {
-             status = (await Location.requestForegroundPermissionsAsync()).status;
+            status = (await Location.requestForegroundPermissionsAsync()).status;
         }
-        
+
         if (status === 'granted') {
-             const location = await Location.getCurrentPositionAsync({});
-             if (mapRef.current && location) {
+            const location = await Location.getCurrentPositionAsync({});
+            if (mapRef.current && location) {
                 mapRef.current.animateToRegion({
                     latitude: location.coords.latitude,
                     longitude: location.coords.longitude,
@@ -286,7 +465,7 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
 
     return (
         <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
 
             {/* ... (Keep Drawer Overlay/Content) ... */}
             {isDrawerOpen && (
@@ -296,19 +475,22 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                     onPress={() => setIsDrawerOpen(false)}
                 />
             )}
-            <Animated.View style={[styles.drawerContent, { transform: [{ translateX: drawerAnim }] }]}>
+            <Animated.View style={[
+                styles.drawerContent,
+                { transform: [{ translateX: drawerAnim }], backgroundColor: colors.backgroundElevated }
+            ]}>
                 {/* ... Drawer Content ... */}
-                <View style={styles.drawerHeader}>
+                <View style={[styles.drawerHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
                     <View style={styles.userProfile}>
-                        <View style={styles.avatarContainer}>
+                        <View style={[styles.avatarContainer, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
                             <Image
                                 source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAv-V7A3SeCdF1j2Bm_cd8CNyCIPLta_60LMVXq6t8rqMzmR3jN9jIZ7bt9ISzqvvQzy15wMvgUi21QK1UeBjAKXD9SYDWvlhxJUKZe5NlK9VOV88baSy0v-zOcbIUMHIc3VF02oz_MO0Xxk3r3CAxCxHQ5uqurmEX4Wo8XypMwNPoDZ3cNhTDHlQV9wpmMCe97EnjPVTHTez6ZZ_Ew_rtUBIDA5gBcfnhoDE5jG4-cqWPRraSda6xFkT3mnJTt9-MA5H7kBzttVcmr" }}
                                 style={styles.avatar}
                             />
                         </View>
                         <View>
-                            <Text style={styles.drawerTitle}>Bonjour !</Text>
-                            <Text style={styles.drawerSubtitle}>Membre Premium</Text>
+                            <Text style={[styles.drawerTitle, { color: colors.text }]}>Bonjour !</Text>
+                            <Text style={[styles.drawerSubtitle, { color: colors.subtext }]}>Membre Premium</Text>
                         </View>
                     </View>
                     <TouchableOpacity style={styles.proButton}>
@@ -319,14 +501,14 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
 
                 <ScrollView style={styles.drawerNav}>
                     <View style={styles.drawerNavItemContainer}>
-                        <DrawerItem icon="settings" label="Paramètres" />
-                        <DrawerItem icon="help" label="Aide & Support" />
-                        <DrawerItem icon="share" label="Partager l'app" />
-                        <DrawerItem icon="info" label="À propos" />
+                        <DrawerItem icon="settings" label="Paramètres" color={colors.text} />
+                        <DrawerItem icon="help" label="Aide & Support" color={colors.text} />
+                        <DrawerItem icon="share" label="Partager l'app" color={colors.text} />
+                        <DrawerItem icon="info" label="À propos" color={colors.text} />
                     </View>
-                    <View style={styles.drawerDivider} />
+                    <View style={[styles.drawerDivider, { backgroundColor: colors.divider }]} />
                     <View style={styles.drawerNavItemContainer}>
-                        <DrawerItem icon="logout" label="Déconnexion" color={COLORS.red400} />
+                        <DrawerItem icon="logout" label="Déconnexion" color={colors.red400} />
                     </View>
                 </ScrollView>
                 <View style={styles.drawerFooter}>
@@ -341,7 +523,7 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                 showsMyLocationButton={false}
                 provider={PROVIDER_DEFAULT}
                 style={StyleSheet.absoluteFillObject}
-                customMapStyle={DARK_MAP_STYLE}
+                customMapStyle={themeMode === 'light' ? LIGHT_MAP_STYLE : DARK_MAP_STYLE}
                 onPress={handleMapPress}
                 initialRegion={{
                     latitude: 48.8566,
@@ -367,13 +549,13 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                                     <MaterialIcons
                                         name="location-on"
                                         size={isSelected ? 60 : 45}
-                                        color={COLORS.primary}
+                                        color={colors.primary}
                                     />
-                                    {isSelected && <View style={styles.activePinDot} />}
+                                    {isSelected && <View style={[styles.activePinDot, { backgroundColor: colors.white }]} />}
                                 </View>
                                 {isSelected && (
-                                    <View style={styles.pinLabel}>
-                                        <Text style={styles.pinLabelText}>{venue.name}</Text>
+                                    <View style={[styles.pinLabel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                        <Text style={[styles.pinLabelText, { color: colors.text }]}>{venue.name}</Text>
                                     </View>
                                 )}
                             </View>
@@ -384,24 +566,26 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
 
             {/* Header */}
             <LinearGradient
-                colors={['rgba(15, 23, 42, 0.95)', 'transparent']}
+                colors={themeMode === 'light'
+                    ? ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.5)', 'transparent']
+                    : ['rgba(15, 23, 42, 0.95)', 'transparent']}
                 style={styles.header}
             >
                 <SafeAreaView edges={['top']}>
                     <View style={styles.headerTop}>
-                        <TouchableOpacity style={styles.menuButton} onPress={toggleDrawer}>
-                            <MaterialIcons name="menu" size={24} color={COLORS.white} />
+                        <TouchableOpacity style={[styles.menuButton, { backgroundColor: colors.inputBackground, borderColor: colors.border }]} onPress={toggleDrawer}>
+                            <MaterialIcons name="menu" size={24} color={colors.text} />
                         </TouchableOpacity>
-                        <Text style={styles.headerTitle}>AUTOUR DE MOI</Text>
-                        <TouchableOpacity style={styles.filterButton} onPress={openFilterSheet}>
-                            <MaterialIcons name="tune" size={24} color={COLORS.white} />
+                        <Text style={[styles.headerTitle, { color: colors.text, textShadowColor: themeMode === 'light' ? 'transparent' : 'rgba(0,0,0,0.5)' }]}>AUTOUR DE MOI</Text>
+                        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.primary }]} onPress={openFilterSheet}>
+                            <MaterialIcons name="tune" size={24} color={colors.white} />
                         </TouchableOpacity>
                     </View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.headerTabs} contentContainerStyle={{ paddingHorizontal: 16 }}>
-                        <FilterTab label="Tout" active />
-                        <FilterTab label="Football" />
-                        <FilterTab label="Rugby" />
-                        <FilterTab label="Tennis" />
+                        <FilterTab label="Tout" active colors={colors} />
+                        <FilterTab label="Football" colors={colors} />
+                        <FilterTab label="Rugby" colors={colors} />
+                        <FilterTab label="Tennis" colors={colors} />
                     </ScrollView>
                 </SafeAreaView>
             </LinearGradient>
@@ -417,7 +601,7 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
             {/* Venue Card - Only Conditionally Rendered */}
             {selectedVenue && (
                 <View style={styles.venueCardContainer}>
-                    <View style={styles.venueCard}>
+                    <View style={[styles.venueCard, { backgroundColor: colors.card }]}>
                         <Image
                             source={{ uri: selectedVenue.image }}
                             style={styles.venueImage}
@@ -425,7 +609,7 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                         <View style={styles.venueInfo}>
                             <View>
                                 <View style={styles.venueHeaderRow}>
-                                    <Text style={styles.venueName} numberOfLines={1}>{selectedVenue.name}</Text>
+                                    <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>{selectedVenue.name}</Text>
                                     <View style={[styles.openBadge, !selectedVenue.isOpen && styles.closedBadge]}>
                                         <Text style={[styles.openBadgeText, !selectedVenue.isOpen && styles.closedBadgeText]}>
                                             {selectedVenue.isOpen ? "OUVERT" : "FERMÉ"}
@@ -433,27 +617,27 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                                     </View>
                                 </View>
                                 <View style={styles.ratingRow}>
-                                    <MaterialIcons name="star" size={16} color={COLORS.yellow400} />
-                                    <Text style={styles.ratingText}>{selectedVenue.rating.toFixed(1)}</Text>
-                                    <Text style={styles.venueSubText}>• {selectedVenue.tags[0]} • {selectedVenue.priceLevel} • {selectedVenue.distance}</Text>
+                                    <MaterialIcons name="star" size={16} color={colors.yellow400} />
+                                    <Text style={[styles.ratingText, { color: colors.text }]}>{selectedVenue.rating.toFixed(1)}</Text>
+                                    <Text style={[styles.venueSubText, { color: colors.textMuted }]}>• {selectedVenue.tags[0]} • {selectedVenue.priceLevel} • {selectedVenue.distance}</Text>
                                 </View>
                             </View>
                             <View style={styles.broadcastRow}>
                                 <View style={styles.broadcastBadge}>
-                                    <MaterialIcons name="live-tv" size={14} color={COLORS.primary} />
-                                    <Text style={styles.broadcastText}>Diffusé ici</Text>
+                                    <MaterialIcons name="live-tv" size={14} color={colors.primary} />
+                                    <Text style={[styles.broadcastText, { color: colors.primary }]}>Diffusé ici</Text>
                                 </View>
                             </View>
                         </View>
                     </View>
-                    <View style={styles.venueActions}>
+                    <View style={[styles.venueActions, { backgroundColor: colors.card }]}>
                         <TouchableOpacity style={styles.venueBtnSecondary}>
-                            <MaterialIcons name="directions" size={18} color={COLORS.slate400} />
-                            <Text style={styles.venueBtnTextSecondary}>Itinéraire</Text>
+                            <MaterialIcons name="directions" size={18} color={colors.slate400} />
+                            <Text style={[styles.venueBtnTextSecondary, { color: colors.slate400 }]}>Itinéraire</Text>
                         </TouchableOpacity>
-                        <View style={styles.venueBtnDivider} />
+                        <View style={[styles.venueBtnDivider, { backgroundColor: colors.divider }]} />
                         <TouchableOpacity
-                            style={styles.venueBtnPrimary}
+                            style={[styles.venueBtnPrimary, { backgroundColor: colors.primary }]}
                             onPress={() => navigation.navigate('TestVenueProfile', { venueId: selectedVenue?.id })}
                         >
                             <Text style={styles.venueBtnTextPrimary}>Voir détails</Text>
@@ -479,19 +663,19 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                     onPress={toggleSheet}
                 >
                     <View style={styles.handleBar} />
-                    <Text style={styles.handleText}>
+                    <Text style={[styles.handleText, { color: colors.text }]}>
                         {isSheetOpen ? "Masquer les matchs" : "Prochains Matchs"}
                     </Text>
                     <MaterialIcons
                         name={isSheetOpen ? "keyboard-arrow-down" : "keyboard-arrow-up"}
                         size={20}
-                        color={COLORS.slate400}
+                        color={colors.slate400}
                         style={{ marginTop: 4 }}
                     />
                 </TouchableOpacity>
 
                 {/* Content */}
-                <View style={styles.sheetContent}>
+                <View style={[styles.sheetContent, { backgroundColor: colors.backgroundElevated }]}>
                     <ScrollView showsVerticalScrollIndicator={false}>
                         {upcomingMatches.map((match) => (
                             <MatchItem
@@ -504,6 +688,7 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                                 team2Color={match.team2Color}
                                 time={match.time}
                                 league={match.league}
+                                colors={colors}
                             />
                         ))}
                         <View style={{ height: 100 }} />
@@ -512,8 +697,8 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
             </Animated.View>
 
             {/* Near Me Button */}
-            <TouchableOpacity 
-                style={styles.nearMeButton} 
+            <TouchableOpacity
+                style={styles.nearMeButton}
                 activeOpacity={0.8}
                 onPress={handleCenterOnUser}
             >
@@ -537,37 +722,46 @@ const DrawerItem = ({ icon, label, color = COLORS.slate300 }: any) => (
     </TouchableOpacity>
 );
 
-const FilterTab = ({ label, active }: any) => (
-    <TouchableOpacity style={[styles.filterTab, active && styles.filterTabActive]}>
-        <Text style={[styles.filterTabText, active && styles.filterTabTextActive]}>{label}</Text>
+const FilterTab = ({ label, active, colors }: any) => (
+    <TouchableOpacity style={[
+        styles.filterTab,
+        { backgroundColor: colors.inputBackground, borderColor: colors.border },
+        active && { backgroundColor: colors.white, borderColor: colors.white }
+    ]}>
+        <Text style={[
+            styles.filterTabText,
+            { color: colors.text }, // Default to text color (white in dark, black in light?) Wait.
+            // If active, it should be inverted.
+            active && { color: colors.black }
+        ]}>{label}</Text>
     </TouchableOpacity>
 );
 
-const MatchItem = ({ date, month, team1, team2, team1Color, team2Color, time, league, divider = "vs" }: any) => (
-    <TouchableOpacity style={styles.matchItem}>
+const MatchItem = ({ date, month, team1, team2, team1Color, team2Color, time, league, divider = "vs", colors }: any) => (
+    <TouchableOpacity style={[styles.matchItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.matchDate}>
-            <Text style={styles.matchMonth}>{month}</Text>
-            <Text style={styles.matchDay}>{date}</Text>
+            <Text style={[styles.matchMonth, { color: colors.textMuted }]}>{month}</Text>
+            <Text style={[styles.matchDay, { color: colors.text }]}>{date}</Text>
         </View>
         <View style={styles.matchInfo}>
             <View style={styles.teamsRow}>
                 <Text style={[styles.teamName, { color: team1Color }]}>{team1}</Text>
-                <Text style={styles.teamDivider}>{divider}</Text>
+                <Text style={[styles.teamDivider, { color: colors.textMuted }]}>{divider}</Text>
                 <Text style={[styles.teamName, { color: team2Color }]}>{team2}</Text>
             </View>
             <View style={styles.matchMeta}>
-                <MaterialIcons name="schedule" size={12} color={COLORS.slate400} />
-                <Text style={styles.matchMetaText}>{time} • {league}</Text>
+                <MaterialIcons name="schedule" size={12} color={colors.slate400} />
+                <Text style={[styles.matchMetaText, { color: colors.textMuted }]}>{time} • {league}</Text>
             </View>
         </View>
-        <MaterialIcons name="chevron-right" size={24} color={COLORS.slate500} />
+        <MaterialIcons name="chevron-right" size={24} color={colors.slate500} />
     </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.backgroundDark,
+        // backgroundColor: COLORS.background, // Handled dynamically
     },
     // Drawer
     drawerOverlay: {
