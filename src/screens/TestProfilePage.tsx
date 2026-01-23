@@ -65,7 +65,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
     title: 'Préférences',
     rows: [
       { icon: 'language', color: '#818cf8', label: 'Langue', meta: 'Français' },
-      { icon: 'dark-mode', color: '#a78bfa', label: 'Thème', meta: 'Sombre' },
+      { icon: 'dark-mode', color: '#a78bfa', label: 'Thème' },
       { icon: 'notifications', color: '#fb923c', label: 'Notifications', toggle: true },
     ],
   },
@@ -91,13 +91,21 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
     ],
   },
 ];
-
 const TestProfilePage = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { logout, user, themeMode, colors } = useStore();
   const userData = user?.user ?? user ?? null;
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  const getThemeLabel = (mode: 'light' | 'dark' | 'system') => {
+    switch (mode) {
+      case 'light': return 'Clair';
+      case 'dark': return 'Sombre';
+      case 'system': return 'Système';
+      default: return 'Sombre';
+    }
+  };
 
   // Build profile from store user data
   const profile: UserProfile = {
@@ -217,7 +225,9 @@ const TestProfilePage = () => {
                     );
                   }
 
-                  const showMeta = row.meta || row.accent || row.badge;
+                  const showMeta = row.meta || row.accent || row.badge || (row.label === 'Thème');
+                  const displayMeta = row.label === 'Thème' ? getThemeLabel(themeMode) : row.meta;
+
                   const handlePress = () => {
                     if (row.label === 'Questions fréquentes') {
                       navigation.navigate('TestFaqSupport');
@@ -262,9 +272,9 @@ const TestProfilePage = () => {
                           {row.label}
                         </Text>
                       </View>
-                      {row.meta ? (
+                      {displayMeta ? (
                         <View style={styles.metaContainer}>
-                          <Text style={[styles.metaText, { color: colors.subtext }]}>{row.meta}</Text>
+                          <Text style={[styles.metaText, { color: colors.subtext }]}>{displayMeta}</Text>
                           <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
                         </View>
                       ) : row.badge ? (

@@ -138,7 +138,7 @@ const ThemeSelectionScreen = () => {
             {/* Header */}
             <View style={[styles.header, {
                 paddingTop: insets.top + 8,
-                backgroundColor: colors.background === '#ffffff' ? 'rgba(255,255,255,0.9)' : 'rgba(11, 11, 15, 0.9)',
+                backgroundColor: themeMode === 'light' ? 'rgba(248,247,245,0.95)' : 'rgba(11, 11, 15, 0.9)',
                 borderBottomColor: colors.border
             }]}>
                 <TouchableOpacity

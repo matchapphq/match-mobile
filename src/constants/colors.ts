@@ -23,6 +23,7 @@ export const DARK_THEME = {
     ...BASE_COLORS,
     background: "#0b0b0f",
     backgroundLight: "#121212", // used for slightly lighter backgrounds
+    backgroundDark: "#050508",
     backgroundElevated: "#1c1c21",
 
     surface: "#1c1c21",
@@ -43,12 +44,15 @@ export const DARK_THEME = {
     border: "rgba(255,255,255,0.08)",
 
     inputBackground: "rgba(255,255,255,0.05)",
+
+    surfaceGlass: "rgba(255,255,255,0.10)",
 };
 
 export const LIGHT_THEME = {
     ...BASE_COLORS,
     background: "#f8f7f5", // Light beige/off-white from valid matches
     backgroundLight: "#ffffff",
+    backgroundDark: "#e2e8f0",
     backgroundElevated: "#ffffff",
 
     surface: "#ffffff",
@@ -69,6 +73,8 @@ export const LIGHT_THEME = {
     border: "rgba(0,0,0,0.08)",
 
     inputBackground: "rgba(0,0,0,0.04)",
+
+    surfaceGlass: "rgba(0,0,0,0.05)",
 };
 
 // Default export for backward compatibility during refactor
