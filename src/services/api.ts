@@ -10,10 +10,9 @@ import {
 } from "../types";
 import Constants from "expo-constants";
 import { cacheService } from "./cache";
+import { tokenStorage } from "../utils/tokenStorage";
 
 const API_BASE_URL = Constants.expoConfig?.extra?.apiBase || "http://localhost:8008/api";
-
-//const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'https://opportunely-untrinitarian-tommie.ngrok-free.dev';
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -26,7 +25,7 @@ const api = axios.create({
 // Add auth token to requests
 api.interceptors.request.use(async (config) => {
     try {
-        const token = await AsyncStorage.getItem("authToken");
+        const token = await tokenStorage.getAccessToken();
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -36,13 +35,76 @@ api.interceptors.request.use(async (config) => {
     return config;
 });
 
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error);
+        } else {
+            prom.resolve(token);
+        }
+    });
+
+    failedQueue = [];
+};
+
 // Handle response errors
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        if (error.response?.status === 401) {
-            await AsyncStorage.removeItem("authToken");
+        const originalRequest = error.config;
+
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                return new Promise(function (resolve, reject) {
+                    failedQueue.push({ resolve, reject });
+                })
+                    .then((token) => {
+                        originalRequest.headers["Authorization"] = "Bearer " + token;
+                        return api(originalRequest);
+                    })
+                    .catch((err) => {
+                        return Promise.reject(err);
+                    });
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                const refreshToken = await tokenStorage.getRefreshToken();
+                if (!refreshToken) {
+                    throw new Error("No refresh token available");
+                }
+
+                const response = await axios.post(`${API_BASE_URL}/auth/refresh-token`, {
+                    refresh_token: refreshToken
+                });
+
+                const { token, refresh_token } = response.data;
+                
+                await tokenStorage.setTokens(token, refresh_token);
+                
+                api.defaults.headers.common["Authorization"] = "Bearer " + token;
+                processQueue(null, token);
+                
+                originalRequest.headers["Authorization"] = "Bearer " + token;
+                return api(originalRequest);
+            } catch (err) {
+                processQueue(err, null);
+                await tokenStorage.clearTokens();
+                // We might want to trigger a logout action in the store here
+                // but avoiding circular dependencies is tricky. 
+                // The store should listen to isAuthenticated state which will be false next app load
+                // or we can emit an event.
+                return Promise.reject(err);
+            } finally {
+                isRefreshing = false;
+            }
         }
+
         return Promise.reject(error);
     },
 );

@@ -241,9 +241,11 @@ export const useStore = create<AppState>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const response = await apiService.login(email, password);
-            await AsyncStorage.setItem("authToken", response.token);
-            const user = await apiService.getMe();
+            const { token, refresh_token, user } = response;
+            
+            await tokenStorage.setTokens(token, refresh_token);
             await AsyncStorage.setItem("user", JSON.stringify(user));
+            
             set({
                 user,
                 isAuthenticated: true,
@@ -278,12 +280,12 @@ export const useStore = create<AppState>((set, get) => ({
             };
 
             const response = await apiService.signup(payload);
-            const { token, user } = response;
+            const { token, refresh_token, user } = response;
             if (!token || !user) {
                 throw new Error("Signup response missing data");
             }
 
-            await AsyncStorage.setItem("authToken", token);
+            await tokenStorage.setTokens(token, refresh_token);
             await AsyncStorage.setItem("user", JSON.stringify(user));
             await AsyncStorage.setItem("onboardingCompleted", "true");
 
@@ -624,11 +626,14 @@ export const useStore = create<AppState>((set, get) => ({
                 sortDirection: "asc",
             },
         });
+        
+        await tokenStorage.clearTokens();
+        
         AsyncStorage.multiRemove([
             "user",
             "onboardingCompleted",
             "reservations",
-            "authToken",
+            // "authToken" // Handled by tokenStorage
         ]);
     },
 }));
@@ -640,16 +645,17 @@ export const initializeStore = async () => {
             "user",
             "onboardingCompleted",
             "reservations",
-            "authToken",
             "themeMode"
         ]);
+
+        const token = await tokenStorage.getAccessToken();
 
         const userStr = values.find(([key]) => key === "user")?.[1] || null;
         const onboardingStr =
             values.find(([key]) => key === "onboardingCompleted")?.[1] || null;
         const reservationsStr =
             values.find(([key]) => key === "reservations")?.[1] || null;
-        const token = values.find(([key]) => key === "authToken")?.[1] || null;
+        // const token = values.find(([key]) => key === "authToken")?.[1] || null; // Handled above
         const themeModeStr = values.find(([key]) => key === "themeMode")?.[1] || 'dark';
 
         // Resolve theme
