@@ -11,6 +11,7 @@ import {
     Notification,
 } from "../types";
 import { apiService, mockData, ApiReservation } from "../services/api";
+import { tokenStorage } from "../utils/tokenStorage";
 
 // Transform API reservation to mobile Reservation type
 const transformApiReservation = (
