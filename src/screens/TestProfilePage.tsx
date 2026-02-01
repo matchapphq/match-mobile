@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
+import * as ImagePicker from 'expo-image-picker';
 import { useStore } from '../store/useStore';
 import type { UserProfile } from '../services/testApi';
 
@@ -94,9 +95,24 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
 const TestProfilePage = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { logout, user, themeMode, colors } = useStore();
+  const { logout, user, themeMode, colors, updateUser } = useStore();
   const userData = user?.user ?? user ?? null;
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
+  const handlePickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const newAvatar = result.assets[0].uri;
+      updateUser({ avatar: newAvatar });
+    }
+  };
 
   const getThemeLabel = (mode: 'light' | 'dark' | 'system') => {
     switch (mode) {
@@ -165,7 +181,11 @@ const TestProfilePage = () => {
                   style={styles.avatar}
                   imageStyle={{ borderRadius: 64 }}
                 />
-                <TouchableOpacity style={[styles.avatarEditBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} activeOpacity={0.9}>
+                <TouchableOpacity 
+                  style={[styles.avatarEditBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} 
+                  activeOpacity={0.9}
+                  onPress={handlePickImage}
+                >
                   <MaterialIcons name="edit" size={22} color={colors.text} />
                 </TouchableOpacity>
               </View>

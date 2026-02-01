@@ -97,6 +97,7 @@ interface AppState {
     setUser: (user: User | null) => void;
     setOnboardingCompleted: (completed: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
+    updateUser: (updates: Partial<User>) => void;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
     updateComputedTheme: () => void;
 
@@ -355,6 +356,34 @@ export const useStore = create<AppState>((set, get) => ({
         const { user } = get();
         if (user) {
             const updatedUser = { ...user, preferences };
+            set({ user: updatedUser });
+            AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+    },
+
+    updateUser: (updates) => {
+        const { user } = get();
+        if (user) {
+            // The User interface has a weird redundant structure where 'user' is both nested and top-level.
+            // We'll update both to stay consistent.
+            const updatedUser = { 
+                ...user, 
+                ...updates,
+            };
+
+            // Only sync to nested user object if it exists to avoid creating a partial object
+            // that shadows top-level properties in views using user?.user ?? user
+            if (user.user) {
+                updatedUser.user = {
+                    ...user.user,
+                    ...(updates.user || {}),
+                    // If top level fields are updated, sync them to nested user object if they exist there
+                    ...(updates.avatar ? { avatar: updates.avatar } : {}),
+                    ...(updates.first_name ? { first_name: updates.first_name } : {}),
+                    ...(updates.last_name ? { last_name: updates.last_name } : {}),
+                };
+            }
+
             set({ user: updatedUser });
             AsyncStorage.setItem("user", JSON.stringify(updatedUser));
         }
