@@ -11,7 +11,7 @@ import {
     StatusBar,
     ActivityIndicator,
 } from "react-native";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import MapView, { Marker, PROVIDER_DEFAULT, Region } from "react-native-maps";
 import * as Location from "expo-location";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -316,8 +316,32 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
     const [upcomingMatches, setUpcomingMatches] = useState<VenueMatch[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    // Area search state
+    const [showSearchButton, setShowSearchButton] = useState(false);
+    const [isSearchingArea, setIsSearchingArea] = useState(false);
+    const [hasSearchedArea, setHasSearchedArea] = useState(false);
+    const [noVenuesFound, setNoVenuesFound] = useState(false);
+    const [currentRegion, setCurrentRegion] = useState<Region>({
+        latitude: 48.8566,
+        longitude: 2.3522,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+    });
+    const lastSearchedRegion = useRef<Region | null>(null);
+    const searchButtonAnim = useRef(new Animated.Value(0)).current;
+    const emptyStateTimer = useRef<NodeJS.Timeout | null>(null);
+
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const drawerAnim = useRef(new Animated.Value(-width * 0.8)).current;
+
+    // Cleanup timers on unmount
+    useEffect(() => {
+        return () => {
+            if (emptyStateTimer.current) {
+                clearTimeout(emptyStateTimer.current);
+            }
+        };
+    }, []);
 
     // Location Logic
     useEffect(() => {
@@ -356,6 +380,95 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                     longitudeDelta: 0.05,
                 }, 1000);
             }
+        }
+    };
+
+    // Check if region has changed significantly from last search
+    const hasRegionChangedSignificantly = (newRegion: Region): boolean => {
+        if (!lastSearchedRegion.current) return true;
+        const last = lastSearchedRegion.current;
+        const latDiff = Math.abs(newRegion.latitude - last.latitude);
+        const lngDiff = Math.abs(newRegion.longitude - last.longitude);
+        const deltaDiff = Math.abs(newRegion.latitudeDelta - last.latitudeDelta);
+        // Show button if moved more than 20% of the view or zoom changed significantly
+        const threshold = last.latitudeDelta * 0.2;
+        return latDiff > threshold || lngDiff > threshold || deltaDiff > last.latitudeDelta * 0.3;
+    };
+
+    // Hide button while user is moving the map
+    const handleRegionChange = () => {
+        if (showSearchButton && hasSearchedArea) {
+            setShowSearchButton(false);
+            Animated.timing(searchButtonAnim, {
+                toValue: 0,
+                duration: 100,
+                useNativeDriver: true,
+            }).start();
+        }
+    };
+
+    // Handle map region change - this fires when user STOPS moving the map
+    const handleRegionChangeComplete = (region: Region) => {
+        setCurrentRegion(region);
+        
+        // Show search button when user stops moving (after first search)
+        if (hasSearchedArea && hasRegionChangedSignificantly(region)) {
+            setShowSearchButton(true);
+            Animated.spring(searchButtonAnim, {
+                toValue: 1,
+                useNativeDriver: true,
+                friction: 8,
+            }).start();
+        }
+    };
+
+    // Search venues in the current area
+    const handleSearchArea = async () => {
+        setIsSearchingArea(true);
+        setNoVenuesFound(false);
+        setShowSearchButton(false);
+        
+        // Clear any existing empty state timer
+        if (emptyStateTimer.current) {
+            clearTimeout(emptyStateTimer.current);
+        }
+        
+        Animated.timing(searchButtonAnim, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+        }).start();
+
+        try {
+            const fetchedVenues = await testApi.fetchVenuesInArea(
+                currentRegion.latitude,
+                currentRegion.longitude,
+                currentRegion.latitudeDelta,
+                currentRegion.longitudeDelta
+            );
+            
+            setVenues(fetchedVenues);
+            lastSearchedRegion.current = currentRegion;
+            setHasSearchedArea(true);
+            
+            if (fetchedVenues.length === 0) {
+                setNoVenuesFound(true);
+                // Auto-dismiss empty state after 4 seconds
+                emptyStateTimer.current = setTimeout(() => {
+                    setNoVenuesFound(false);
+                }, 4000);
+            } else {
+                setNoVenuesFound(false);
+            }
+        } catch (error) {
+            console.warn("Search area failed", error);
+            setNoVenuesFound(true);
+            // Auto-dismiss error state after 4 seconds
+            emptyStateTimer.current = setTimeout(() => {
+                setNoVenuesFound(false);
+            }, 4000);
+        } finally {
+            setIsSearchingArea(false);
         }
     };
 
@@ -399,12 +512,10 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
         let active = true;
         const load = async () => {
             try {
-                const [fetchedVenues, fetchedMatches] = await Promise.all([
-                    testApi.fetchVenues(),
-                    testApi.fetchUpcomingMatches(),
-                ]);
+                // Only load upcoming matches on initial load
+                // Venues will be loaded when user clicks "Search in this area"
+                const fetchedMatches = await testApi.fetchUpcomingMatches();
                 if (!active) return;
-                setVenues(fetchedVenues);
                 setUpcomingMatches(fetchedMatches);
             } catch (error) {
                 console.warn("Failed to load map data", error);
@@ -525,6 +636,8 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                 style={StyleSheet.absoluteFillObject}
                 customMapStyle={themeMode === 'light' ? LIGHT_MAP_STYLE : DARK_MAP_STYLE}
                 onPress={handleMapPress}
+                onRegionChange={handleRegionChange}
+                onRegionChangeComplete={handleRegionChangeComplete}
                 initialRegion={{
                     latitude: 48.8566,
                     longitude: 2.3522,
@@ -589,6 +702,71 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                     </ScrollView>
                 </SafeAreaView>
             </LinearGradient>
+
+            {/* Search in this area button */}
+            {(showSearchButton || !hasSearchedArea) && !isSearchingArea && (
+                <Animated.View
+                    style={[
+                        styles.searchAreaButtonContainer,
+                        {
+                            opacity: hasSearchedArea ? searchButtonAnim : 1,
+                            transform: [{
+                                translateY: hasSearchedArea 
+                                    ? searchButtonAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [-20, 0],
+                                    })
+                                    : 0,
+                            }],
+                        },
+                    ]}
+                >
+                    <TouchableOpacity
+                        style={[
+                            styles.searchAreaButton,
+                            { backgroundColor: colors.surfaceDark, borderColor: colors.border }
+                        ]}
+                        onPress={handleSearchArea}
+                        activeOpacity={0.8}
+                    >
+                        <MaterialIcons name="search" size={18} color={colors.text} />
+                        <Text style={[styles.searchAreaButtonText, { color: colors.text }]}>
+                            Rechercher dans cette zone
+                        </Text>
+                    </TouchableOpacity>
+                </Animated.View>
+            )}
+
+            {/* Area Search Loading */}
+            {isSearchingArea && (
+                <View style={styles.searchAreaButtonContainer}>
+                    <View style={[styles.searchAreaButton, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
+                        <ActivityIndicator color={colors.primary} size="small" />
+                        <Text style={[styles.searchAreaButtonText, { color: colors.textMuted }]}>
+                            Recherche en cours...
+                        </Text>
+                    </View>
+                </View>
+            )}
+
+            {/* Empty State - No venues found (auto-dismisses after 4 seconds) */}
+            {noVenuesFound && !isSearchingArea && (
+                <View style={styles.emptyStateContainer}>
+                    <View style={[styles.emptyStateCard, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
+                        <View style={[styles.emptyStateIcon, { backgroundColor: 'rgba(248, 113, 113, 0.2)' }]}>
+                            <MaterialIcons name="search-off" size={24} color={colors.red400} />
+                        </View>
+                        <View style={styles.emptyStateContent}>
+                            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
+                                Aucun lieu trouvé dans cette zone
+                            </Text>
+                            <Text style={[styles.emptyStateSubtitle, { color: colors.textMuted }]}>
+                                Essaye de changer de sport ou de zoomer en arrière.
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+            )}
 
             {/* Loading */}
             {isLoading && (
@@ -1465,6 +1643,83 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '800',
         letterSpacing: 1,
+    },
+
+    // Search Area Button
+    searchAreaButtonContainer: {
+        position: 'absolute',
+        top: 160,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 30,
+    },
+    searchAreaButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 24,
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        gap: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    searchAreaButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.white,
+    },
+
+    // Empty State
+    emptyStateContainer: {
+        position: 'absolute',
+        top: 150,
+        left: 16,
+        right: 16,
+        zIndex: 20,
+    },
+    emptyStateCard: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        padding: 16,
+        borderRadius: 16,
+        backgroundColor: 'rgba(30, 41, 59, 0.95)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 32,
+        elevation: 10,
+        gap: 12,
+    },
+    emptyStateIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyStateContent: {
+        flex: 1,
+    },
+    emptyStateTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: COLORS.white,
+        marginBottom: 4,
+    },
+    emptyStateSubtitle: {
+        fontSize: 12,
+        color: COLORS.slate400,
+        lineHeight: 18,
     },
 });
 

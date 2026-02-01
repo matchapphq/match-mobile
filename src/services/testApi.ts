@@ -138,6 +138,29 @@ export const testApi = {
         }
     },
 
+    async fetchVenuesInArea(
+        latitude: number,
+        longitude: number,
+        latitudeDelta: number,
+        longitudeDelta: number
+    ): Promise<Venue[]> {
+        try {
+            // Calculate radius from delta (approximate conversion)
+            // 1 degree latitude ≈ 111km, use the larger delta for radius
+            const latKm = latitudeDelta * 111;
+            const lngKm = longitudeDelta * 111 * Math.cos(latitude * Math.PI / 180);
+            const radiusKm = Math.max(latKm, lngKm) / 2;
+            // Convert to meters and cap at reasonable max (50km)
+            const radiusMeters = Math.min(radiusKm * 1000, 50000);
+            
+            const apiVenues = await apiService.getNearbyVenues(latitude, longitude, radiusMeters);
+            return apiVenues.map(transformApiVenue);
+        } catch (error) {
+            console.warn("API fetchVenuesInArea failed, returning empty array", error);
+            return [];
+        }
+    },
+
     async fetchVenueById(id: string): Promise<Venue | null> {
         try {
             const apiVenue = await apiService.getVenueDetails(id);
