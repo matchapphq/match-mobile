@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,51 +10,145 @@ import {
   Modal,
   Pressable,
   ActivityIndicator,
+  Alert,
+  RefreshControl,
+  Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { useStore } from '../store/useStore';
-import { testApi, Booking } from '../services/testApi';
 import { apiService } from '../services/api';
 
-const STATUS_STYLES: Record<string, { label: string; color: string }> = {
+type BookingCard = {
+  id: string;
+  status: 'confirmed' | 'pending' | 'cancelled';
+  venue: string;
+  match: string;
+  date: string;
+  people: string;
+  peopleCount: number;
+  location: string;
+  reference: string;
+  dateShort: string;
+  time: string;
+  qrCode?: string;
+  image: string;
+};
+
+const STATUS_STYLES: Record<BookingCard['status'], { label: string; color: string }> = {
   confirmed: { label: 'Confirmé', color: '#4ade80' },
   pending: { label: 'En attente', color: '#fbbf24' },
+  cancelled: { label: 'Annulé', color: '#f87171' },
 };
 
 const TestUserBookedScreen = () => {
-  const { colors, themeMode } = useStore();
+  const {
+    colors,
+    themeMode,
+    reservations,
+    fetchReservations,
+    refreshReservations,
+    cancelReservationApi,
+    isLoading,
+    error,
+  } = useStore();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeQrBooking, setActiveQrBooking] = useState<Booking | null>(null);
+  const [activeQrBooking, setActiveQrBooking] = useState<BookingCard | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrError, setQrError] = useState<string | null>(null);
   const [isQrLoading, setIsQrLoading] = useState(false);
-
-  const loadBookings = useCallback(async () => {
-    try {
-      setError(null);
-      setIsLoading(true);
-      const data = await testApi.fetchBookings();
-      setBookings(data);
-    } catch (err) {
-      console.warn('Failed to load bookings', err);
-      setError("Impossible de charger vos réservations.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [cancelingIds, setCancelingIds] = useState<Set<string>>(new Set());
+  const [cancelError, setCancelError] = useState<string | null>(null);
+  const bannerAnim = useRef(new Animated.Value(0)).current;
+  const bannerTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
+    fetchReservations();
+  }, [fetchReservations]);
 
-  const handleOpenQrModal = useCallback(async (booking: Booking) => {
+  useFocusEffect(
+    useCallback(() => {
+      refreshReservations();
+    }, [refreshReservations]),
+  );
+
+  const hideBanner = useCallback(() => {
+    Animated.timing(bannerAnim, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        setCancelError(null);
+      }
+    });
+  }, [bannerAnim]);
+
+  useEffect(() => {
+    if (cancelError) {
+      Animated.timing(bannerAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+
+      if (bannerTimer.current) {
+        clearTimeout(bannerTimer.current);
+      }
+      bannerTimer.current = setTimeout(() => {
+        hideBanner();
+      }, 3500);
+    }
+
+    return () => {
+      if (bannerTimer.current) {
+        clearTimeout(bannerTimer.current);
+        bannerTimer.current = null;
+      }
+    };
+  }, [bannerAnim, cancelError, hideBanner]);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await refreshReservations();
+    setIsRefreshing(false);
+  }, [refreshReservations]);
+
+  const handleCancelReservation = useCallback(
+    (booking: BookingCard) => {
+      Alert.alert(
+        'Annuler la reservation',
+        'Es-tu sur de vouloir annuler cette reservation ?',
+        [
+          { text: 'Retour', style: 'cancel' },
+          {
+            text: 'Annuler',
+            style: 'destructive',
+            onPress: async () => {
+              setCancelingIds((prev) => new Set(prev).add(booking.id));
+              setCancelError(null);
+              const success = await cancelReservationApi(booking.id);
+              setCancelingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(booking.id);
+                return next;
+              });
+              if (!success) {
+                setCancelError("Impossible d'annuler la reservation. Reessaie.");
+              }
+            },
+          },
+        ],
+      );
+    },
+    [cancelReservationApi],
+  );
+
+  const handleOpenQrModal = useCallback(async (booking: BookingCard) => {
     setActiveQrBooking(booking);
     setQrCode(null);
     setQrError(null);
@@ -100,8 +194,11 @@ const TestUserBookedScreen = () => {
     );
   };
 
-  const renderBookingCard = (booking: Booking) => {
+  const renderBookingCard = (booking: BookingCard) => {
     const statusConfig = STATUS_STYLES[booking.status] ?? STATUS_STYLES.confirmed;
+    const isCancelled = booking.status === 'cancelled';
+    const isConfirmed = booking.status === 'confirmed';
+    const isCanceling = cancelingIds.has(booking.id);
 
     return (
       <View key={booking.id} style={styles.card}>
@@ -123,18 +220,47 @@ const TestUserBookedScreen = () => {
               </View>
             </View>
           </View>
-          <Image source={{ uri: booking.image }} style={[styles.cardImage, booking.status === 'pending' && styles.cardImagePending]} />
+          <View style={styles.cardImageWrapper}>
+            <Image source={{ uri: booking.image }} style={[styles.cardImage, booking.status === 'pending' && styles.cardImagePending]} />
+            {isCancelled ? (
+              <View style={styles.cancelledBadge}>
+                <Text style={styles.cancelledBadgeText}>Annulee</Text>
+              </View>
+            ) : isConfirmed ? (
+              <View style={styles.confirmedBadge}>
+                <Text style={styles.confirmedBadgeText}>Confirmee</Text>
+              </View>
+            ) : null}
+          </View>
         </View>
         <View style={styles.divider} />
-        <TouchableOpacity style={styles.qrButton} onPress={() => handleOpenQrModal(booking)}>
-          <MaterialIcons name="qr-code" size={20} color={COLORS.text} />
-          <Text style={styles.qrButtonText}>Voir le QR Code</Text>
-        </TouchableOpacity>
-        <View style={styles.cardActionsRow}>
-          <TouchableOpacity style={styles.cancelButton}>
-            <Text style={styles.cancelText}>Annuler</Text>
+        {isCancelled ? (
+          <View style={styles.qrButton}>
+            <MaterialIcons name="info" size={20} color={COLORS.subtext} />
+            <Text style={styles.qrButtonText}>Reservation annulee</Text>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.qrButton} onPress={() => handleOpenQrModal(booking)}>
+            <MaterialIcons name="qr-code" size={20} color={COLORS.text} />
+            <Text style={styles.qrButtonText}>Voir le QR Code</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.contactButton, { backgroundColor: statusConfig.color === STATUS_STYLES.pending?.color ? COLORS.primary : COLORS.primary }]}>
+        )}
+        <View style={styles.cardActionsRow}>
+          <TouchableOpacity
+            style={[styles.cancelButton, (isCancelled || isCanceling) && styles.cancelButtonDisabled]}
+            disabled={isCancelled || isCanceling}
+            onPress={() => handleCancelReservation(booking)}
+          >
+            {isCanceling ? (
+              <ActivityIndicator size="small" color={COLORS.text} />
+            ) : (
+              <Text style={styles.cancelText}>{isCancelled ? 'Annulee' : 'Annuler'}</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.contactButton, { backgroundColor: statusConfig.color === STATUS_STYLES.pending?.color ? COLORS.primary : COLORS.primary }, isCancelled && styles.contactButtonDisabled]}
+            disabled={isCancelled}
+          >
             <MaterialIcons name="call" size={18} color={COLORS.text} />
             <Text style={styles.contactText}>Contacter</Text>
           </TouchableOpacity>
@@ -142,6 +268,29 @@ const TestUserBookedScreen = () => {
       </View>
     );
   };
+
+  const bookings = useMemo<BookingCard[]>(
+    () =>
+      reservations.map((reservation) => {
+        const date = reservation.date ? new Date(reservation.date) : new Date();
+        return {
+          id: reservation.id,
+          status: reservation.status === 'confirmed' ? 'confirmed' : reservation.status === 'cancelled' ? 'cancelled' : 'pending',
+          venue: reservation.venueName,
+          match: reservation.matchTitle || 'Match',
+          date: date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
+          people: `${reservation.numberOfPeople} personne${reservation.numberOfPeople > 1 ? 's' : ''}`,
+          peopleCount: reservation.numberOfPeople,
+          location: reservation.venueAddress || '',
+          reference: reservation.id?.slice(0, 8).toUpperCase(),
+          dateShort: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+          time: reservation.time || '',
+          qrCode: reservation.qrCode,
+          image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800',
+        };
+      }),
+    [reservations],
+  );
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -154,16 +303,45 @@ const TestUserBookedScreen = () => {
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {isLoading ? (
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
+      >
+        {cancelError ? (
+          <Animated.View
+            style={[
+              styles.inlineBanner,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+              {
+                opacity: bannerAnim,
+                transform: [
+                  {
+                    translateY: bannerAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-6, 0],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          >
+            <MaterialIcons name="error-outline" size={18} color="#f87171" />
+            <Text style={[styles.inlineBannerText, { color: colors.text }]}>{cancelError}</Text>
+            <TouchableOpacity onPress={hideBanner} style={styles.inlineBannerClose}>
+              <MaterialIcons name="close" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </Animated.View>
+        ) : null}
+        {isLoading && bookings.length === 0 ? (
           <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <ActivityIndicator color={colors.primary} />
             <Text style={[styles.stateText, { color: colors.text }]}>Chargement de vos réservations...</Text>
           </View>
-        ) : error ? (
+        ) : error && bookings.length === 0 ? (
           <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.stateText, { color: colors.text }]}>{error}</Text>
-            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadBookings} activeOpacity={0.85}>
+            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={fetchReservations} activeOpacity={0.85}>
               <MaterialIcons name="refresh" size={18} color={colors.white} />
               <Text style={[styles.retryButtonText, { color: colors.white }]}>Réessayer</Text>
             </TouchableOpacity>
@@ -311,6 +489,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
   },
+  cardImageWrapper: {
+    position: 'relative',
+  },
   cardDetails: {
     flex: 1,
     gap: 6,
@@ -324,6 +505,36 @@ const styles = StyleSheet.create({
   },
   cardImagePending: {
     opacity: 0.9,
+  },
+  cancelledBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(248, 113, 113, 0.92)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  cancelledBadgeText: {
+    color: COLORS.text,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  confirmedBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(74, 222, 128, 0.92)',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  confirmedBadgeText: {
+    color: '#052e16',
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
   statusRow: {
     flexDirection: 'row',
@@ -391,6 +602,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  cancelButtonDisabled: {
+    opacity: 0.6,
+  },
   cancelText: {
     color: '#d1d5db',
     fontSize: 14,
@@ -409,6 +623,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
+  },
+  contactButtonDisabled: {
+    opacity: 0.6,
   },
   contactText: {
     color: COLORS.text,
@@ -447,6 +664,26 @@ const styles = StyleSheet.create({
     color: '#e5e7eb',
     fontSize: 14,
     fontWeight: '600',
+  },
+  inlineBanner: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  inlineBannerText: {
+    flex: 1,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  inlineBannerClose: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   stateWrapper: {
     borderRadius: 20,

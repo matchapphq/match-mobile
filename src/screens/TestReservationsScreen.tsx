@@ -15,9 +15,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
-import { useStore } from "../store/useStore";
+import { useStore, transformApiReservation } from "../store/useStore";
 import { apiService, MatchVenue } from "../services/api";
-import type { Match } from "../types";
+import type { Match, Reservation } from "../types";
 
 const { width } = Dimensions.get("window");
 
@@ -95,7 +95,14 @@ const FILTERS = [
 ];
 
 const TestReservationsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, themeMode } = useStore();
+    const {
+        colors,
+        themeMode,
+        addReservation,
+        updateReservation,
+        removeReservation,
+        refreshReservations,
+    } = useStore();
     const insets = useSafeAreaInsets();
     const [guests, setGuests] = useState(4);
     const [specialRequest, setSpecialRequest] = useState("");
@@ -283,6 +290,21 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
         if (isSubmitting || !selectedMatch) return;
         setReservationError(null);
         setIsSubmitting(true);
+        const tempId = `temp-${Date.now()}`;
+        const optimisticReservation: Reservation = {
+            id: tempId,
+            venueId: selectedMatch.venueMatchId,
+            venueName: selectedMatch.venueName,
+            venueAddress: selectedMatch.venueAddress,
+            date: selectedDate?.fullDate ?? new Date(),
+            time: selectedMatch.time,
+            numberOfPeople: guests,
+            matchId: selectedMatch.id,
+            matchTitle: `${selectedMatch.team1} vs ${selectedMatch.team2}`,
+            status: "pending",
+            conditions: specialRequest.trim() ? specialRequest.trim() : undefined,
+        };
+        addReservation(optimisticReservation);
         try {
             const response = await apiService.createReservation({
                 venueMatchId: selectedMatch.venueMatchId,
@@ -292,6 +314,13 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
 
             const dateLabel = formatFullDateLabel(selectedDate) || selectedMatch.dateIso;
             const reference = response.reservation?.id || `#BK-${Date.now()}`;
+            if (response.reservation) {
+                updateReservation(
+                    tempId,
+                    transformApiReservation(response.reservation, response.qrCode),
+                );
+            }
+            refreshReservations();
 
             setIsSubmitting(false);
             navigation.navigate("TestReservationSuccess", {
@@ -304,10 +333,22 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
                 image: selectedMatch.bgImage,
             });
         } catch (error) {
+            removeReservation(tempId);
             setIsSubmitting(false);
             setReservationError(extractErrorMessage(error));
         }
-    }, [guests, isSubmitting, navigation, selectedDate, selectedMatch, specialRequest]);
+    }, [
+        addReservation,
+        guests,
+        isSubmitting,
+        navigation,
+        refreshReservations,
+        removeReservation,
+        selectedDate,
+        selectedMatch,
+        specialRequest,
+        updateReservation,
+    ]);
 
     const confirmDisabled = !selectedMatch || isSubmitting;
 

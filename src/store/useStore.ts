@@ -14,7 +14,7 @@ import { apiService, mockData, ApiReservation } from "../services/api";
 import { tokenStorage } from "../utils/tokenStorage";
 
 // Transform API reservation to mobile Reservation type
-const transformApiReservation = (
+export const transformApiReservation = (
     apiRes: ApiReservation,
     qrCode?: string,
 ): Reservation => {
@@ -119,6 +119,7 @@ interface AppState {
     addReservation: (reservation: Reservation) => void;
     updateReservation: (id: string, updates: Partial<Reservation>) => void;
     cancelReservation: (id: string) => void;
+    removeReservation: (id: string) => void;
 
     // Reservation API Actions
     fetchReservations: () => Promise<void>;
@@ -539,6 +540,12 @@ export const useStore = create<AppState>((set, get) => ({
         const updated = reservations.map((r) =>
             r.id === id ? { ...r, status: "cancelled" as const } : r,
         );
+        set({ reservations: updated });
+        AsyncStorage.setItem("reservations", JSON.stringify(updated));
+    },
+    removeReservation: (id) => {
+        const { reservations } = get();
+        const updated = reservations.filter((r) => r.id !== id);
         set({ reservations: updated });
         AsyncStorage.setItem("reservations", JSON.stringify(updated));
     },
