@@ -6,20 +6,28 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  ImageBackground,
   StatusBar,
   Modal,
   Pressable,
   ActivityIndicator,
-  Alert,
   RefreshControl,
   Animated,
+  TextInput,
+  Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../constants/colors';
 import { useStore } from '../store/useStore';
 import { apiService } from '../services/api';
+import CancelReservationModal, { CancelReservationData } from '../components/CancelReservationModal';
+
+const { width } = Dimensions.get('window');
+
+type FilterType = 'all' | 'confirmed' | 'pending' | 'cancelled';
 
 type BookingCard = {
   id: string;
@@ -27,6 +35,7 @@ type BookingCard = {
   venue: string;
   match: string;
   date: string;
+  dateFormatted: string;
   people: string;
   peopleCount: number;
   location: string;
@@ -35,13 +44,21 @@ type BookingCard = {
   time: string;
   qrCode?: string;
   image: string;
+  rawDate: Date;
 };
 
 const STATUS_STYLES: Record<BookingCard['status'], { label: string; color: string }> = {
-  confirmed: { label: 'Confirmé', color: '#4ade80' },
-  pending: { label: 'En attente', color: '#fbbf24' },
-  cancelled: { label: 'Annulé', color: '#f87171' },
+  confirmed: { label: 'Confirmé', color: '#22c55e' },
+  pending: { label: 'En attente', color: '#f59e0b' },
+  cancelled: { label: 'Annulé', color: '#ef4444' },
 };
+
+const FILTERS: { label: string; value: FilterType }[] = [
+  { label: 'Toutes', value: 'all' },
+  { label: 'Confirmées', value: 'confirmed' },
+  { label: 'En attente', value: 'pending' },
+  { label: 'Annulées', value: 'cancelled' },
+];
 
 const TestUserBookedScreen = () => {
   const {
@@ -56,10 +73,21 @@ const TestUserBookedScreen = () => {
   } = useStore();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  
+  // UI State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState<FilterType>('all');
+  
+  // QR Modal State
   const [activeQrBooking, setActiveQrBooking] = useState<BookingCard | null>(null);
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [qrError, setQrError] = useState<string | null>(null);
   const [isQrLoading, setIsQrLoading] = useState(false);
+  
+  // Cancel Modal State
+  const [cancelModalBooking, setCancelModalBooking] = useState<BookingCard | null>(null);
+  
+  // Other State
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [cancelingIds, setCancelingIds] = useState<Set<string>>(new Set());
   const [cancelError, setCancelError] = useState<string | null>(null);
@@ -120,33 +148,35 @@ const TestUserBookedScreen = () => {
 
   const handleCancelReservation = useCallback(
     (booking: BookingCard) => {
-      Alert.alert(
-        'Annuler la reservation',
-        'Es-tu sur de vouloir annuler cette reservation ?',
-        [
-          { text: 'Retour', style: 'cancel' },
-          {
-            text: 'Annuler',
-            style: 'destructive',
-            onPress: async () => {
-              setCancelingIds((prev) => new Set(prev).add(booking.id));
-              setCancelError(null);
-              const success = await cancelReservationApi(booking.id);
-              setCancelingIds((prev) => {
-                const next = new Set(prev);
-                next.delete(booking.id);
-                return next;
-              });
-              if (!success) {
-                setCancelError("Impossible d'annuler la reservation. Reessaie.");
-              }
-            },
-          },
-        ],
-      );
+      setCancelModalBooking(booking);
     },
-    [cancelReservationApi],
+    [],
   );
+
+  const handleCloseCancelModal = useCallback(() => {
+    setCancelModalBooking(null);
+  }, []);
+
+  const handleConfirmCancel = useCallback(async () => {
+    if (!cancelModalBooking) return;
+    
+    const bookingId = cancelModalBooking.id;
+    setCancelModalBooking(null);
+    setCancelingIds((prev) => new Set(prev).add(bookingId));
+    setCancelError(null);
+    
+    const success = await cancelReservationApi(bookingId);
+    
+    setCancelingIds((prev) => {
+      const next = new Set(prev);
+      next.delete(bookingId);
+      return next;
+    });
+    
+    if (!success) {
+      setCancelError("Impossible d'annuler la réservation. Réessaie.");
+    }
+  }, [cancelModalBooking, cancelReservationApi]);
 
   const handleOpenQrModal = useCallback(async (booking: BookingCard) => {
     setActiveQrBooking(booking);
@@ -182,125 +212,194 @@ const TestUserBookedScreen = () => {
     setIsQrLoading(false);
   }, []);
 
-  const renderStatus = (status: string) => {
-    const statusConfig = STATUS_STYLES[status] ?? STATUS_STYLES.confirmed;
-    return (
-      <View style={styles.statusRow}>
-        <View style={[styles.statusDotOuter, { backgroundColor: `${statusConfig.color}33` }]}>
-          <View style={[styles.statusDotInner, { backgroundColor: statusConfig.color }]} />
-        </View>
-        <Text style={[styles.statusText, { color: statusConfig.color }]}>{statusConfig.label.toUpperCase()}</Text>
-      </View>
-    );
-  };
-
-  const renderBookingCard = (booking: BookingCard) => {
-    const statusConfig = STATUS_STYLES[booking.status] ?? STATUS_STYLES.confirmed;
+  const renderUpcomingCard = (booking: BookingCard) => {
+    const statusConfig = STATUS_STYLES[booking.status];
     const isCancelled = booking.status === 'cancelled';
     const isConfirmed = booking.status === 'confirmed';
     const isCanceling = cancelingIds.has(booking.id);
 
     return (
-      <View key={booking.id} style={styles.card}>
-        <View style={styles.cardContent}>
-          <View style={styles.cardDetails}>
-            {renderStatus(booking.status)}
-            <View style={{ marginTop: 4 }}>
-              <Text style={styles.venueName}>{booking.venue}</Text>
-              <Text style={styles.matchText}>{booking.match}</Text>
+      <View
+        key={booking.id}
+        style={[styles.upcomingCard, { backgroundColor: colors.card, borderColor: 'rgba(255,255,255,0.05)' }]}
+      >
+        <View style={styles.upcomingCardContent}>
+          <View style={styles.upcomingCardInfo}>
+            {/* Status */}
+            <View style={styles.upcomingStatusRow}>
+              <View style={[styles.upcomingStatusDot, { backgroundColor: statusConfig.color }]} />
+              <Text style={[styles.upcomingStatusText, { color: statusConfig.color }]}>
+                {statusConfig.label}
+              </Text>
             </View>
-            <View style={styles.metaRow}>
-              <View style={styles.metaItem}>
-                <MaterialIcons name="calendar-today" size={18} color={colors.subtext} />
-                <Text style={[styles.metaText, { color: colors.subtext }]}>{booking.date}</Text>
-              </View>
-              <View style={styles.metaItem}>
-                <MaterialIcons name="group" size={18} color={colors.subtext} />
-                <Text style={[styles.metaText, { color: colors.subtext }]}>{booking.people}</Text>
-              </View>
+            {/* Venue */}
+            <Text style={[styles.upcomingVenueName, { color: colors.text }]}>{booking.venue}</Text>
+            {/* Match */}
+            <Text style={[styles.upcomingMatchText, { color: colors.primary }]}>{booking.match}</Text>
+            {/* Date */}
+            <View style={styles.upcomingDateRow}>
+              <MaterialIcons name="calendar-today" size={14} color={colors.textMuted} />
+              <Text style={[styles.upcomingDateText, { color: colors.textMuted }]}>{booking.dateFormatted}</Text>
             </View>
           </View>
-          <View style={styles.cardImageWrapper}>
-            <Image source={{ uri: booking.image }} style={[styles.cardImage, booking.status === 'pending' && styles.cardImagePending]} />
-            {isCancelled ? (
-              <View style={styles.cancelledBadge}>
-                <Text style={styles.cancelledBadgeText}>Annulee</Text>
-              </View>
-            ) : isConfirmed ? (
-              <View style={styles.confirmedBadge}>
-                <Text style={styles.confirmedBadgeText}>Confirmee</Text>
-              </View>
-            ) : null}
-          </View>
+          {/* Thumbnail */}
+          <Image
+            source={{ uri: booking.image }}
+            style={[styles.upcomingThumbnail, isCancelled && { opacity: 0.5 }]}
+          />
         </View>
-        <View style={styles.divider} />
-        {isCancelled ? (
-          <View style={styles.qrButton}>
-            <MaterialIcons name="info" size={20} color={COLORS.subtext} />
-            <Text style={styles.qrButtonText}>Reservation annulee</Text>
-          </View>
-        ) : (
-          <TouchableOpacity style={styles.qrButton} onPress={() => handleOpenQrModal(booking)}>
-            <MaterialIcons name="qr-code" size={20} color={COLORS.text} />
-            <Text style={styles.qrButtonText}>Voir le QR Code</Text>
-          </TouchableOpacity>
-        )}
-        <View style={styles.cardActionsRow}>
+        {/* Actions */}
+        <View style={[styles.upcomingActionsRow, { borderTopColor: 'rgba(255,255,255,0.05)' }]}>
           <TouchableOpacity
-            style={[styles.cancelButton, (isCancelled || isCanceling) && styles.cancelButtonDisabled]}
-            disabled={isCancelled || isCanceling}
+            style={styles.upcomingCancelButton}
             onPress={() => handleCancelReservation(booking)}
+            disabled={isCancelled || isCanceling}
           >
             {isCanceling ? (
-              <ActivityIndicator size="small" color={COLORS.text} />
+              <ActivityIndicator size="small" color={colors.textMuted} />
             ) : (
-              <Text style={styles.cancelText}>{isCancelled ? 'Annulee' : 'Annuler'}</Text>
+              <Text style={[styles.upcomingCancelText, { color: colors.textMuted }]}>
+                {isCancelled ? 'Annulée' : 'Annuler'}
+              </Text>
             )}
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.contactButton, { backgroundColor: statusConfig.color === STATUS_STYLES.pending?.color ? COLORS.primary : COLORS.primary }, isCancelled && styles.contactButtonDisabled]}
-            disabled={isCancelled}
-          >
-            <MaterialIcons name="call" size={18} color={COLORS.text} />
-            <Text style={styles.contactText}>Contacter</Text>
-          </TouchableOpacity>
+          {isConfirmed ? (
+            <TouchableOpacity
+              style={[styles.upcomingTicketButton, { backgroundColor: 'rgba(244,123,37,0.1)' }]}
+              onPress={() => handleOpenQrModal(booking)}
+            >
+              <MaterialIcons name="qr-code" size={14} color={colors.primary} />
+              <Text style={[styles.upcomingTicketText, { color: colors.primary }]}>Ticket</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={[styles.upcomingModifyButton, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+              <Text style={[styles.upcomingModifyText, { color: colors.text }]}>Modifier</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     );
   };
 
+  
   const bookings = useMemo<BookingCard[]>(
     () =>
       reservations.map((reservation) => {
         const date = reservation.date ? new Date(reservation.date) : new Date();
+        const weekDays = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        const months = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc'];
         return {
           id: reservation.id,
           status: reservation.status === 'confirmed' ? 'confirmed' : reservation.status === 'cancelled' ? 'cancelled' : 'pending',
           venue: reservation.venueName,
           match: reservation.matchTitle || 'Match',
           date: date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }),
-          people: `${reservation.numberOfPeople} personne${reservation.numberOfPeople > 1 ? 's' : ''}`,
+          dateFormatted: `${weekDays[date.getDay()]} ${date.getDate()} ${months[date.getMonth()]} • ${reservation.time || date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`,
+          people: `${reservation.numberOfPeople} pers.`,
           peopleCount: reservation.numberOfPeople,
           location: reservation.venueAddress || '',
           reference: reservation.id?.slice(0, 8).toUpperCase(),
           dateShort: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-          time: reservation.time || '',
+          time: reservation.time || date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
           qrCode: reservation.qrCode,
           image: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800',
+          rawDate: date,
         };
       }),
     [reservations],
   );
 
+  // Filter and search bookings
+  const filteredBookings = useMemo(() => {
+    let filtered = bookings;
+    
+    // Apply status filter
+    if (selectedFilter !== 'all') {
+      filtered = filtered.filter((b) => b.status === selectedFilter);
+    }
+    
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (b) =>
+          b.venue?.toLowerCase().includes(query) ||
+          b.match?.toLowerCase().includes(query)
+      );
+    }
+    
+    return filtered;
+  }, [bookings, selectedFilter, searchQuery]);
+
+  // Get the next upcoming reservation (confirmed or pending, future date)
+  const nextReservation = useMemo(() => {
+    const now = new Date();
+    const upcoming = bookings
+      .filter((b) => b.status !== 'cancelled' && b.rawDate >= now)
+      .sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
+    return upcoming[0] || null;
+  }, [bookings]);
+
+  // Get other reservations (excluding the featured one if showing all)
+  const otherReservations = useMemo(() => {
+    if (selectedFilter !== 'all' || searchQuery.trim()) {
+      return filteredBookings;
+    }
+    if (!nextReservation) return filteredBookings;
+    return filteredBookings.filter((b) => b.id !== nextReservation.id);
+  }, [filteredBookings, nextReservation, selectedFilter, searchQuery]);
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
-      <View style={[styles.header, { paddingTop: insets.top + 8, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surfaceAlt }]} onPress={() => navigation.goBack()}>
-          <MaterialIcons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: colors.text }]}>MES RÉSERVATIONS</Text>
-        <View style={{ width: 32 }} />
+      
+      {/* Header */}
+      <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.border }]}>
+        <View style={styles.headerTop}>
+          <TouchableOpacity style={styles.headerBackButton} onPress={() => navigation.goBack()}>
+            <MaterialIcons name="arrow-back" size={24} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>MES RÉSERVATIONS</Text>
+        </View>
+        
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
+          <View style={[styles.searchBar, { backgroundColor: colors.card }]}>
+            <MaterialIcons name="search" size={20} color={colors.textMuted} />
+            <TextInput
+              style={[styles.searchInput, { color: colors.text }]}
+              placeholder="Rechercher un bar ou un match..."
+              placeholderTextColor={colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+        </View>
+        
+        {/* Filter Tabs */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
+          {FILTERS.map((filter) => (
+            <TouchableOpacity
+              key={filter.value}
+              style={[
+                styles.filterTab,
+                selectedFilter === filter.value
+                  ? { backgroundColor: colors.primary }
+                  : { backgroundColor: colors.card, borderColor: 'rgba(255,255,255,0.05)', borderWidth: 1 }
+              ]}
+              onPress={() => setSelectedFilter(filter.value)}
+            >
+              <Text
+                style={[
+                  styles.filterTabText,
+                  { color: selectedFilter === filter.value ? colors.white : colors.textMuted }
+                ]}
+              >
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
 
       <ScrollView
@@ -308,6 +407,7 @@ const TestUserBookedScreen = () => {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
       >
+        {/* Error Banner */}
         {cancelError ? (
           <Animated.View
             style={[
@@ -315,14 +415,7 @@ const TestUserBookedScreen = () => {
               { backgroundColor: colors.surface, borderColor: colors.border },
               {
                 opacity: bannerAnim,
-                transform: [
-                  {
-                    translateY: bannerAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [-6, 0],
-                    }),
-                  },
-                ],
+                transform: [{ translateY: bannerAnim.interpolate({ inputRange: [0, 1], outputRange: [-6, 0] }) }],
               },
             ]}
           >
@@ -333,6 +426,8 @@ const TestUserBookedScreen = () => {
             </TouchableOpacity>
           </Animated.View>
         ) : null}
+
+        {/* Loading State */}
         {isLoading && bookings.length === 0 ? (
           <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <ActivityIndicator color={colors.primary} />
@@ -356,15 +451,110 @@ const TestUserBookedScreen = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          bookings.map(renderBookingCard)
+          <>
+            {/* Featured Next Event - only show when filter is "all" and no search */}
+            {nextReservation && selectedFilter === 'all' && !searchQuery.trim() && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitle, { color: colors.primary }]}>Prochain Événement</Text>
+                <View style={[styles.featuredCard, { backgroundColor: colors.card, borderColor: 'rgba(255,255,255,0.05)' }]}>
+                  {/* Featured Image */}
+                  <View style={styles.featuredImageContainer}>
+                    <ImageBackground
+                      source={{ uri: nextReservation.image }}
+                      style={styles.featuredImage}
+                      imageStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
+                    >
+                      <LinearGradient
+                        colors={['transparent', 'rgba(28, 28, 33, 0.4)', 'rgba(28, 28, 33, 0.95)']}
+                        style={styles.featuredGradient}
+                      />
+                      {/* Status Badge */}
+                      <View style={[styles.featuredStatusBadge, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                        <View style={styles.statusDotWrapper}>
+                          <View style={[styles.statusDotPing, { backgroundColor: STATUS_STYLES[nextReservation.status].color }]} />
+                          <View style={[styles.statusDot, { backgroundColor: STATUS_STYLES[nextReservation.status].color }]} />
+                        </View>
+                        <Text style={[styles.featuredStatusText, { color: STATUS_STYLES[nextReservation.status].color }]}>
+                          {STATUS_STYLES[nextReservation.status].label}
+                        </Text>
+                      </View>
+                      {/* Venue Name & Match */}
+                      <View style={styles.featuredContentOverlay}>
+                        <Text style={styles.featuredVenueName}>{nextReservation.venue.toUpperCase()}</Text>
+                        <View style={styles.featuredMatchRow}>
+                          <MaterialIcons name="live-tv" size={16} color={colors.primary} />
+                          <Text style={[styles.featuredMatchText, { color: colors.primary }]}>{nextReservation.match}</Text>
+                        </View>
+                      </View>
+                    </ImageBackground>
+                  </View>
+                  
+                  {/* Featured Details */}
+                  <View style={styles.featuredDetails}>
+                    <View style={[styles.featuredInfoRow, { borderBottomColor: 'rgba(255,255,255,0.05)' }]}>
+                      <View style={styles.featuredInfoItem}>
+                        <MaterialIcons name="calendar-month" size={18} color={colors.primary} />
+                        <Text style={[styles.featuredInfoText, { color: colors.text }]}>{nextReservation.dateFormatted}</Text>
+                      </View>
+                      <View style={styles.featuredInfoItem}>
+                        <MaterialIcons name="group" size={18} color={colors.textMuted} />
+                        <Text style={[styles.featuredInfoText, { color: colors.textMuted }]}>{nextReservation.people}</Text>
+                      </View>
+                    </View>
+                    
+                    {/* QR Code Button */}
+                    <TouchableOpacity
+                      style={styles.featuredQrButton}
+                      onPress={() => handleOpenQrModal(nextReservation)}
+                      activeOpacity={0.9}
+                    >
+                      <MaterialIcons name="qr-code-2" size={24} color="#000" />
+                      <Text style={styles.featuredQrButtonText}>VOIR LE QR CODE</Text>
+                    </TouchableOpacity>
+                    
+                    {/* Action Buttons */}
+                    <View style={styles.featuredActionsRow}>
+                      <TouchableOpacity
+                        style={[styles.featuredCancelButton, { borderColor: 'rgba(255,255,255,0.1)' }]}
+                        onPress={() => handleCancelReservation(nextReservation)}
+                        disabled={cancelingIds.has(nextReservation.id)}
+                      >
+                        {cancelingIds.has(nextReservation.id) ? (
+                          <ActivityIndicator size="small" color={colors.textMuted} />
+                        ) : (
+                          <Text style={[styles.featuredCancelText, { color: colors.textMuted }]}>Annuler</Text>
+                        )}
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.featuredContactButton, { backgroundColor: colors.surfaceAlt }]}>
+                        <MaterialIcons name="call" size={18} color={colors.text} />
+                        <Text style={[styles.featuredContactText, { color: colors.text }]}>Contacter</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            )}
+            
+            {/* Upcoming Section */}
+            {otherReservations.length > 0 && (
+              <View style={styles.section}>
+                <Text style={[styles.sectionTitleSmall, { color: colors.textMuted }]}>À Venir</Text>
+                {otherReservations.map((booking) => renderUpcomingCard(booking))}
+              </View>
+            )}
+          </>
         )}
 
-        <TouchableOpacity style={[styles.findButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]} onPress={() => navigation.navigate('TestMapScreen' as never)}>
+        {/* Find Another Bar Button */}
+        <TouchableOpacity
+          style={[styles.findButton, { borderColor: 'rgba(255,255,255,0.1)' }]}
+          onPress={() => navigation.navigate('TestMapScreen' as never)}
+        >
           <MaterialIcons name="add-circle" size={20} color={colors.primary} />
-          <Text style={[styles.findButtonText, { color: colors.text }]}>Trouver un autre bar</Text>
+          <Text style={[styles.findButtonText, { color: colors.textMuted }]}>Trouver un autre bar</Text>
         </TouchableOpacity>
 
-        <View style={{ height: 80 }} />
+        <View style={{ height: 100 }} />
       </ScrollView>
 
       <Modal visible={!!activeQrBooking} transparent animationType="fade" onRequestClose={handleCloseModal}>
@@ -435,6 +625,21 @@ const TestUserBookedScreen = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Cancel Confirmation Modal */}
+      <CancelReservationModal
+        visible={!!cancelModalBooking}
+        reservation={cancelModalBooking ? {
+          id: cancelModalBooking.id,
+          match: cancelModalBooking.match,
+          venue: cancelModalBooking.venue,
+          time: cancelModalBooking.time,
+          image: cancelModalBooking.image,
+        } : null}
+        onClose={handleCloseCancelModal}
+        onConfirmCancel={handleConfirmCancel}
+        primaryColor={colors.primary}
+      />
     </View>
   );
 };
@@ -444,14 +649,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
   },
+  
+  // Header
   header: {
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    borderBottomColor: 'rgba(255,255,255,0.08)',
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+  },
+  headerBackButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: -8,
   },
   headerButton: {
     width: 40,
@@ -464,12 +685,342 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
     textAlign: 'center',
-    marginHorizontal: 12,
+    paddingRight: 32,
     color: COLORS.text,
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  
+  // Search
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  
+  // Filters
+  filterContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    gap: 10,
+  },
+  filterTab: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  filterTabText: {
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  
+  // Sections
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+    opacity: 0.9,
+  },
+  sectionTitleSmall: {
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 2,
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  
+  // Featured Card
+  featuredCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+  },
+  featuredImageContainer: {
+    height: 180,
+    width: '100%',
+  },
+  featuredImage: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  featuredGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '70%',
+  },
+  featuredStatusBadge: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  statusDotWrapper: {
+    width: 8,
+    height: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusDotPing: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    opacity: 0.5,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  featuredStatusText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
     letterSpacing: 1,
   },
+  featuredContentOverlay: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+  },
+  featuredVenueName: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.5,
+    lineHeight: 34,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  featuredMatchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  featuredMatchText: {
+    fontSize: 14,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  featuredDetails: {
+    padding: 16,
+    gap: 14,
+  },
+  featuredInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  featuredInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  featuredInfoText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  featuredQrButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    height: 48,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  featuredQrButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#000',
+    letterSpacing: 1,
+  },
+  featuredActionsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  featuredCancelButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuredCancelText: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  featuredContactButton: {
+    flex: 1,
+    height: 40,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  featuredContactText: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  
+  // Upcoming Cards
+  upcomingCard: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 12,
+  },
+  upcomingCardContent: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  upcomingCardInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  upcomingStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  upcomingStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  upcomingStatusText: {
+    fontSize: 9,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  upcomingVenueName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  upcomingMatchText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+    marginTop: 2,
+  },
+  upcomingDateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 8,
+  },
+  upcomingDateText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  upcomingThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    opacity: 0.8,
+  },
+  upcomingActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 12,
+    marginTop: 12,
+    borderTopWidth: 1,
+  },
+  upcomingCancelButton: {
+    flex: 1,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upcomingCancelText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  upcomingTicketButton: {
+    flex: 1,
+    height: 32,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+  },
+  upcomingTicketText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  upcomingModifyButton: {
+    flex: 1,
+    height: 32,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  upcomingModifyText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  
   scrollContent: {
     padding: 16,
     gap: 16,
