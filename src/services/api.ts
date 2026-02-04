@@ -527,6 +527,34 @@ export const apiService = {
         const response = await api.post("/discovery/search", filters);
         return response.data;
     },
+
+    /**
+     * Paginated search for venues and matches
+     */
+    searchPaginated: async (params: {
+        q?: string;
+        type?: "all" | "matches" | "venues";
+        page?: number;
+        limit?: number;
+        lat?: number;
+        lng?: number;
+        radius_km?: number;
+        date?: string;
+    }): Promise<{
+        venues: any[];
+        matches: any[];
+        pagination: {
+            page: number;
+            limit: number;
+            totalVenues: number;
+            totalMatches: number;
+            hasMoreVenues: boolean;
+            hasMoreMatches: boolean;
+        };
+    }> => {
+        const response = await api.get("/discovery/search", { params });
+        return response.data;
+    },
 };
 
 // Mock data for development
