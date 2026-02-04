@@ -491,6 +491,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                 key={venue.id}
                                                                 style={[styles.venueCardNew, { backgroundColor: themeMode === 'light' ? '#fff' : colors.surfaceAlt, borderColor: colors.divider }]}
                                                                 activeOpacity={0.85}
+                                                                onPress={() => navigation.navigate('VenueProfile', { venueId: venue.id })}
                                                             >
                                                                 <View style={[styles.venueImageContainerNew, { backgroundColor: colors.surface }]}>
                                                                     {venue.image ? (
