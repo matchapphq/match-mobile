@@ -1,4 +1,4 @@
-// match-mobile/src/types/testApi.types.ts
+// match-mobile/src/types/app.types.ts
 
 export interface UserProfile {
     name: string;

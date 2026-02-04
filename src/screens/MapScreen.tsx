@@ -884,9 +884,9 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
             </TouchableOpacity>
 
             <MapScreenFilter
-                visible={filterVisible}
+                visible={filterSheetVisible}
                 initialSelections={filterSelections}
-                onClose={() => setFilterVisible(false)}
+                onClose={() => setFilterSheetVisible(false)}
                 onApply={handleApplyFilters}
             />
         </View>
