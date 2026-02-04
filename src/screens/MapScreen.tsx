@@ -17,13 +17,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import TestMapScreenFilter, {
+import MapScreenFilter, {
     DEFAULT_FILTER_SELECTIONS,
     FilterSelections,
-} from "../components/TestMapScreenFilter";
+} from "../components/MapScreenFilter";
 import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
-import { testApi, Venue, VenueMatch } from "../services/testApi";
+import { mobileApi, Venue, VenueMatch } from "../services/mobileApi";
 
 
 const { width, height } = Dimensions.get("window");
@@ -308,7 +308,7 @@ const LIGHT_MAP_STYLE = [
     }
 ];
 
-const TestMapScreen = ({ navigation }: { navigation: any }) => {
+const MapScreen = ({ navigation }: { navigation: any }) => {
     const { colors, themeMode } = useStore();
     const mapRef = useRef<MapView>(null);
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
@@ -440,7 +440,7 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
         }).start();
 
         try {
-            const fetchedVenues = await testApi.fetchVenuesInArea(
+            const fetchedVenues = await mobileApi.fetchVenuesInArea(
                 currentRegion.latitude,
                 currentRegion.longitude,
                 currentRegion.latitudeDelta,
@@ -514,7 +514,7 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
             try {
                 // Only load upcoming matches on initial load
                 // Venues will be loaded when user clicks "Search in this area"
-                const fetchedMatches = await testApi.fetchUpcomingMatches();
+                const fetchedMatches = await mobileApi.fetchUpcomingMatches();
                 if (!active) return;
                 setUpcomingMatches(fetchedMatches);
             } catch (error) {
@@ -816,7 +816,7 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                         <View style={[styles.venueBtnDivider, { backgroundColor: colors.divider }]} />
                         <TouchableOpacity
                             style={[styles.venueBtnPrimary, { backgroundColor: colors.primary }]}
-                            onPress={() => navigation.navigate('TestVenueProfile', { venueId: selectedVenue?.id })}
+                            onPress={() => navigation.navigate('VenueProfile', { venueId: selectedVenue?.id })}
                         >
                             <Text style={styles.venueBtnTextPrimary}>Voir détails</Text>
                             <MaterialIcons name="arrow-forward" size={18} color={COLORS.white} />
@@ -883,10 +883,10 @@ const TestMapScreen = ({ navigation }: { navigation: any }) => {
                 <MaterialIcons name="near-me" size={24} color={COLORS.white} />
             </TouchableOpacity>
 
-            <TestMapScreenFilter
-                visible={filterSheetVisible}
+            <MapScreenFilter
+                visible={filterVisible}
                 initialSelections={filterSelections}
-                onClose={closeFilterSheet}
+                onClose={() => setFilterVisible(false)}
                 onApply={handleApplyFilters}
             />
         </View>
@@ -1723,4 +1723,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestMapScreen;
+export default MapScreen;

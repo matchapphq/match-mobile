@@ -6,12 +6,12 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 // removing static COLORS import if possible, or keeping for types if needed (but prefer store)
-import { testApi, Venue, VenueMatch } from '../services/testApi';
+import { mobileApi, Venue, VenueMatch } from '../services/mobileApi';
 
 import { useStore } from '../store/useStore';
 const { width } = Dimensions.get('window');
 
-const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
+const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const { colors, themeMode } = useStore();
     const insets = useSafeAreaInsets();
     const venueId: string | undefined = route?.params?.venueId;
@@ -23,7 +23,7 @@ const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route:
         try {
             setError(null);
             setIsLoading(true);
-            const data = venueId ? await testApi.fetchVenueById(venueId) : null;
+            const data = venueId ? await mobileApi.fetchVenueById(venueId) : null;
             setVenue(data ?? null);
         } catch (err) {
             console.warn('Failed to load venue', err);
@@ -218,7 +218,7 @@ const TestVenueProfileScreen = ({ navigation, route }: { navigation: any; route:
                         backgroundColor: colors.primary
                     }
                 ]}
-                onPress={() => navigation.navigate("TestReservationsScreen")}
+                onPress={() => navigation.navigate("ReservationsScreen")}
             >
                 <MaterialIcons name="calendar-today" size={20} color={colors.white} />
                 <Text style={styles.reserveButtonText}>Réserver une table</Text>
@@ -595,4 +595,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestVenueProfileScreen;
+export default VenueProfileScreen;

@@ -94,7 +94,7 @@ const FILTERS = [
     { label: "Tennis", icon: "sports-tennis", selected: false },
 ];
 
-const TestReservationsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
+const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const {
         colors,
         themeMode,
@@ -323,7 +323,7 @@ const TestReservationsScreen = ({ navigation, route }: { navigation: any; route:
             refreshReservations();
 
             setIsSubmitting(false);
-            navigation.navigate("TestReservationSuccess", {
+            navigation.navigate("ReservationSuccess", {
                 venueName: selectedMatch.venueName,
                 address: selectedMatch.venueAddress,
                 dateLabel,
@@ -992,4 +992,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestReservationsScreen;
+export default ReservationsScreen;

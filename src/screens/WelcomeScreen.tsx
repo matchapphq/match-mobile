@@ -18,7 +18,7 @@ const HERO_IMAGE =
 const BRAND_PRIMARY = "#f47b25";
 const { height } = Dimensions.get("window");
 
-const TestWelcomeScreen = () => {
+const WelcomeScreen = () => {
     const contentOpacity = useRef(new Animated.Value(0)).current;
     const contentTranslate = useRef(new Animated.Value(40)).current;
     const navigation = useNavigation<any>();
@@ -39,7 +39,7 @@ const TestWelcomeScreen = () => {
     }, [contentOpacity, contentTranslate]);
 
     const handleNext = () => {
-        navigation.navigate("TestAuthEntry");
+        navigation.navigate("AuthEntry");
     };
 
     return (
@@ -166,4 +166,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestWelcomeScreen;
+export default WelcomeScreen;

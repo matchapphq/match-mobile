@@ -16,7 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import * as ImagePicker from 'expo-image-picker';
 import { useStore } from '../store/useStore';
-import type { UserProfile } from '../services/testApi';
+import type { UserProfile } from '../services/mobileApi';
 
 type SectionRow = {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -92,7 +92,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
     ],
   },
 ];
-const TestProfilePage = () => {
+const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const { logout, user, themeMode, colors, updateUser } = useStore();
@@ -149,7 +149,7 @@ const TestProfilePage = () => {
           logout();
           navigation.reset({
             index: 0,
-            routes: [{ name: 'TestWelcome' }],
+            routes: [{ name: 'Welcome' }],
           });
         },
       },
@@ -250,7 +250,7 @@ const TestProfilePage = () => {
 
                   const handlePress = () => {
                     if (row.label === 'Questions fréquentes') {
-                      navigation.navigate('TestFaqSupport');
+                      navigation.navigate('FaqSupport');
                       return;
                     }
                     if (row.label === 'Langue') {
@@ -511,4 +511,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TestProfilePage;
+export default ProfileScreen;

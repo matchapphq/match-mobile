@@ -10,9 +10,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import { BG_DARK, BRAND_PRIMARY, SURFACE_DARK, width, height } from "./styles";
-import { TEST_ONBOARDING_TOTAL_STEPS } from "../../store/useTestOnboardingForm";
+import { ONBOARDING_TOTAL_STEPS } from "../../store/useOnboardingForm";
 
-export type TestOnboardingLayoutProps = {
+export type OnboardingLayoutProps = {
     step: number;
     title: ReactNode;
     subtitle?: ReactNode;
@@ -24,7 +24,7 @@ export type TestOnboardingLayoutProps = {
     children: ReactNode;
 };
 
-export const TestOnboardingLayout: React.FC<TestOnboardingLayoutProps> = ({
+export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
     step,
     title,
     subtitle,
@@ -35,7 +35,7 @@ export const TestOnboardingLayout: React.FC<TestOnboardingLayoutProps> = ({
     onBack,
     children,
 }) => {
-    const progressWidth = `${(step / TEST_ONBOARDING_TOTAL_STEPS) * 100}%`;
+    const progressWidth = `${(step / ONBOARDING_TOTAL_STEPS) * 100}%`;
 
     return (
         <View style={styles.container}>
@@ -48,7 +48,7 @@ export const TestOnboardingLayout: React.FC<TestOnboardingLayoutProps> = ({
                     <TouchableOpacity style={styles.backButton} onPress={onBack}>
                         <MaterialIcons name="arrow-back-ios-new" size={18} color="rgba(255,255,255,0.8)" />
                     </TouchableOpacity>
-                    <Text style={styles.stepIndicator}>Étape {step} sur {TEST_ONBOARDING_TOTAL_STEPS}</Text>
+                    <Text style={styles.stepIndicator}>Étape {step} sur {ONBOARDING_TOTAL_STEPS}</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
@@ -215,4 +215,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestOnboardingLayout;
+export default OnboardingLayout;

@@ -15,7 +15,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
-import { SearchMatchResult, Venue, testApi } from "../services/testApi";
+import { SearchMatchResult, Venue, mobileApi } from "../services/mobileApi";
 
 type MatchDetailRoute = {
     params?: {
@@ -23,7 +23,7 @@ type MatchDetailRoute = {
     };
 };
 
-const TestMatchDetailScreen = ({
+const MatchDetailScreen = ({
     navigation,
     route,
 }: {
@@ -48,8 +48,8 @@ const TestMatchDetailScreen = ({
             setError(null);
             setIsLoading(true);
             const [matchData, venueData] = await Promise.all([
-                testApi.fetchMatchById(matchId),
-                testApi.fetchVenues(),
+                mobileApi.fetchMatchById(matchId),
+                mobileApi.fetchVenues(),
             ]);
 
             if (!matchData) {
@@ -245,7 +245,7 @@ const TestMatchDetailScreen = ({
                                     <TouchableOpacity
                                         style={[styles.venueButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
                                         onPress={() =>
-                                            navigation.navigate("TestReservationsScreen", {
+                                            navigation.navigate("ReservationsScreen", {
                                                 venue,
                                                 matchId: match.id,
                                                 match,
@@ -597,4 +597,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestMatchDetailScreen;
+export default MatchDetailScreen;

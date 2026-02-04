@@ -46,7 +46,7 @@ type Props = {
     onApply: (selections: FilterSelections) => void;
 };
 
-const TestMapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props) => {
+const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props) => {
     const { colors, themeMode } = useStore();
     const sheetAnim = useRef(new Animated.Value(0)).current;
     const [rendered, setRendered] = useState(visible);
@@ -289,7 +289,7 @@ const TestMapScreenFilter = ({ visible, initialSelections, onClose, onApply }: P
     );
 };
 
-export default TestMapScreenFilter;
+export default MapScreenFilter;
 
 const styles = StyleSheet.create({
     backdrop: {

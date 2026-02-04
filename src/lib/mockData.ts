@@ -1,6 +1,6 @@
 import { VenueType, SportType } from "../types";
 import type {
-    Venue as TestVenue,
+    Venue,
     VenueMatch,
     SearchMatchResult,
     SearchResult,
@@ -10,7 +10,7 @@ import type {
     UserProfile,
     NotificationSetting,
     MockReservation,
-} from "../types/testApi.types";
+} from "../types/app.types";
 
 export const mockProfile: UserProfile = {
     name: "Alex Martin",
@@ -22,7 +22,7 @@ export const mockProfile: UserProfile = {
     tier: "Gold",
 };
 
-export const mockVenues: TestVenue[] = [
+export const mockVenues: Venue[] = [
     {
         id: "venue-1",
         name: "THE KOP BAR",

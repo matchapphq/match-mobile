@@ -4,13 +4,13 @@ import { BlurView } from "expo-blur";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useStore } from "../store/useStore";
 
-interface TestPillProps {
+interface BottomTabPillProps {
     state: any;
     descriptors: any;
     navigation: any;
 }
 
-const TestPill = ({ state, descriptors, navigation }: TestPillProps) => {
+const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) => {
     const { colors, themeMode } = useStore();
 
     return (
@@ -46,11 +46,11 @@ const TestPill = ({ state, descriptors, navigation }: TestPillProps) => {
                 let iconName: keyof typeof MaterialIcons.glyphMap = "circle";
                 let displayText = label;
 
-                // Adjust these based on your actual route names in TestTabNavigator
-                if (route.name === "TestMap") {
+                // Adjust these based on your actual route names in TabNavigator
+                if (route.name === "Map") {
                     iconName = "map";
                     displayText = "Découvrir";
-                } else if (route.name === "TestSearch") {
+                } else if (route.name === "Search") {
                     iconName = "search";
                     displayText = "Rechercher";
                 } else if (route.name === "Reservations") {
@@ -131,4 +131,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestPill;
+export default BottomTabPill;

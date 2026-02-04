@@ -60,7 +60,7 @@ const FILTERS: { label: string; value: FilterType }[] = [
   { label: 'Annulées', value: 'cancelled' },
 ];
 
-const TestUserBookedScreen = () => {
+const UserBookedScreen = () => {
   const {
     colors,
     themeMode,
@@ -445,7 +445,7 @@ const TestUserBookedScreen = () => {
           <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <MaterialIcons name="event-busy" size={36} color={colors.textSecondary} />
             <Text style={[styles.stateText, { color: colors.text }]}>Vous n'avez aucune réservation pour le moment.</Text>
-            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('TestMapScreen' as never)} activeOpacity={0.85}>
+            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('Map' as never)} activeOpacity={0.85}>
               <MaterialIcons name="search" size={18} color={colors.white} />
               <Text style={[styles.retryButtonText, { color: colors.white }]}>Explorer les bars</Text>
             </TouchableOpacity>
@@ -548,7 +548,7 @@ const TestUserBookedScreen = () => {
         {/* Find Another Bar Button */}
         <TouchableOpacity
           style={[styles.findButton, { borderColor: 'rgba(255,255,255,0.1)' }]}
-          onPress={() => navigation.navigate('TestMapScreen' as never)}
+          onPress={() => navigation.navigate('Map' as never)}
         >
           <MaterialIcons name="add-circle" size={20} color={colors.primary} />
           <Text style={[styles.findButtonText, { color: colors.textMuted }]}>Trouver un autre bar</Text>
@@ -1457,4 +1457,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TestUserBookedScreen;
+export default UserBookedScreen;

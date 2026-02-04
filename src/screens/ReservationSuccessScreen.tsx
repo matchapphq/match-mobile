@@ -22,7 +22,7 @@ type SuccessParams = {
 const DEFAULT_IMAGE =
     "https://lh3.googleusercontent.com/aida-public/AB6AXuDFKCVuOq4v4pl8GgumWkDkahxAgQfU5tllCtpxZGcY0k37BRwxsYjlp0QVSwkn52Y5nwqaOezIeVt5fnv8yBCYBNcRHV7bWa-owzsJnQKABidkqvB9pqnfRBjdxaNR6DZNBoYWyLC4OzbSAh2pk5KB8XK3Ki7zbkdr5eamtyFnv7dkfnojXaET-Hvr1LWwLe_c8TlWsydZRX1o5Hizo5AXMvuUlFbGYOOKcibcZ6dF1We8FNKOhydp80y-vbvsInR_weoOJ4yD27Kr";
 
-const TestReservationSuccessScreen = ({ navigation, route }: { navigation: any; route: { params?: SuccessParams } }) => {
+const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; route: { params?: SuccessParams } }) => {
     const { colors, themeMode } = useStore();
     const {
         venueName = "THE KOP BAR",
@@ -150,7 +150,7 @@ const TestReservationSuccessScreen = ({ navigation, route }: { navigation: any; 
                         <Text style={[styles.primaryButtonText, { color: colors.white }]}>Voir mon QR Code</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[styles.secondaryButton, { backgroundColor: colors.surface, borderColor: 'transparent' }]} onPress={() => navigation.navigate("TestTab")}>
+                    <TouchableOpacity style={[styles.secondaryButton, { backgroundColor: colors.surface, borderColor: 'transparent' }]} onPress={() => navigation.navigate("Tab")}>
                         <Text style={[styles.secondaryButtonText, { color: colors.text }]}>Retour à l'accueil</Text>
                     </TouchableOpacity>
                 </View>
@@ -389,4 +389,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestReservationSuccessScreen;
+export default ReservationSuccessScreen;

@@ -5,17 +5,17 @@ import { createStackNavigator } from "@react-navigation/stack";
 import { useStore } from "../store/useStore";
 
 // Import screens
-import SplashScreen from "../screens/TestSplashScreen";
-import TestWelcomeScreen from "../screens/TestWelcomeScreen";
-import TestAuthEntryScreen from "../screens/TestAuthEntryScreen";
-import TestOnboardingScreen from "../screens/TestOnboardingScreen";
+import SplashScreen from "../screens/SplashScreen";
+import WelcomeScreen from "../screens/WelcomeScreen";
+import AuthEntryScreen from "../screens/AuthEntryScreen";
+import OnboardingScreen from "../screens/OnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
-import TestTabNavigator from "./TestTabNavigator";
-import TestReservationsScreen from "../screens/TestReservationsScreen";
-import TestVenueProfileScreen from "../screens/TestVenueProfileScreen";
-import TestFaqSupport from "../screens/TestFaqSupport";
-import TestReservationSuccessScreen from "../screens/TestReservationSuccessScreen";
-import TestMatchDetailScreen from "../screens/TestMatchDetailScreen";
+import TabNavigator from "./TabNavigator";
+import ReservationsScreen from "../screens/ReservationsScreen";
+import VenueProfileScreen from "../screens/VenueProfileScreen";
+import FaqSupport from "../screens/FaqSupport";
+import ReservationSuccessScreen from "../screens/ReservationSuccessScreen";
+import MatchDetailScreen from "../screens/MatchDetailScreen";
 import LanguageSelectionScreen from "../screens/LanguageSelectionScreen";
 import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
 
@@ -44,19 +44,19 @@ export const AppNavigator = () => {
             >
                 {!isAuthenticated ? (
                     <>
-                        <Stack.Screen name="TestWelcome" component={TestWelcomeScreen} />
-                        <Stack.Screen name="TestAuthEntry" component={TestAuthEntryScreen} />
-                        <Stack.Screen name="TestOnboarding" component={TestOnboardingScreen} />
+                        <Stack.Screen name="Welcome" component={WelcomeScreen} />
+                        <Stack.Screen name="AuthEntry" component={AuthEntryScreen} />
+                        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
                         <Stack.Screen name="Login" component={LoginScreen} />
                     </>
                 ) : (
                     <>
-                        <Stack.Screen name="TestTab" component={TestTabNavigator} />
-                        <Stack.Screen name="TestVenueProfile" component={TestVenueProfileScreen} />
-                        <Stack.Screen name="TestReservationsScreen" component={TestReservationsScreen} />
-                        <Stack.Screen name="TestReservationSuccess" component={TestReservationSuccessScreen} />
-                        <Stack.Screen name="TestMatchDetail" component={TestMatchDetailScreen} />
-                        <Stack.Screen name="TestFaqSupport" component={TestFaqSupport} />
+                        <Stack.Screen name="Tab" component={TabNavigator} />
+                        <Stack.Screen name="VenueProfile" component={VenueProfileScreen} />
+                        <Stack.Screen name="ReservationsScreen" component={ReservationsScreen} />
+                        <Stack.Screen name="ReservationSuccess" component={ReservationSuccessScreen} />
+                        <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
+                        <Stack.Screen name="FaqSupport" component={FaqSupport} />
                         <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
                         <Stack.Screen name="ThemeSelection" component={ThemeSelectionScreen} />
                     </>

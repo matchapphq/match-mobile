@@ -1,13 +1,13 @@
 import { create } from "zustand";
 
-export const TEST_ONBOARDING_TOTAL_STEPS = 8;
+export const ONBOARDING_TOTAL_STEPS = 8;
 
 const DEFAULT_COORDINATES = {
     lat: 48.8566,
     lng: 2.3522,
 };
 
-export type TestOnboardingFormData = {
+export type OnboardingFormData = {
     firstName: string;
     lastName: string;
     email: string;
@@ -25,7 +25,7 @@ export type TestOnboardingFormData = {
     home_lng: number | null;
 };
 
-const initialData: TestOnboardingFormData = {
+const initialData: OnboardingFormData = {
     firstName: "",
     lastName: "",
     email: "",
@@ -45,15 +45,15 @@ const initialData: TestOnboardingFormData = {
 
 type ArrayField = "fav_sports" | "fav_team_ids" | "ambiances" | "venue_types";
 
-type TestOnboardingFormState = {
-    data: TestOnboardingFormData;
-    updateField: <K extends keyof TestOnboardingFormData>(field: K, value: TestOnboardingFormData[K]) => void;
+type OnboardingFormState = {
+    data: OnboardingFormData;
+    updateField: <K extends keyof OnboardingFormData>(field: K, value: OnboardingFormData[K]) => void;
     toggleArrayValue: (field: ArrayField, value: string) => void;
     reset: () => void;
     buildRequestPayload: () => Record<string, unknown>;
 };
 
-export const useTestOnboardingForm = create<TestOnboardingFormState>((set, get) => ({
+export const useOnboardingForm = create<OnboardingFormState>((set, get) => ({
     data: initialData,
     updateField: (field, value) =>
         set((state) => ({

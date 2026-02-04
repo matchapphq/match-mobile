@@ -13,10 +13,10 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
-import { testApi, SearchMatchResult, SearchResult, SearchTrend } from "../services/testApi";
+import { mobileApi, SearchMatchResult, SearchResult, SearchTrend } from "../services/mobileApi";
 import { useStore } from "../store/useStore";
 
-const TestSearchMenu = ({ navigation }: { navigation: any }) => {
+const SearchMenu = ({ navigation }: { navigation: any }) => {
     const { colors, themeMode } = useStore();
     const [searchQuery, setSearchQuery] = useState("");
     const filterAnim = useRef(new Animated.Value(0)).current;
@@ -61,7 +61,7 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
         try {
             setError(null);
             setIsLoading(true);
-            const data = await testApi.fetchSearchData();
+            const data = await mobileApi.fetchSearchData();
             setTrends(data.trends);
             setRecentSearches(data.recentSearches);
             setMatchResults(data.matchResults);
@@ -219,7 +219,7 @@ const TestSearchMenu = ({ navigation }: { navigation: any }) => {
                                                     key={match.id}
                                                     style={[styles.matchCard, { backgroundColor: colors.surfaceAlt, borderColor: colors.divider }]}
                                                     activeOpacity={0.9}
-                                                    onPress={() => navigation.navigate("TestMatchDetail", { matchId: match.id })}
+                                                    onPress={() => navigation.navigate("MatchDetail", { matchId: match.id })}
                                                 >
                                                     <View style={[styles.matchCardBackdrop, { backgroundColor: "rgba(244,123,37,0.1)" }]} />
                                                     <View style={styles.matchMeta}>
@@ -698,4 +698,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestSearchMenu;
+export default SearchMenu;

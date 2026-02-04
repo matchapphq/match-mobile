@@ -8,7 +8,7 @@ import type {
     FaqItem,
     UserProfile,
     ReservationDate,
-} from "../types/testApi.types";
+} from "../types/app.types";
 
 export type { Venue, VenueMatch, SearchTrend, SearchResult, SearchMatchResult, Booking, FaqItem, UserProfile, ReservationDate };
 
@@ -20,7 +20,7 @@ import {
     generateDates,
 } from "../lib/mockData";
 
-// Transform API venue to TestApi Venue format
+// Transform API venue to MobileApi Venue format
 const transformApiVenue = (apiVenue: any): Venue => ({
     id: apiVenue.id,
     name: apiVenue.name,
@@ -127,7 +127,7 @@ const transformApiReservation = (apiRes: any): Booking => {
     };
 };
 
-export const testApi = {
+export const mobileApi = {
     async fetchVenues(): Promise<Venue[]> {
         try {
             const apiVenues = await apiService.getVenues();

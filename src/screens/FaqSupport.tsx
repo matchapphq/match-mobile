@@ -46,7 +46,7 @@ const FAQ_ITEMS = [
   },
 ];
 
-const TestFaqSupport = ({ navigation }: { navigation: any }) => {
+const FaqSupport = ({ navigation }: { navigation: any }) => {
   const { colors, themeMode } = useStore();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
@@ -263,4 +263,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TestFaqSupport;
+export default FaqSupport;

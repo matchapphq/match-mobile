@@ -37,7 +37,7 @@ const LoginScreen = () => {
 
         navigation.reset({
             index: 0,
-            routes: [{ name: "TestTab", params: { screen: "TestMap" } }],
+            routes: [{ name: "Tab", params: { screen: "Map" } }],
         });
     };
 

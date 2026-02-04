@@ -18,11 +18,11 @@ const HERO_IMAGE =
 const BRAND_PRIMARY = "#f47b25";
 const { width } = Dimensions.get("window");
 
-const TestAuthEntryScreen = () => {
+const AuthEntryScreen = () => {
     const navigation = useNavigation<any>();
 
     const handleRegister = () => {
-        navigation.navigate("TestOnboarding");
+        navigation.navigate("Onboarding");
     };
 
     const handleLogin = () => {
@@ -243,4 +243,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestAuthEntryScreen;
+export default AuthEntryScreen;

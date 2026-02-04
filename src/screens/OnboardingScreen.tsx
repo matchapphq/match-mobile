@@ -12,30 +12,30 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { createStackNavigator } from "@react-navigation/stack";
 import type { StackScreenProps } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
-import TestOnboardingLayout from "./testOnboarding/TestOnboardingLayout";
-import { sharedStyles, BRAND_PRIMARY, SUCCESS } from "./testOnboarding/styles";
+import OnboardingLayout from "./onboarding/OnboardingLayout";
+import { sharedStyles, BRAND_PRIMARY, SUCCESS } from "./onboarding/styles";
 import {
     USERNAME_SUGGESTIONS,
     SPORTS_OPTIONS,
     MOOD_OPTIONS,
     VENUE_OPTIONS,
     BUDGET_OPTIONS,
-} from "./testOnboarding/options";
-import { useTestOnboardingForm } from "../store/useTestOnboardingForm";
+} from "./onboarding/options";
+import { useOnboardingForm } from "../store/useOnboardingForm";
 import { useStore } from "../store/useStore";
 
-type TestOnboardingStackParamList = {
-    TestOnboardingName: undefined;
-    TestOnboardingContact: undefined;
-    TestOnboardingSecurity: undefined;
-    TestOnboardingUsername: undefined;
-    TestOnboardingSports: undefined;
-    TestOnboardingMood: undefined;
-    TestOnboardingVenue: undefined;
-    TestOnboardingBudget: undefined;
+type OnboardingStackParamList = {
+    OnboardingName: undefined;
+    OnboardingContact: undefined;
+    OnboardingSecurity: undefined;
+    OnboardingUsername: undefined;
+    OnboardingSports: undefined;
+    OnboardingMood: undefined;
+    OnboardingVenue: undefined;
+    OnboardingBudget: undefined;
 };
 
-const Stack = createStackNavigator<TestOnboardingStackParamList>();
+const Stack = createStackNavigator<OnboardingStackParamList>();
 
 const COUNTRY_OPTIONS = [
     { code: "FR", flag: "🇫🇷", name: "France", dialCode: "+33", maxLength: 9, pattern: "# ## ## ## ##" },
@@ -115,20 +115,20 @@ const localStyles = StyleSheet.create({
     },
 });
 
-type StepScreenProps<RouteName extends keyof TestOnboardingStackParamList> =
-    StackScreenProps<TestOnboardingStackParamList, RouteName>;
+type StepScreenProps<RouteName extends keyof OnboardingStackParamList> =
+    StackScreenProps<OnboardingStackParamList, RouteName>;
 
 const accent = { color: BRAND_PRIMARY };
 
-const NameStepScreen: React.FC<StepScreenProps<"TestOnboardingName">> = ({
+const NameStepScreen: React.FC<StepScreenProps<"OnboardingName">> = ({
     navigation,
 }) => {
-    const { data, updateField } = useTestOnboardingForm();
+    const { data, updateField } = useOnboardingForm();
     const canContinue =
         data.firstName.trim().length > 0 && data.lastName.trim().length > 0;
 
     return (
-        <TestOnboardingLayout
+        <OnboardingLayout
             step={1}
             title={
                 <>
@@ -137,7 +137,7 @@ const NameStepScreen: React.FC<StepScreenProps<"TestOnboardingName">> = ({
             }
             subtitle="Dis-nous comment tu t'appelles pour personnaliser ton expérience sur Match."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("TestOnboardingContact")}
+            onNext={() => navigation.navigate("OnboardingContact")}
             onBack={() => navigation.goBack()}
             footerNote="En continuant, tu acceptes nos CGU et notre Politique de confidentialité."
         >
@@ -180,14 +180,14 @@ const NameStepScreen: React.FC<StepScreenProps<"TestOnboardingName">> = ({
                     />
                 </View>
             </View>
-        </TestOnboardingLayout>
+        </OnboardingLayout>
     );
 };
 
-const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
+const ContactStepScreen: React.FC<StepScreenProps<"OnboardingContact">> = ({
     navigation,
 }) => {
-    const { data, updateField } = useTestOnboardingForm();
+    const { data, updateField } = useOnboardingForm();
     const [selectedCountry, setSelectedCountry] = useState(COUNTRY_OPTIONS[0]);
     const [modalVisible, setModalVisible] = useState(false);
 
@@ -206,12 +206,12 @@ const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
     };
 
     return (
-        <TestOnboardingLayout
+        <OnboardingLayout
             step={2}
             title="Coordonnées"
             subtitle="Comment peut-on te joindre pour confirmer tes réservations ?"
             canContinue={canContinue}
-            onNext={() => navigation.navigate("TestOnboardingSecurity")}
+            onNext={() => navigation.navigate("OnboardingSecurity")}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.formGroup}>
@@ -318,14 +318,14 @@ const ContactStepScreen: React.FC<StepScreenProps<"TestOnboardingContact">> = ({
                     </View>
                 </TouchableOpacity>
             </Modal>
-        </TestOnboardingLayout>
+        </OnboardingLayout>
     );
 };
 
 const SecurityStepScreen: React.FC<
-    StepScreenProps<"TestOnboardingSecurity">
+    StepScreenProps<"OnboardingSecurity">
 > = ({ navigation }) => {
-    const { data, updateField } = useTestOnboardingForm();
+    const { data, updateField } = useOnboardingForm();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const passwordsMatch =
@@ -334,12 +334,12 @@ const SecurityStepScreen: React.FC<
         data.confirmPassword.length >= 6;
 
     return (
-        <TestOnboardingLayout
+        <OnboardingLayout
             step={3}
             title="Sécurité"
             subtitle="Protège ton compte en définissant un mot de passe sécurisé."
             canContinue={passwordsMatch}
-            onNext={() => navigation.navigate("TestOnboardingUsername")}
+            onNext={() => navigation.navigate("OnboardingUsername")}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.formGroup}>
@@ -419,23 +419,23 @@ const SecurityStepScreen: React.FC<
                     </TouchableOpacity>
                 </View>
             </View>
-        </TestOnboardingLayout>
+        </OnboardingLayout>
     );
 };
 
 const UsernameStepScreen: React.FC<
-    StepScreenProps<"TestOnboardingUsername">
+    StepScreenProps<"OnboardingUsername">
 > = ({ navigation }) => {
-    const { data, updateField } = useTestOnboardingForm();
+    const { data, updateField } = useOnboardingForm();
     const canContinue = data.username.trim().length >= 3;
 
     return (
-        <TestOnboardingLayout
+        <OnboardingLayout
             step={4}
             title="Ton identité unique"
             subtitle="Choisis un nom d'utilisateur pour que tes amis te trouvent facilement."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("TestOnboardingSports")}
+            onNext={() => navigation.navigate("OnboardingSports")}
             onBack={() => navigation.goBack()}
             footerNote="Tu pourras le modifier plus tard dans ton profil."
         >
@@ -479,18 +479,18 @@ const UsernameStepScreen: React.FC<
                     ))}
                 </View>
             </View>
-        </TestOnboardingLayout>
+        </OnboardingLayout>
     );
 };
 
-const SportsStepScreen: React.FC<StepScreenProps<"TestOnboardingSports">> = ({
+const SportsStepScreen: React.FC<StepScreenProps<"OnboardingSports">> = ({
     navigation,
 }) => {
-    const { data, toggleArrayValue } = useTestOnboardingForm();
+    const { data, toggleArrayValue } = useOnboardingForm();
     const canContinue = data.fav_sports.length > 0;
 
     return (
-        <TestOnboardingLayout
+        <OnboardingLayout
             step={5}
             title={
                 <>
@@ -500,7 +500,7 @@ const SportsStepScreen: React.FC<StepScreenProps<"TestOnboardingSports">> = ({
             }
             subtitle="Sélectionne tes favoris pour personnaliser ton flux et trouver les meilleurs bars."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("TestOnboardingMood")}
+            onNext={() => navigation.navigate("OnboardingMood")}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.optionsList}>
@@ -565,14 +565,14 @@ const SportsStepScreen: React.FC<StepScreenProps<"TestOnboardingSports">> = ({
                     );
                 })}
             </View>
-        </TestOnboardingLayout>
+        </OnboardingLayout>
     );
 };
 
-const MoodStepScreen: React.FC<StepScreenProps<"TestOnboardingMood">> = ({
+const MoodStepScreen: React.FC<StepScreenProps<"OnboardingMood">> = ({
     navigation,
 }) => {
-    const { data, updateField } = useTestOnboardingForm();
+    const { data, updateField } = useOnboardingForm();
     const canContinue = Boolean(data.ambiances[0]);
 
     const handleSelectMood = (id: string) => {
@@ -580,12 +580,12 @@ const MoodStepScreen: React.FC<StepScreenProps<"TestOnboardingMood">> = ({
     };
 
     return (
-        <TestOnboardingLayout
+        <OnboardingLayout
             step={6}
             title="Quelle ambiance ?"
             subtitle="Choisis ton style pour que nous puissions te proposer les meilleurs spots."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("TestOnboardingVenue")}
+            onNext={() => navigation.navigate("OnboardingVenue")}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.moodGrid}>
@@ -626,14 +626,14 @@ const MoodStepScreen: React.FC<StepScreenProps<"TestOnboardingMood">> = ({
                     );
                 })}
             </View>
-        </TestOnboardingLayout>
+        </OnboardingLayout>
     );
 };
 
-const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({
+const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
     navigation,
 }) => {
-    const { data, updateField } = useTestOnboardingForm();
+    const { data, updateField } = useOnboardingForm();
     const canContinue = data.venue_types.length > 0;
 
     const handleSelectVenue = (id: string) => {
@@ -641,7 +641,7 @@ const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({
     };
 
     return (
-        <TestOnboardingLayout
+        <OnboardingLayout
             step={7}
             title={
                 <>
@@ -651,7 +651,7 @@ const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({
             }
             subtitle="Choisis l'ambiance qui correspond à ton envie du moment."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("TestOnboardingBudget")}
+            onNext={() => navigation.navigate("OnboardingBudget")}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.optionsList}>
@@ -719,15 +719,15 @@ const VenueStepScreen: React.FC<StepScreenProps<"TestOnboardingVenue">> = ({
                     );
                 })}
             </View>
-        </TestOnboardingLayout>
+        </OnboardingLayout>
     );
 };
 
-const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({
+const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
     navigation,
 }) => {
     const { data, updateField, buildRequestPayload, reset } =
-        useTestOnboardingForm();
+        useOnboardingForm();
     const signup = useStore((state) => state.signup);
     const isLoading = useStore((state) => state.isLoading);
     const storeError = useStore((state) => state.error);
@@ -743,7 +743,7 @@ const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({
             reset();
             rootNavigation.reset({
                 index: 0,
-                routes: [{ name: "TestTab" }],
+                routes: [{ name: "Tab" }],
             });
         } else {
             setSubmissionError(
@@ -753,7 +753,7 @@ const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({
     };
 
     return (
-        <TestOnboardingLayout
+        <OnboardingLayout
             step={8}
             title={<>Quel est {"\n"}votre budget ?</>}
             subtitle="Nous trouverons les bars qui correspondent à tes attentes."
@@ -797,47 +797,47 @@ const BudgetStepScreen: React.FC<StepScreenProps<"TestOnboardingBudget">> = ({
                     );
                 })}
             </View>
-        </TestOnboardingLayout>
+        </OnboardingLayout>
     );
 };
 
-const TestOnboardingScreen = () => {
+const OnboardingScreen = () => {
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen
-                name="TestOnboardingName"
+                name="OnboardingName"
                 component={NameStepScreen}
             />
             <Stack.Screen
-                name="TestOnboardingContact"
+                name="OnboardingContact"
                 component={ContactStepScreen}
             />
             <Stack.Screen
-                name="TestOnboardingSecurity"
+                name="OnboardingSecurity"
                 component={SecurityStepScreen}
             />
             <Stack.Screen
-                name="TestOnboardingUsername"
+                name="OnboardingUsername"
                 component={UsernameStepScreen}
             />
             <Stack.Screen
-                name="TestOnboardingSports"
+                name="OnboardingSports"
                 component={SportsStepScreen}
             />
             <Stack.Screen
-                name="TestOnboardingMood"
+                name="OnboardingMood"
                 component={MoodStepScreen}
             />
             <Stack.Screen
-                name="TestOnboardingVenue"
+                name="OnboardingVenue"
                 component={VenueStepScreen}
             />
             <Stack.Screen
-                name="TestOnboardingBudget"
+                name="OnboardingBudget"
                 component={BudgetStepScreen}
             />
         </Stack.Navigator>
     );
 };
 
-export default TestOnboardingScreen;
+export default OnboardingScreen;

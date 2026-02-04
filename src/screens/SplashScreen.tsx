@@ -10,7 +10,7 @@ const DOT_COUNT = 3;
 const PATTERN_COLUMNS = 6;
 const PATTERN_ROWS = 14;
 
-const TestSplashScreen = () => {
+const SplashScreen = () => {
     const iconScale = useRef(new Animated.Value(0.7)).current;
     const contentOpacity = useRef(new Animated.Value(0)).current;
     const dotAnimations = useRef([...Array(DOT_COUNT)].map(() => new Animated.Value(0))).current;
@@ -237,4 +237,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default TestSplashScreen;
+export default SplashScreen;
