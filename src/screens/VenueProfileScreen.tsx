@@ -203,26 +203,17 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                         </ImageBackground>
                     </View>
 
-                    {/* Reserve Button - REMOVED FROM SCROLLVIEW */}
+                    {/* Reserve Button */}
+                    <TouchableOpacity
+                        style={[styles.reserveButton, { backgroundColor: colors.primary }]}
+                        onPress={() => navigation.navigate("ReservationsScreen")}
+                    >
+                        <MaterialIcons name="calendar-today" size={20} color={colors.white} />
+                        <Text style={styles.reserveButtonText}>Réserver une table</Text>
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
 
-            {/* Floating Reserve Button */}
-            <TouchableOpacity
-                style={[
-                    styles.floatingReserveButton,
-                    {
-                        bottom: insets.bottom + 32,
-                        left: 20,
-                        right: 20,
-                        backgroundColor: colors.primary
-                    }
-                ]}
-                onPress={() => navigation.navigate("ReservationsScreen")}
-            >
-                <MaterialIcons name="calendar-today" size={20} color={colors.white} />
-                <Text style={styles.reserveButtonText}>Réserver une table</Text>
-            </TouchableOpacity>
 
         </View>
     );
@@ -551,6 +542,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 10,
+        marginTop: 24,
+        marginBottom: 32,
         shadowColor: 'rgb(124, 45, 18)',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.4,

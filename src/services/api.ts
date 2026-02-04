@@ -423,17 +423,34 @@ export const apiService = {
         return data;
     },
 
-    getMatchVenues: async (matchId: string): Promise<MatchVenue[]> => {
-        const cacheKey = `match_venues_${matchId}`;
-        const cached = await cacheService.get<MatchVenue[]>(cacheKey);
-        if (cached) return cached;
+    getMatchVenues: async (
+        matchId: string,
+        lat?: number,
+        lng?: number,
+        distanceKm: number = 50
+    ): Promise<MatchVenue[]> => {
+        // Don't use cache when location is provided (results are personalized)
+        if (lat === undefined || lng === undefined) {
+            const cacheKey = `match_venues_${matchId}`;
+            const cached = await cacheService.get<MatchVenue[]>(cacheKey);
+            if (cached) return cached;
 
-        const response = await api.get(`/matches/${matchId}/venues`);
+            const response = await api.get(`/matches/${matchId}/venues`);
+            const data = Array.isArray(response.data)
+                ? response.data
+                : response.data?.data || [];
+                
+            await cacheService.set(cacheKey, data, 15); // Cache for 15 minutes
+            return data;
+        }
+
+        // Fetch with location params for distance-sorted results
+        const response = await api.get(`/matches/${matchId}/venues`, {
+            params: { lat, lng, distance_km: distanceKm }
+        });
         const data = Array.isArray(response.data)
             ? response.data
             : response.data?.data || [];
-            
-        await cacheService.set(cacheKey, data, 15); // Cache for 15 minutes
         return data;
     },
 
@@ -508,6 +525,34 @@ export const apiService = {
 
     search: async (filters: SearchFilters): Promise<{ venues: Venue[]; matches: Match[] }> => {
         const response = await api.post("/discovery/search", filters);
+        return response.data;
+    },
+
+    /**
+     * Paginated search for venues and matches
+     */
+    searchPaginated: async (params: {
+        q?: string;
+        type?: "all" | "matches" | "venues";
+        page?: number;
+        limit?: number;
+        lat?: number;
+        lng?: number;
+        radius_km?: number;
+        date?: string;
+    }): Promise<{
+        venues: any[];
+        matches: any[];
+        pagination: {
+            page: number;
+            limit: number;
+            totalVenues: number;
+            totalMatches: number;
+            hasMoreVenues: boolean;
+            hasMoreMatches: boolean;
+        };
+    }> => {
+        const response = await api.get("/discovery/search", { params });
         return response.data;
     },
 };

@@ -222,6 +222,125 @@ export const mobileApi = {
         }
     },
 
+    /**
+     * Paginated search with type filtering - uses backend pagination
+     * @param query - Search query string
+     * @param type - Filter type: "all" | "matches" | "venues"
+     * @param page - Page number (1-indexed)
+     * @param limit - Items per page (default 15)
+     * @param filterDate - Optional date string (ISO format) to filter matches
+     * @param lat - Optional user latitude for geo-filtering
+     * @param lng - Optional user longitude for geo-filtering
+     */
+    async searchPaginated(
+        query: string,
+        type: "all" | "matches" | "venues" = "all",
+        page: number = 1,
+        limit: number = 15,
+        filterDate?: string,
+        lat?: number,
+        lng?: number
+    ): Promise<{
+        venues: SearchResult[];
+        matches: SearchMatchResult[];
+        hasMoreVenues: boolean;
+        hasMoreMatches: boolean;
+        totalVenues: number;
+        totalMatches: number;
+    }> {
+        try {
+            // Call backend paginated search endpoint
+            const response = await apiService.searchPaginated({
+                q: query,
+                type,
+                page,
+                limit,
+                date: filterDate,
+                lat,
+                lng,
+                radius_km: 50, // Default 50km radius
+            });
+
+            // Transform backend response to frontend format
+            const venues = (response.venues || []).map(transformToSearchResult);
+            const matches = (response.matches || []).map(transformToSearchMatch);
+
+            return {
+                venues,
+                matches,
+                hasMoreVenues: response.pagination?.hasMoreVenues ?? false,
+                hasMoreMatches: response.pagination?.hasMoreMatches ?? false,
+                totalVenues: response.pagination?.totalVenues ?? venues.length,
+                totalMatches: response.pagination?.totalMatches ?? matches.length,
+            };
+        } catch (error) {
+            console.warn("API searchPaginated failed, falling back to client-side", error);
+            
+            // Fallback to client-side filtering if backend fails
+            try {
+                const shouldFetchVenues = type === "all" || type === "venues";
+                const shouldFetchMatches = type === "all" || type === "matches";
+
+                const [apiVenues, apiMatches] = await Promise.all([
+                    shouldFetchVenues ? apiService.getVenues() : Promise.resolve([]),
+                    shouldFetchMatches ? apiService.getUpcomingMatches() : Promise.resolve([]),
+                ]);
+
+                const queryLower = query.toLowerCase().trim();
+                let filteredVenues = apiVenues;
+                let filteredMatches = apiMatches;
+
+                if (queryLower) {
+                    filteredVenues = apiVenues.filter((v: any) => 
+                        v.name?.toLowerCase().includes(queryLower) ||
+                        v.type?.toLowerCase().includes(queryLower) ||
+                        v.city?.toLowerCase().includes(queryLower)
+                    );
+                    filteredMatches = apiMatches.filter((m: any) => {
+                        const homeName = m.homeTeam?.name || m.homeTeam || "";
+                        const awayName = m.awayTeam?.name || m.awayTeam || "";
+                        const league = m.league?.name || m.competition || "";
+                        return homeName.toLowerCase().includes(queryLower) ||
+                               awayName.toLowerCase().includes(queryLower) ||
+                               league.toLowerCase().includes(queryLower);
+                    });
+                }
+
+                if (filterDate) {
+                    filteredMatches = filteredMatches.filter((m: any) => {
+                        const matchDate = new Date(m.scheduled_at || m.date);
+                        const filterDateObj = new Date(filterDate);
+                        return matchDate.getFullYear() === filterDateObj.getFullYear() &&
+                               matchDate.getMonth() === filterDateObj.getMonth() &&
+                               matchDate.getDate() === filterDateObj.getDate();
+                    });
+                }
+
+                const startIndex = (page - 1) * limit;
+                const endIndex = startIndex + limit;
+
+                return {
+                    venues: filteredVenues.slice(startIndex, endIndex).map(transformToSearchResult),
+                    matches: filteredMatches.slice(startIndex, endIndex).map(transformToSearchMatch),
+                    hasMoreVenues: endIndex < filteredVenues.length,
+                    hasMoreMatches: endIndex < filteredMatches.length,
+                    totalVenues: filteredVenues.length,
+                    totalMatches: filteredMatches.length,
+                };
+            } catch (fallbackError) {
+                console.warn("Fallback search also failed", fallbackError);
+                return {
+                    venues: [],
+                    matches: [],
+                    hasMoreVenues: false,
+                    hasMoreMatches: false,
+                    totalVenues: 0,
+                    totalMatches: 0,
+                };
+            }
+        }
+    },
+
     async fetchBookings(): Promise<Booking[]> {
         try {
             const response = await apiService.getUserReservations();
@@ -294,6 +413,47 @@ export const mobileApi = {
             return filtered.map(transformApiMatch);
         } catch (error) {
             console.warn("API fetchMatchesForDate failed", error);
+            return [];
+        }
+    },
+
+    async fetchMatchVenues(
+        matchId: string,
+        userLat?: number,
+        userLng?: number,
+        maxDistanceKm: number = 50
+    ): Promise<Venue[]> {
+        try {
+            // Call API with location params if provided (for distance sorting)
+            const matchVenues = await apiService.getMatchVenues(
+                matchId,
+                userLat,
+                userLng,
+                maxDistanceKm
+            );
+            
+            // Transform API response to Venue format
+            return matchVenues.map((mv: any) => ({
+                id: mv.venue?.id || mv.venueMatchId,
+                name: mv.venue?.name || "Unknown Venue",
+                latitude: mv.venue?.latitude ?? 48.8566,
+                longitude: mv.venue?.longitude ?? 2.3522,
+                address: mv.venue?.street_address || mv.venue?.city || "",
+                distance: mv.venue?.distance !== null && mv.venue?.distance !== undefined
+                    ? `${mv.venue.distance} km`
+                    : "N/A",
+                image: mv.venue?.image_url || mv.venue?.cover_image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
+                rating: mv.venue?.rating ?? 4.5,
+                tags: ["Bar sportif", "Diffuse ce match"],
+                priceLevel: "€€",
+                isOpen: true,
+                matches: [],
+                venueMatchId: mv.venueMatchId,
+                availableCapacity: mv.availableCapacity,
+                totalCapacity: mv.totalCapacity,
+            }));
+        } catch (error) {
+            console.warn("API fetchMatchVenues failed", error);
             return [];
         }
     },
