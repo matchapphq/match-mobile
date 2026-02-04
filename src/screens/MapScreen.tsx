@@ -331,9 +331,6 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     const searchButtonAnim = useRef(new Animated.Value(0)).current;
     const emptyStateTimer = useRef<NodeJS.Timeout | null>(null);
 
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-    const drawerAnim = useRef(new Animated.Value(-width * 0.8)).current;
-
     // Cleanup timers on unmount
     useEffect(() => {
         return () => {
@@ -478,15 +475,6 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     const bottomSheetHeight = height * 0.5; // Expand to 50% of screen
     const collapsedOffset = 104; // The bottom position of the handle in collapsed state
 
-    // Animate Drawer
-    useEffect(() => {
-        Animated.timing(drawerAnim, {
-            toValue: isDrawerOpen ? 0 : -width * 0.8,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
-    }, [isDrawerOpen]);
-
     // Animate Sheet
     useEffect(() => {
         Animated.spring(sheetAnim, {
@@ -499,10 +487,6 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
 
     const [filterSelections, setFilterSelections] = useState<FilterSelections>(DEFAULT_FILTER_SELECTIONS);
     const [filterSheetVisible, setFilterSheetVisible] = useState(false);
-
-    const toggleDrawer = () => {
-        setIsDrawerOpen(!isDrawerOpen);
-    };
 
     const toggleSheet = () => {
         setIsSheetOpen(!isSheetOpen);
@@ -578,55 +562,6 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         <View style={styles.container}>
             <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
 
-            {/* ... (Keep Drawer Overlay/Content) ... */}
-            {isDrawerOpen && (
-                <TouchableOpacity
-                    style={styles.drawerOverlay}
-                    activeOpacity={1}
-                    onPress={() => setIsDrawerOpen(false)}
-                />
-            )}
-            <Animated.View style={[
-                styles.drawerContent,
-                { transform: [{ translateX: drawerAnim }], backgroundColor: colors.backgroundElevated }
-            ]}>
-                {/* ... Drawer Content ... */}
-                <View style={[styles.drawerHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-                    <View style={styles.userProfile}>
-                        <View style={[styles.avatarContainer, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
-                            <Image
-                                source={{ uri: "https://lh3.googleusercontent.com/aida-public/AB6AXuAv-V7A3SeCdF1j2Bm_cd8CNyCIPLta_60LMVXq6t8rqMzmR3jN9jIZ7bt9ISzqvvQzy15wMvgUi21QK1UeBjAKXD9SYDWvlhxJUKZe5NlK9VOV88baSy0v-zOcbIUMHIc3VF02oz_MO0Xxk3r3CAxCxHQ5uqurmEX4Wo8XypMwNPoDZ3cNhTDHlQV9wpmMCe97EnjPVTHTez6ZZ_Ew_rtUBIDA5gBcfnhoDE5jG4-cqWPRraSda6xFkT3mnJTt9-MA5H7kBzttVcmr" }}
-                                style={styles.avatar}
-                            />
-                        </View>
-                        <View>
-                            <Text style={[styles.drawerTitle, { color: colors.text }]}>Bonjour !</Text>
-                            <Text style={[styles.drawerSubtitle, { color: colors.subtext }]}>Membre Premium</Text>
-                        </View>
-                    </View>
-                    <TouchableOpacity style={styles.proButton}>
-                        <MaterialIcons name="star" size={18} color={COLORS.primary} />
-                        <Text style={styles.proButtonText}>Passer à l'offre Pro</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <ScrollView style={styles.drawerNav}>
-                    <View style={styles.drawerNavItemContainer}>
-                        <DrawerItem icon="settings" label="Paramètres" color={colors.text} />
-                        <DrawerItem icon="help" label="Aide & Support" color={colors.text} />
-                        <DrawerItem icon="share" label="Partager l'app" color={colors.text} />
-                        <DrawerItem icon="info" label="À propos" color={colors.text} />
-                    </View>
-                    <View style={[styles.drawerDivider, { backgroundColor: colors.divider }]} />
-                    <View style={styles.drawerNavItemContainer}>
-                        <DrawerItem icon="logout" label="Déconnexion" color={colors.red400} />
-                    </View>
-                </ScrollView>
-                <View style={styles.drawerFooter}>
-                    <Text style={styles.versionText}>Version 2.4.0</Text>
-                </View>
-            </Animated.View>
-
             {/* Map Custom */}
             <MapView
                 ref={mapRef}
@@ -686,9 +621,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
             >
                 <SafeAreaView edges={['top']}>
                     <View style={styles.headerTop}>
-                        <TouchableOpacity style={[styles.menuButton, { backgroundColor: colors.inputBackground, borderColor: colors.border }]} onPress={toggleDrawer}>
-                            <MaterialIcons name="menu" size={24} color={colors.text} />
-                        </TouchableOpacity>
+                        <View style={{ width: 40 }} />
                         <Text style={[styles.headerTitle, { color: colors.text, textShadowColor: themeMode === 'light' ? 'transparent' : 'rgba(0,0,0,0.5)' }]}>AUTOUR DE MOI</Text>
                         <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.primary }]} onPress={openFilterSheet}>
                             <MaterialIcons name="tune" size={24} color={colors.white} />
@@ -893,13 +826,6 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     );
 };
 
-const DrawerItem = ({ icon, label, color = COLORS.slate300 }: any) => (
-    <TouchableOpacity style={styles.drawerItem}>
-        <MaterialIcons name={icon} size={24} color={color} />
-        <Text style={[styles.drawerItemLabel, { color }]}>{label}</Text>
-    </TouchableOpacity>
-);
-
 const FilterTab = ({ label, active, colors }: any) => (
     <TouchableOpacity style={[
         styles.filterTab,
@@ -941,115 +867,6 @@ const styles = StyleSheet.create({
         flex: 1,
         // backgroundColor: COLORS.background, // Handled dynamically
     },
-    // Drawer
-    drawerOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.6)',
-        zIndex: 60,
-    },
-    drawerContent: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        bottom: 0,
-        width: '80%',
-        maxWidth: 320,
-        backgroundColor: COLORS.slate900,
-        zIndex: 70,
-        shadowColor: '#000',
-        shadowOffset: { width: 4, height: 0 },
-        shadowOpacity: 0.5,
-        shadowRadius: 10,
-        borderRightWidth: 1,
-        borderRightColor: 'rgba(255,255,255,0.1)',
-    },
-    drawerHeader: {
-        paddingTop: 56, // Safe area approx
-        paddingBottom: 32,
-        paddingHorizontal: 24,
-        backgroundColor: COLORS.surfaceDark, // Or gradient
-        borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.05)',
-    },
-    userProfile: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-        marginBottom: 24,
-    },
-    avatarContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: COLORS.surfaceDark,
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-        padding: 2,
-    },
-    avatar: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 32,
-    },
-    drawerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: COLORS.white,
-    },
-    drawerSubtitle: {
-        fontSize: 14,
-        color: COLORS.slate400,
-    },
-    proButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(244, 123, 37, 0.1)',
-        paddingVertical: 10,
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: 'rgba(244, 123, 37, 0.2)',
-        gap: 8,
-    },
-    proButtonText: {
-        color: COLORS.primary,
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    drawerNav: {
-        flex: 1,
-        paddingVertical: 16,
-    },
-    drawerNavItemContainer: {
-        paddingHorizontal: 12,
-    },
-    drawerItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 14,
-        paddingHorizontal: 16,
-        borderRadius: 12,
-        gap: 16,
-    },
-    drawerItemLabel: {
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    drawerDivider: {
-        height: 1,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        marginVertical: 16,
-        marginHorizontal: 24,
-    },
-    drawerFooter: {
-        padding: 24,
-        alignItems: 'center',
-    },
-    versionText: {
-        fontSize: 12,
-        color: COLORS.slate600,
-    },
-
     // Map
     mapContainer: {
         ...StyleSheet.absoluteFillObject,
