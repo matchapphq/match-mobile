@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Location from "expo-location";
 import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
 import { SearchMatchResult, Venue, mobileApi } from "../services/mobileApi";
@@ -36,6 +37,27 @@ const MatchDetailScreen = ({
     const [venues, setVenues] = useState<Venue[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+    // Get user location on mount
+    useEffect(() => {
+        (async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status === "granted") {
+                    const location = await Location.getCurrentPositionAsync({
+                        accuracy: Location.Accuracy.Balanced,
+                    });
+                    setUserLocation({
+                        lat: location.coords.latitude,
+                        lng: location.coords.longitude,
+                    });
+                }
+            } catch (err) {
+                console.warn("Failed to get user location:", err);
+            }
+        })();
+    }, []);
 
     const loadData = useCallback(async () => {
         if (!matchId) {
@@ -47,30 +69,40 @@ const MatchDetailScreen = ({
         try {
             setError(null);
             setIsLoading(true);
-            const [matchData, venueData] = await Promise.all([
-                mobileApi.fetchMatchById(matchId),
-                mobileApi.fetchVenues(),
-            ]);
+            
+            // Fetch match details first
+            const matchData = await mobileApi.fetchMatchById(matchId);
 
             if (!matchData) {
                 setError("Impossible de trouver ce match.");
                 setMatch(null);
-            } else {
-                setMatch(matchData);
-                setVenues(venueData);
+                setIsLoading(false);
+                return;
             }
+            
+            setMatch(matchData);
+
+            // Fetch venues broadcasting this specific match, sorted by distance from user
+            const venueData = await mobileApi.fetchMatchVenues(
+                matchId,
+                userLocation?.lat,
+                userLocation?.lng,
+                50 // max 50km radius
+            );
+            setVenues(venueData);
         } catch (err) {
             console.warn("Failed to load match details", err);
             setError("Impossible de charger les détails du match.");
         } finally {
             setIsLoading(false);
         }
-    }, [matchId]);
+    }, [matchId, userLocation]);
 
     useEffect(() => {
         loadData();
     }, [loadData]);
 
+    // Show up to 4 venues (already sorted by distance from API)
     const recommendedVenues = useMemo(() => venues.slice(0, 4), [venues]);
 
     const renderState = (message: string, showRetry = false) => (
@@ -207,58 +239,75 @@ const MatchDetailScreen = ({
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={{ paddingHorizontal: 16, gap: 16 }}
-                        style={{ marginHorizontal: -16 }}
-                    >
-                        {recommendedVenues.map((venue) => (
-                            <View key={venue.id} style={[styles.venueCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                <View style={styles.venueImageWrapper}>
-                                    <Image source={{ uri: venue.image }} style={styles.venueImage} />
-                                    <View style={styles.ratingChip}>
-                                        <MaterialIcons
-                                            name="star"
-                                            size={12}
-                                            color={colors.primary}
-                                            style={{ marginRight: 4 }}
-                                        />
-                                        <Text style={[styles.ratingChipText, { color: colors.white }]}>{venue.rating.toFixed(1)}</Text>
+                    {recommendedVenues.length > 0 ? (
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={{ paddingHorizontal: 16, gap: 16 }}
+                            style={{ marginHorizontal: -16 }}
+                        >
+                            {recommendedVenues.map((venue) => (
+                                <View key={venue.id} style={[styles.venueCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                    <View style={styles.venueImageWrapper}>
+                                        <Image source={{ uri: venue.image }} style={styles.venueImage} />
+                                        <View style={styles.ratingChip}>
+                                            <MaterialIcons
+                                                name="star"
+                                                size={12}
+                                                color={colors.primary}
+                                                style={{ marginRight: 4 }}
+                                            />
+                                            <Text style={[styles.ratingChipText, { color: colors.white }]}>{venue.rating.toFixed(1)}</Text>
+                                        </View>
+                                        <View style={styles.statusChip}>
+                                            <Text style={styles.statusChipText}>
+                                                {venue.isOpen ? "Ouvert" : "Fermé"}
+                                            </Text>
+                                        </View>
                                     </View>
-                                    <View style={styles.statusChip}>
-                                        <Text style={styles.statusChipText}>
-                                            {venue.isOpen ? "Ouvert" : "Fermé"}
+                                    <View style={styles.venueBody}>
+                                        <View style={styles.venueTitleRow}>
+                                            <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>
+                                                {venue.name}
+                                            </Text>
+                                            <View style={styles.distanceBadge}>
+                                                <MaterialIcons name="place" size={14} color={colors.primary} />
+                                                <Text style={[styles.venueDistance, { color: colors.primary }]}>{venue.distance}</Text>
+                                            </View>
+                                        </View>
+                                        <Text style={[styles.venueMeta, { color: colors.textSecondary }]} numberOfLines={2}>
+                                            {venue.address}
                                         </Text>
+                                        <TouchableOpacity
+                                            style={[styles.venueButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
+                                            onPress={() =>
+                                                navigation.navigate("ReservationsScreen", {
+                                                    venue,
+                                                    matchId: match.id,
+                                                    match,
+                                                    matchDateIso: match.dateIso,
+                                                })
+                                            }
+                                        >
+                                            <Text style={[styles.venueButtonText, { color: colors.text }]}>RÉSERVER UNE TABLE</Text>
+                                        </TouchableOpacity>
                                     </View>
                                 </View>
-                                <View style={styles.venueBody}>
-                                    <View style={styles.venueTitleRow}>
-                                        <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>
-                                            {venue.name}
-                                        </Text>
-                                        <Text style={[styles.venueDistance, { color: colors.primary }]}>{venue.distance}</Text>
-                                    </View>
-                                    <Text style={[styles.venueMeta, { color: colors.textSecondary }]} numberOfLines={2}>
-                                        {venue.address}
-                                    </Text>
-                                    <TouchableOpacity
-                                        style={[styles.venueButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
-                                        onPress={() =>
-                                            navigation.navigate("ReservationsScreen", {
-                                                venue,
-                                                matchId: match.id,
-                                                match,
-                                                matchDateIso: match.dateIso,
-                                            })
-                                        }
-                                    >
-                                        <Text style={[styles.venueButtonText, { color: colors.text }]}>RÉSERVER UNE TABLE</Text>
-                                    </TouchableOpacity>
-                                </View>
+                            ))}
+                        </ScrollView>
+                    ) : (
+                        <View style={[styles.emptyVenuesContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <View style={[styles.emptyVenuesIcon, { backgroundColor: 'rgba(244,123,37,0.12)' }]}>
+                                <MaterialIcons name="tv-off" size={32} color={colors.primary} />
                             </View>
-                        ))}
-                    </ScrollView>
+                            <Text style={[styles.emptyVenuesTitle, { color: colors.text }]}>
+                                Aucun bar ne diffuse ce match
+                            </Text>
+                            <Text style={[styles.emptyVenuesSubtitle, { color: colors.textSecondary }]}>
+                                Nous n'avons pas encore trouvé de bars diffusant ce match à proximité.
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
         </View>
@@ -553,6 +602,15 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         fontSize: 12,
     },
+    distanceBadge: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 2,
+        backgroundColor: "rgba(244,123,37,0.12)",
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+    },
     venueMeta: {
         color: "rgba(255,255,255,0.6)",
         fontSize: 12,
@@ -594,6 +652,33 @@ const styles = StyleSheet.create({
     retryButtonText: {
         color: COLORS.background,
         fontWeight: "700",
+    },
+    emptyVenuesContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 40,
+        paddingHorizontal: 24,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    emptyVenuesIcon: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 16,
+    },
+    emptyVenuesTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        textAlign: "center",
+        marginBottom: 8,
+    },
+    emptyVenuesSubtitle: {
+        fontSize: 14,
+        textAlign: "center",
+        lineHeight: 20,
     },
 });
 

@@ -297,4 +297,45 @@ export const mobileApi = {
             return [];
         }
     },
+
+    async fetchMatchVenues(
+        matchId: string,
+        userLat?: number,
+        userLng?: number,
+        maxDistanceKm: number = 50
+    ): Promise<Venue[]> {
+        try {
+            // Call API with location params if provided (for distance sorting)
+            const matchVenues = await apiService.getMatchVenues(
+                matchId,
+                userLat,
+                userLng,
+                maxDistanceKm
+            );
+            
+            // Transform API response to Venue format
+            return matchVenues.map((mv: any) => ({
+                id: mv.venue?.id || mv.venueMatchId,
+                name: mv.venue?.name || "Unknown Venue",
+                latitude: mv.venue?.latitude ?? 48.8566,
+                longitude: mv.venue?.longitude ?? 2.3522,
+                address: mv.venue?.street_address || mv.venue?.city || "",
+                distance: mv.venue?.distance !== null && mv.venue?.distance !== undefined
+                    ? `${mv.venue.distance} km`
+                    : "N/A",
+                image: mv.venue?.image_url || mv.venue?.cover_image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
+                rating: mv.venue?.rating ?? 4.5,
+                tags: ["Bar sportif", "Diffuse ce match"],
+                priceLevel: "€€",
+                isOpen: true,
+                matches: [],
+                venueMatchId: mv.venueMatchId,
+                availableCapacity: mv.availableCapacity,
+                totalCapacity: mv.totalCapacity,
+            }));
+        } catch (error) {
+            console.warn("API fetchMatchVenues failed", error);
+            return [];
+        }
+    },
 };

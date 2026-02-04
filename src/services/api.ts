@@ -423,17 +423,34 @@ export const apiService = {
         return data;
     },
 
-    getMatchVenues: async (matchId: string): Promise<MatchVenue[]> => {
-        const cacheKey = `match_venues_${matchId}`;
-        const cached = await cacheService.get<MatchVenue[]>(cacheKey);
-        if (cached) return cached;
+    getMatchVenues: async (
+        matchId: string,
+        lat?: number,
+        lng?: number,
+        distanceKm: number = 50
+    ): Promise<MatchVenue[]> => {
+        // Don't use cache when location is provided (results are personalized)
+        if (lat === undefined || lng === undefined) {
+            const cacheKey = `match_venues_${matchId}`;
+            const cached = await cacheService.get<MatchVenue[]>(cacheKey);
+            if (cached) return cached;
 
-        const response = await api.get(`/matches/${matchId}/venues`);
+            const response = await api.get(`/matches/${matchId}/venues`);
+            const data = Array.isArray(response.data)
+                ? response.data
+                : response.data?.data || [];
+                
+            await cacheService.set(cacheKey, data, 15); // Cache for 15 minutes
+            return data;
+        }
+
+        // Fetch with location params for distance-sorted results
+        const response = await api.get(`/matches/${matchId}/venues`, {
+            params: { lat, lng, distance_km: distanceKm }
+        });
         const data = Array.isArray(response.data)
             ? response.data
             : response.data?.data || [];
-            
-        await cacheService.set(cacheKey, data, 15); // Cache for 15 minutes
         return data;
     },
 
