@@ -151,7 +151,15 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
 
                     {/* Action Buttons */}
                     <View style={styles.actionsRow}>
-                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <TouchableOpacity 
+                            style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                            onPress={() => navigation.navigate('VenueMatches', {
+                                venueId: venue.id,
+                                venueName: venue.name,
+                                venueAddress: venue.address,
+                                venueImage: venue.image,
+                            })}
+                        >
                             <MaterialIcons name="sports-soccer" size={20} color={colors.text} />
                             <Text style={[styles.actionButtonText, { color: colors.text }]}>Voir les matchs</Text>
                         </TouchableOpacity>
@@ -166,7 +174,14 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                     {/* Matchs Recommandés */}
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Matchs recommandés</Text>
-                        <TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate('VenueMatches', {
+                                venueId: venue.id,
+                                venueName: venue.name,
+                                venueAddress: venue.address,
+                                venueImage: venue.image,
+                            })}
+                        >
                             <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
                         </TouchableOpacity>
                     </View>

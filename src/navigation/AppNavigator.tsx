@@ -16,6 +16,7 @@ import VenueProfileScreen from "../screens/VenueProfileScreen";
 import FaqSupport from "../screens/FaqSupport";
 import ReservationSuccessScreen from "../screens/ReservationSuccessScreen";
 import MatchDetailScreen from "../screens/MatchDetailScreen";
+import VenueMatchesScreen from "../screens/VenueMatchesScreen";
 import LanguageSelectionScreen from "../screens/LanguageSelectionScreen";
 import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
 
@@ -53,6 +54,7 @@ export const AppNavigator = () => {
                     <>
                         <Stack.Screen name="Tab" component={TabNavigator} />
                         <Stack.Screen name="VenueProfile" component={VenueProfileScreen} />
+                        <Stack.Screen name="VenueMatches" component={VenueMatchesScreen} />
                         <Stack.Screen name="ReservationsScreen" component={ReservationsScreen} />
                         <Stack.Screen name="ReservationSuccess" component={ReservationSuccessScreen} />
                         <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
