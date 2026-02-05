@@ -163,7 +163,15 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             <MaterialIcons name="sports-soccer" size={20} color={colors.text} />
                             <Text style={[styles.actionButtonText, { color: colors.text }]}>Voir les matchs</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <TouchableOpacity 
+                            style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                            onPress={() => navigation.navigate('VenueReviews', {
+                                venueId: venue.id,
+                                venueName: venue.name,
+                                venueRating: venue.rating,
+                                venueReviewCount: venue.tags.length * 40 + 40,
+                            })}
+                        >
                             <MaterialIcons name="rate-review" size={20} color={colors.text} />
                             <Text style={[styles.actionButtonText, { color: colors.text }]}>Voir les avis</Text>
                         </TouchableOpacity>
