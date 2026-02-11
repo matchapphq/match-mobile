@@ -1,25 +1,28 @@
+import { COLORS } from "./colors";
+
 export const theme = {
   colors: {
-    primary: '#7B2FFE', // Purple (Brand Color)
-    secondary: '#A3FF00', // Neon green (Accents)
-    background: '#0A0A14', // Deep dark background
-    surface: '#1E1E2D', // Slightly lighter dark for cards
-    cardBackground: '#FFFFFF', // White cards
-    text: '#FFFFFF',
-    textDark: '#1A1A2E', // Dark text for light backgrounds
-    textSecondary: '#CDCDE0', // Lighter gray for secondary text
-    error: '#FF3333',
-    success: '#4CAF50',
-    warning: '#FFC107',
-    border: '#7B2FFE',
+    ...COLORS,
+    primary: COLORS.primary,
+    secondary: COLORS.sky400,
+    background: COLORS.background,
+    surface: COLORS.surface,
+    cardBackground: COLORS.surfaceLight,
+    text: COLORS.text,
+    textDark: COLORS.textInverse,
+    textSecondary: COLORS.textSecondary,
+    error: COLORS.red400,
+    success: COLORS.emerald500,
+    warning: COLORS.yellow400,
+    border: COLORS.border,
     gradient: {
-      start: '#7B2FFE',
-      middle: '#6B00D6',
-      end: '#0A0A14',
+      start: COLORS.primary,
+      middle: COLORS.primaryDark,
+      end: COLORS.background,
     },
     tag: {
-      background: '#E8E8F0',
-      text: '#1A1A2E',
+      background: COLORS.surfaceLight,
+      text: COLORS.textInverse,
     },
   },
   fonts: {

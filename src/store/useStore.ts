@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Appearance, ColorSchemeName } from 'react-native';
+import { DARK_THEME, LIGHT_THEME, ThemeColors } from "../constants/colors";
 import {
     User,
     UserPreferences,
@@ -8,13 +10,58 @@ import {
     Reservation,
     Notification,
 } from "../types";
-import { apiService, mockData } from "../services/api";
+import { apiService, mockData, ApiReservation } from "../services/api";
+import { tokenStorage } from "../utils/tokenStorage";
+
+// Transform API reservation to mobile Reservation type
+export const transformApiReservation = (
+    apiRes: ApiReservation,
+    qrCode?: string,
+): Reservation => {
+    const venue = apiRes.venueMatch?.venue;
+    const match = apiRes.venueMatch?.match;
+    const scheduledAt = match?.scheduled_at
+        ? new Date(match.scheduled_at)
+        : new Date();
+
+    let status: "pending" | "confirmed" | "cancelled" = "pending";
+    if (apiRes.status === "confirmed") status = "confirmed";
+    else if (apiRes.status === "canceled" || apiRes.status === "cancelled")
+        status = "cancelled";
+
+    return {
+        id: apiRes.id,
+        venueId: venue?.id || apiRes.venue_match_id,
+        venueName: venue?.name || "Venue",
+        venueAddress:
+            [venue?.street_address, venue?.city].filter(Boolean).join(", ") ||
+            undefined,
+        date: scheduledAt,
+        time: scheduledAt.toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+        }),
+        numberOfPeople: apiRes.party_size,
+        matchId: match?.id,
+        matchTitle: match
+            ? `${match.homeTeam?.name || "TBD"} vs ${match.awayTeam?.name || "TBD"}`
+            : undefined,
+        status,
+        conditions: apiRes.special_requests || undefined,
+        qrCode: qrCode || apiRes.qr_code || undefined,
+    };
+};
 
 interface AppState {
     // User
     user: User | null;
     isAuthenticated: boolean;
     onboardingCompleted: boolean;
+
+    // Theme
+    themeMode: 'light' | 'dark' | 'system';
+    computedTheme: 'light' | 'dark';
+    colors: ThemeColors;
 
     // Venues
     venues: Venue[];
@@ -50,6 +97,9 @@ interface AppState {
     setUser: (user: User | null) => void;
     setOnboardingCompleted: (completed: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
+    updateUser: (updates: Partial<User>) => void;
+    setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
+    updateComputedTheme: () => void;
 
     setVenues: (venues: Venue[]) => void;
     setSelectedVenue: (venue: Venue | null) => void;
@@ -69,6 +119,12 @@ interface AppState {
     addReservation: (reservation: Reservation) => void;
     updateReservation: (id: string, updates: Partial<Reservation>) => void;
     cancelReservation: (id: string) => void;
+    removeReservation: (id: string) => void;
+
+    // Reservation API Actions
+    fetchReservations: () => Promise<void>;
+    cancelReservationApi: (id: string, reason?: string) => Promise<boolean>;
+    getReservationWithQR: (id: string) => Promise<Reservation | null>;
 
     addNotification: (notification: Notification) => void;
     markNotificationAsRead: (id: string) => void;
@@ -85,6 +141,7 @@ interface AppState {
     fetchUpcomingMatches: () => Promise<void>;
     login: (email: string, password: string) => Promise<boolean>;
     signup: (data: any) => Promise<boolean>;
+    refreshReservations: () => Promise<void>;
 
     // Loading states
     isLoading: boolean;
@@ -92,7 +149,7 @@ interface AppState {
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
 
-    logout: () => void;
+    logout: () => Promise<void>;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -100,6 +157,9 @@ export const useStore = create<AppState>((set, get) => ({
     user: null,
     isAuthenticated: false,
     onboardingCompleted: false,
+    themeMode: 'dark', // Default to dark initially
+    computedTheme: 'dark',
+    colors: DARK_THEME,
     venues: [],
     selectedVenue: null,
     filteredVenues: [],
@@ -184,9 +244,11 @@ export const useStore = create<AppState>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const response = await apiService.login(email, password);
-            await AsyncStorage.setItem("authToken", response.token);
-            const user = await apiService.getMe();
+            const { token, refresh_token, user } = response;
+            
+            await tokenStorage.setTokens(token, refresh_token);
             await AsyncStorage.setItem("user", JSON.stringify(user));
+            
             set({
                 user,
                 isAuthenticated: true,
@@ -202,30 +264,50 @@ export const useStore = create<AppState>((set, get) => ({
     signup: async (data) => {
         set({ isLoading: true, error: null });
         try {
-            // Map frontend state to the API schema
-            const apiData = {
-                ...data,
-                fav_sports: data.sports,
-                ambiances: data.ambiance,
-                venue_types: data.foodTypes,
+            const payload = {
+                email: data.email,
+                firstName: data.firstName,
+                username: data.username,
+                lastName: data.lastName,
+                password: data.password,
+                role: data.role ?? "user",
+                referralCode: data.referralCode?.trim() || undefined,
+                phone: data.phone || data.phoneNumber || undefined,
+                fav_sports: data.fav_sports ?? data.sports ?? [],
+                fav_team_ids: data.fav_team_ids ?? data.favoriteTeams ?? [],
+                ambiances: data.ambiances ?? data.ambiance ?? [],
+                venue_types: data.venue_types ?? data.foodTypes ?? [],
+                budget: data.budget ?? data.priceRange ?? undefined,
+                home_lat: data.home_lat ?? data.lat ?? undefined,
+                home_lng: data.home_lng ?? data.lng ?? undefined,
             };
-            // Remove old keys if they are not expected by the API
-            // delete apiData.sports;
-            // delete apiData.ambiance;
-            // delete apiData.foodTypes;
 
-            await AsyncStorage.setItem("authToken", response.token);
-            await AsyncStorage.setItem("user", JSON.stringify(response.user));
+            const response = await apiService.signup(payload);
+            const { token, refresh_token, user } = response;
+            if (!token || !user) {
+                throw new Error("Signup response missing data");
+            }
+
+            await tokenStorage.setTokens(token, refresh_token);
+            await AsyncStorage.setItem("user", JSON.stringify(user));
+            await AsyncStorage.setItem("onboardingCompleted", "true");
+
             set({
-                user: response.user,
+                user,
                 isAuthenticated: true,
-                onboardingCompleted: true, // Mark onboarding as completed
+                onboardingCompleted: true,
                 isLoading: false,
             });
-            await AsyncStorage.setItem("onboardingCompleted", "true");
             return true;
         } catch (error: any) {
-            set({ error: error.message || "Signup failed", isLoading: false });
+            console.error("Signup failed:", error);
+            set({
+                error:
+                    error?.response?.data?.error ||
+                    error.message ||
+                    "Signup failed",
+                isLoading: false,
+            });
             return false;
         }
     },
@@ -248,10 +330,61 @@ export const useStore = create<AppState>((set, get) => ({
         );
     },
 
+    setThemeMode: (mode) => {
+        const systemTheme = Appearance.getColorScheme() || 'dark';
+        const newComputed = mode === 'system' ? systemTheme : mode;
+
+        set({
+            themeMode: mode,
+            computedTheme: newComputed,
+            colors: newComputed === 'light' ? LIGHT_THEME : DARK_THEME
+        });
+        AsyncStorage.setItem("themeMode", mode);
+    },
+
+    updateComputedTheme: () => {
+        const { themeMode } = get();
+        if (themeMode === 'system') {
+            const systemTheme = Appearance.getColorScheme() || 'dark';
+            set({
+                computedTheme: systemTheme,
+                colors: systemTheme === 'light' ? LIGHT_THEME : DARK_THEME
+            });
+        }
+    },
+
     updateUserPreferences: (preferences) => {
         const { user } = get();
         if (user) {
             const updatedUser = { ...user, preferences };
+            set({ user: updatedUser });
+            AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+    },
+
+    updateUser: (updates) => {
+        const { user } = get();
+        if (user) {
+            // The User interface has a weird redundant structure where 'user' is both nested and top-level.
+            // We'll update both to stay consistent.
+            const updatedUser = { 
+                ...user, 
+                ...updates,
+            };
+
+            // Only sync to nested user object if it exists to avoid creating a partial object
+            // that shadows top-level properties in views using user?.user ?? user
+            if (user.user) {
+                updatedUser.user = {
+                    ...user.user,
+                    ...(updates.user || {}),
+                    // If top level fields are updated, sync them to nested user object if they exist there
+                    ...(updates.avatar ? { avatar: updates.avatar } : {}),
+                    ...(updates.first_name ? { first_name: updates.first_name } : {}),
+                    ...(updates.last_name ? { last_name: updates.last_name } : {}),
+                };
+            }
+
             set({ user: updatedUser });
             AsyncStorage.setItem("user", JSON.stringify(updatedUser));
         }
@@ -410,6 +543,74 @@ export const useStore = create<AppState>((set, get) => ({
         set({ reservations: updated });
         AsyncStorage.setItem("reservations", JSON.stringify(updated));
     },
+    removeReservation: (id) => {
+        const { reservations } = get();
+        const updated = reservations.filter((r) => r.id !== id);
+        set({ reservations: updated });
+        AsyncStorage.setItem("reservations", JSON.stringify(updated));
+    },
+
+    // Reservation API Actions
+    fetchReservations: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const response = await apiService.getUserReservations();
+            const apiReservations = response.data || [];
+            const transformed = apiReservations.map((r) =>
+                transformApiReservation(r),
+            );
+            set({ reservations: transformed, isLoading: false });
+            AsyncStorage.setItem("reservations", JSON.stringify(transformed));
+        } catch (error) {
+            console.error("Error fetching reservations:", error);
+            set({ isLoading: false, error: "Failed to fetch reservations" });
+        }
+    },
+
+    refreshReservations: async () => {
+        try {
+            const response = await apiService.getUserReservations();
+            const apiReservations = response.data || [];
+            const transformed = apiReservations.map((r) =>
+                transformApiReservation(r),
+            );
+            set({ reservations: transformed });
+            AsyncStorage.setItem("reservations", JSON.stringify(transformed));
+        } catch (error) {
+            console.error("Error refreshing reservations:", error);
+        }
+    },
+
+    cancelReservationApi: async (id, reason) => {
+        set({ isLoading: true, error: null });
+        try {
+            await apiService.cancelReservation(id, reason);
+            const { reservations } = get();
+            const updated = reservations.map((r) =>
+                r.id === id ? { ...r, status: "cancelled" as const } : r,
+            );
+            set({ reservations: updated, isLoading: false });
+            AsyncStorage.setItem("reservations", JSON.stringify(updated));
+            return true;
+        } catch (error) {
+            console.error("Error canceling reservation:", error);
+            set({ isLoading: false, error: "Failed to cancel reservation" });
+            return false;
+        }
+    },
+
+    getReservationWithQR: async (id) => {
+        try {
+            const response = await apiService.getReservationById(id);
+            return transformApiReservation(
+                response.reservation,
+                response.qrCode,
+            );
+        } catch (error) {
+            console.error("Error fetching reservation with QR:", error);
+            return null;
+        }
+    },
 
     addNotification: (notification) => {
         const { notifications } = get();
@@ -431,11 +632,20 @@ export const useStore = create<AppState>((set, get) => ({
         set({ notifications: [], unreadNotificationCount: 0 });
     },
 
-    logout: () => {
+    logout: async () => {
+        try {
+            await apiService.logout();
+        } catch (error) {
+            console.error("Logout API error:", error);
+        }
+
         set({
             user: null,
             isAuthenticated: false,
             onboardingCompleted: false,
+            themeMode: 'dark',
+            computedTheme: 'dark',
+            colors: DARK_THEME,
             venues: [],
             selectedVenue: null,
             filteredVenues: [],
@@ -453,11 +663,14 @@ export const useStore = create<AppState>((set, get) => ({
                 sortDirection: "asc",
             },
         });
+        
+        await tokenStorage.clearTokens();
+        
         AsyncStorage.multiRemove([
             "user",
             "onboardingCompleted",
             "reservations",
-            "authToken",
+            // "authToken" // Handled by tokenStorage
         ]);
     },
 }));
@@ -469,15 +682,27 @@ export const initializeStore = async () => {
             "user",
             "onboardingCompleted",
             "reservations",
-            "authToken",
+            "themeMode"
         ]);
+
+        const token = await tokenStorage.getAccessToken();
 
         const userStr = values.find(([key]) => key === "user")?.[1] || null;
         const onboardingStr =
             values.find(([key]) => key === "onboardingCompleted")?.[1] || null;
         const reservationsStr =
             values.find(([key]) => key === "reservations")?.[1] || null;
-        const token = values.find(([key]) => key === "authToken")?.[1] || null;
+        // const token = values.find(([key]) => key === "authToken")?.[1] || null; // Handled above
+        const themeModeStr = values.find(([key]) => key === "themeMode")?.[1] || 'dark';
+
+        // Resolve theme
+        const themeMode = (themeModeStr === 'light' || themeModeStr === 'dark' || themeModeStr === 'system')
+            ? themeModeStr
+            : 'dark';
+
+        const systemTheme = Appearance.getColorScheme() || 'dark';
+        const computedTheme = themeMode === 'system' ? systemTheme : themeMode;
+        const colors = computedTheme === 'light' ? LIGHT_THEME : DARK_THEME;
 
         const user = userStr ? JSON.parse(userStr) : null;
         const onboarding = onboardingStr ? JSON.parse(onboardingStr) : false;
@@ -494,6 +719,9 @@ export const initializeStore = async () => {
             isAuthenticated: !!token && !!user,
             onboardingCompleted: onboarding,
             reservations: parsedReservations,
+            themeMode: themeMode as 'light' | 'dark' | 'system',
+            computedTheme,
+            colors,
         });
     } catch (error) {
         console.error("Error initializing store:", error);

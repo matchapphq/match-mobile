@@ -1,313 +1,514 @@
-import React from "react";
+import React, { useState } from 'react';
 import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    Image,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import { theme } from "../constants/theme";
-import { useStore } from "../store/useStore";
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  StatusBar,
+  ImageBackground,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { COLORS } from '../constants/colors';
+import * as ImagePicker from 'expo-image-picker';
+import { useStore } from '../store/useStore';
+import type { UserProfile } from '../services/mobileApi';
 
+type SectionRow = {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  color: string;
+  label: string;
+  meta?: string;
+  toggle?: boolean;
+  accent?: string;
+  badge?: string | number;
+};
+
+const DEFAULT_PROFILE: UserProfile = {
+  name: 'Utilisateur',
+  email: '',
+  badgeLabel: 'Fan',
+  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+  memberSince: '2024',
+  tier: 'Gold',
+};
+
+const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
+  {
+    title: 'Profil',
+    rows: [
+      { icon: 'person', color: '#60a5fa', label: 'Modifier le profil' },
+      { icon: 'favorite', color: '#f472b6', label: 'Mes favoris' },
+    ],
+  },
+  {
+    title: 'Paiement & Avantages',
+    rows: [
+      {
+        icon: 'account-balance-wallet',
+        color: '#f59e0b', // Amber-ish
+        label: 'Mon Portefeuille',
+        meta: '12.50 €'
+      },
+      {
+        icon: 'local-activity',
+        color: '#f43f5e', // Rose-ish
+        label: 'Mes Coupons',
+        badge: 2
+      },
+    ],
+  },
+  {
+    title: 'Préférences',
+    rows: [
+      { icon: 'language', color: '#818cf8', label: 'Langue', meta: 'Français' },
+      { icon: 'dark-mode', color: '#a78bfa', label: 'Thème' },
+      { icon: 'notifications', color: '#fb923c', label: 'Notifications', toggle: true },
+    ],
+  },
+  {
+    title: 'Sécurité & Confidentialité',
+    rows: [
+      { icon: 'lock', color: '#34d399', label: 'Mot de passe' },
+      { icon: 'shield', color: '#2dd4bf', label: 'Données personnelles' },
+    ],
+  },
+  {
+    title: 'Q&A Support',
+    rows: [
+      { icon: 'help', color: '#fbbf24', label: 'Questions fréquentes' },
+      { icon: 'chat', color: '#34d399', label: 'Parler à un conseiller' },
+    ],
+  },
+  {
+    title: 'Actions',
+    rows: [
+      { icon: 'logout', color: COLORS.primary, label: 'Déconnexion', accent: COLORS.primary },
+      { icon: 'delete', color: '#f87171', label: 'Supprimer le compte', accent: '#f87171' },
+    ],
+  },
+];
 const ProfileScreen = () => {
-    const navigation = useNavigation<any>();
-    const { user, logout } = useStore();
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<any>();
+  const { logout, user, themeMode, colors, updateUser } = useStore();
+  const userData = user?.user ?? user ?? null;
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
-    const menuItems = [
-        {
-            id: "level",
-            label: "Mon niveau",
-            icon: "trophy-outline",
-            color: theme.colors.primary,
-        },
-        {
-            id: "reservations",
-            label: "Mes réservations",
-            icon: "people-outline",
-            color: theme.colors.primary,
-        },
-        {
-            id: "notifications",
-            label: "Notifications",
-            icon: "notifications-outline",
-            color: theme.colors.primary,
-        },
-        {
-            id: "reviews",
-            label: "Mes avis",
-            icon: "flag-outline",
-            color: theme.colors.primary,
-        },
-        {
-            id: "favorites",
-            label: "Coups de coeur",
-            icon: "heart-outline",
-            color: theme.colors.primary,
-        },
-        {
-            id: "info",
-            label: "Mes infos",
-            icon: "information-circle-outline",
-            color: theme.colors.primary,
-        },
-        {
-            id: "preferences",
-            label: "Préférences sportives",
-            icon: "settings-outline",
-            color: theme.colors.primary,
-        },
-    ];
+  const handlePickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
 
-    const handleMenuPress = (id: string) => {
-        switch (id) {
-            case "reservations":
-                navigation.navigate("Reservations");
-                break;
-            case "notifications":
-                navigation.navigate("Notifications");
-                break;
-            case "level":
-                navigation.navigate("Level");
-                break;
-            case "reviews":
-                navigation.navigate("Reviews");
-                break;
-            case "favorites":
-                navigation.navigate("Favorites");
-                break;
-            case "info":
-                navigation.navigate("UserInfo");
-                break;
-            case "preferences":
-                navigation.navigate("Preferences");
-                break;
-            default:
-                break;
-        }
-    };
+    if (!result.canceled) {
+      const newAvatar = result.assets[0].uri;
+      updateUser({ avatar: newAvatar });
+    }
+  };
 
-    const handleLogout = () => {
-        logout();
-    };
+  const getThemeLabel = (mode: 'light' | 'dark' | 'system') => {
+    switch (mode) {
+      case 'light': return 'Clair';
+      case 'dark': return 'Sombre';
+      case 'system': return 'Système';
+      default: return 'Sombre';
+    }
+  };
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.globeButton}
+  // Build profile from store user data
+  const profile: UserProfile = {
+    name: userData
+      ? [userData.first_name, userData.last_name].filter(Boolean).join(' ') || 'Utilisateur'
+      : DEFAULT_PROFILE.name,
+    email: userData?.email || DEFAULT_PROFILE.email,
+    badgeLabel: 'Fan',
+    avatar: userData?.avatar || DEFAULT_PROFILE.avatar,
+    memberSince: userData?.created_at ? new Date(userData.created_at).getFullYear().toString() : '2024',
+    tier: 'Gold',
+    first_name: userData?.first_name,
+    last_name: userData?.last_name,
+  };
+
+  const isLoading = false;
+
+  const handleLogout = () => {
+    Alert.alert('Déconnexion', 'Veux-tu te déconnecter de Match ?', [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Confirmer',
+        style: 'destructive',
+        onPress: () => {
+          logout();
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Welcome' }],
+          });
+        },
+      },
+    ]);
+  };
+
+  return (
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
+      <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surface }]} onPress={() => navigation.goBack?.()}>
+            <MaterialIcons name="arrow-back" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>Paramètres</Text>
+          <View style={{ width: 40 }} />
+        </View>
+
+        <View style={styles.avatarSection}>
+          {isLoading ? (
+            <ActivityIndicator color={colors.primary} size="large" style={{ marginVertical: 40 }} />
+          ) : (
+            <>
+              <View style={styles.avatarWrapper}>
+                <ImageBackground
+                  source={{
+                    uri: profile.avatar,
+                  }}
+                  style={styles.avatar}
+                  imageStyle={{ borderRadius: 64 }}
+                />
+                <TouchableOpacity 
+                  style={[styles.avatarEditBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} 
+                  activeOpacity={0.9}
+                  onPress={handlePickImage}
                 >
-                    <Ionicons
-                        name="globe-outline"
-                        size={24}
-                        color={theme.colors.secondary}
-                    />
+                  <MaterialIcons name="edit" size={22} color={colors.text} />
                 </TouchableOpacity>
-                <View style={styles.titleContainer}>
-                    <Text style={styles.title}>
-                        Bonjour {user?.user.first_name} {user?.user.last_name}
-                    </Text>
-                    <View style={styles.titleUnderline} />
-                </View>
-                <View style={styles.headerProfileIcon}>
-                    <Text style={styles.headerProfileEmoji}>👤</Text>
-                </View>
-            </View>
+              </View>
+              <Text style={[styles.name, { color: colors.text }]}>
+                {profile.first_name && profile.last_name
+                  ? `${profile.first_name} ${profile.last_name}`
+                  : profile.name}
+              </Text>
+              <Text style={[styles.memberSince, { color: colors.subtext }]}>{profile.email}</Text>
+              <TouchableOpacity
+                style={styles.badge}
+                activeOpacity={0.85}
+                onPress={() =>
+                  Alert.alert(`Avantages Membre ${profile.tier}`, "Accédez à vos avantages exclusifs prochainement.")
+                }
+              >
+                <MaterialIcons name="emoji-events" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+                <Text style={[styles.badgeLabel, { color: colors.primary }]}>{profile.badgeLabel}</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
 
-            <View style={styles.profileSection}>
-                <View style={styles.avatarContainer}>
-                    <View style={styles.avatarInner}>
-                        <Image
-                            source={{
-                                uri:
-                                    user?.user.avatar ||
-                                    "https://api.dicebear.com/7.x/avataaars/png?seed=match",
-                            }}
-                            style={styles.avatarImage}
-                        />
-                    </View>
-                </View>
-                <Text style={styles.levelText}>Niveau Social Sport</Text>
-            </View>
-
-            <ScrollView
-                style={styles.menuList}
-                showsVerticalScrollIndicator={false}
-            >
-                {menuItems.map((item) => (
-                    <TouchableOpacity
-                        key={item.id}
-                        style={styles.menuItem}
-                        onPress={() => handleMenuPress(item.id)}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.menuItemContent}>
-                            <Ionicons
-                                name={item.icon as any}
-                                size={24}
-                                color={item.color}
-                            />
-                            <Text style={styles.menuItemText}>
-                                {item.label}
-                            </Text>
+        <View style={styles.sectionsWrapper}>
+          {SECTION_DATA.map((section) => (
+            <View key={section.title} style={styles.sectionBlock}>
+              <Text style={[styles.sectionHeader, { color: colors.subtext }]}>{section.title}</Text>
+              <View style={[styles.sectionCard, {
+                borderColor: colors.border,
+                backgroundColor: themeMode === 'light' ? 'white' : 'rgba(255,255,255,0.04)'
+              }]}>
+                {section.rows.map((row, index) => {
+                  const isLast = index === section.rows.length - 1;
+                  if (row.toggle) {
+                    return (
+                      <View key={row.label} style={[styles.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider }]}>
+                        <View style={styles.rowLeft}>
+                          <View style={[styles.rowIcon, { backgroundColor: `${row.color}1A` }]}>
+                            <MaterialIcons name={row.icon as any} size={20} color={row.color} />
+                          </View>
+                          <Text style={[styles.rowLabel, { color: colors.text }]}>{row.label}</Text>
                         </View>
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          onPress={() => setNotificationsEnabled((prev) => !prev)}
+                        >
+                          <View style={[styles.toggleTrack, notificationsEnabled && styles.toggleTrackActive]}>
+                            <View
+                              style={[
+                                styles.toggleThumb,
+                                notificationsEnabled && styles.toggleThumbActive,
+                              ]}
+                            />
+                          </View>
+                        </TouchableOpacity>
+                      </View>
+                    );
+                  }
+
+                  const showMeta = row.meta || row.accent || row.badge || (row.label === 'Thème');
+                  const displayMeta = row.label === 'Thème' ? getThemeLabel(themeMode) : row.meta;
+
+                  const handlePress = () => {
+                    if (row.label === 'Questions fréquentes') {
+                      navigation.navigate('FaqSupport');
+                      return;
+                    }
+                    if (row.label === 'Langue') {
+                      navigation.navigate('LanguageSelection');
+                      return;
+                    }
+                    if (row.label === 'Thème') {
+                      navigation.navigate('ThemeSelection');
+                      return;
+                    }
+                    if (row.label === 'Parler à un conseiller') {
+                      Alert.alert('Support', 'Nous connectons cette option prochainement.');
+                      return;
+                    }
+                    if (row.label === 'Déconnexion') {
+                      handleLogout();
+                      return;
+                    }
+                  };
+
+                  return (
+                    <TouchableOpacity
+                      key={row.label}
+                      style={[styles.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider }]}
+                      activeOpacity={0.85}
+                      onPress={handlePress}
+                    >
+                      <View style={styles.rowLeft}>
+                        <View style={[styles.rowIcon, { backgroundColor: `${row.color}1A` }]}>
+                          <MaterialIcons name={row.icon as any} size={20} color={row.color} />
+                        </View>
+                        <Text
+                          style={[
+                            styles.rowLabel,
+                            { color: colors.text },
+                            row.accent && { color: row.accent, fontWeight: '600' },
+                          ]}
+                        >
+                          {row.label}
+                        </Text>
+                      </View>
+                      {displayMeta ? (
+                        <View style={styles.metaContainer}>
+                          <Text style={[styles.metaText, { color: colors.subtext }]}>{displayMeta}</Text>
+                          <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
+                        </View>
+                      ) : row.badge ? (
+                        <View style={styles.metaContainer}>
+                          <View style={[styles.badgeContainer, { backgroundColor: colors.primary }]}>
+                            <Text style={styles.badgeText}>{row.badge}</Text>
+                          </View>
+                          <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
+                        </View>
+                      ) : showMeta ? null : (
+                        <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
+                      )}
                     </TouchableOpacity>
-                ))}
-            </ScrollView>
-
-            <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={handleLogout}
-                activeOpacity={0.8}
-            >
-                <Text style={styles.logoutButtonText}>Déconnexion</Text>
-            </TouchableOpacity>
-
-            <View style={styles.footer}>
-                <TouchableOpacity style={styles.footerButton}>
-                    <Ionicons
-                        name="open-outline"
-                        size={18}
-                        color={theme.colors.textSecondary}
-                    />
-                    <Text style={styles.footerText}>
-                        Proposer un lieu{"\n"}sur Match
-                    </Text>
-                </TouchableOpacity>
+                  );
+                })}
+              </View>
             </View>
-        </SafeAreaView>
-    );
+          ))}
+        </View>
+
+        <Text style={[styles.versionText, { color: colors.subtext }]}>Version 2.4.0 • Build 192</Text>
+      </ScrollView>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#FFFFFF",
-    },
-    header: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
-    },
-    globeButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        borderWidth: 2,
-        borderColor: theme.colors.secondary,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    titleContainer: {
-        alignItems: "center",
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: "bold",
-        color: theme.colors.textDark,
-    },
-    titleUnderline: {
-        width: 120,
-        height: 2,
-        backgroundColor: theme.colors.textDark,
-        marginTop: 4,
-    },
-    headerProfileIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: theme.colors.secondary,
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 2,
-        borderColor: theme.colors.secondary,
-    },
-    headerProfileEmoji: {
-        fontSize: 18,
-    },
-    profileSection: {
-        alignItems: "center",
-        paddingVertical: theme.spacing.lg,
-    },
-    avatarContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        borderWidth: 3,
-        borderColor: theme.colors.secondary,
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: theme.spacing.md,
-        backgroundColor: "#FFFFFF",
-    },
-    avatarInner: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        backgroundColor: theme.colors.secondary,
-        justifyContent: "center",
-        alignItems: "center",
-        overflow: "hidden",
-    },
-    avatarImage: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-    },
-    levelText: {
-        fontSize: theme.fonts.sizes.lg,
-        fontWeight: "bold",
-        color: theme.colors.textDark,
-    },
-    menuList: {
-        flex: 1,
-        paddingHorizontal: theme.spacing.xl,
-    },
-    menuItem: {
-        paddingVertical: theme.spacing.md + 4,
-    },
-    menuItemContent: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: theme.spacing.md,
-    },
-    menuItemText: {
-        fontSize: theme.fonts.sizes.md,
-        fontWeight: "500",
-        color: theme.colors.primary,
-    },
-    logoutButton: {
-        backgroundColor: theme.colors.secondary,
-        marginHorizontal: theme.spacing.xxl,
-        marginVertical: theme.spacing.md,
-        paddingVertical: theme.spacing.md,
-        borderRadius: theme.borderRadius.full,
-        alignItems: "center",
-    },
-    logoutButtonText: {
-        fontSize: theme.fonts.sizes.md,
-        fontWeight: "bold",
-        color: theme.colors.textDark,
-    },
-    footer: {
-        paddingVertical: theme.spacing.lg,
-        alignItems: "center",
-    },
-    footerButton: {
-        alignItems: "center",
-        gap: 4,
-    },
-    footerText: {
-        fontSize: theme.fonts.sizes.sm,
-        color: theme.colors.textSecondary,
-        textAlign: "center",
-    },
+  root: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  header: {
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.08)',
+  },
+  headerTitle: {
+    color: COLORS.text,
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  avatarWrapper: {
+    marginBottom: 12,
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatar: {
+    width: 128,
+    height: 128,
+    borderRadius: 64,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    bottom: -6,
+    right: -6,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.primary,
+    borderWidth: 4,
+    borderColor: COLORS.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+  },
+  name: {
+    color: COLORS.text,
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 6,
+  },
+  memberSince: {
+    color: COLORS.subtext,
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(244,123,37,0.15)',
+  },
+  badgeLabel: {
+    color: COLORS.primary,
+    fontWeight: '600',
+    fontSize: 12,
+  },
+  sectionsWrapper: {
+    paddingHorizontal: 16,
+    gap: 24,
+  },
+  sectionBlock: {
+    marginBottom: 18,
+  },
+  sectionHeader: {
+    color: COLORS.subtext,
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  },
+  sectionCard: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  rowDivider: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: COLORS.divider,
+  },
+  rowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    flex: 1,
+  },
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowLabel: {
+    color: COLORS.text,
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  metaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metaText: {
+    color: COLORS.subtext,
+    fontSize: 13,
+  },
+  toggleTrack: {
+    width: 44,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleTrackActive: {
+    backgroundColor: COLORS.primary,
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    transform: [{ translateX: 0 }],
+  },
+  toggleThumbActive: {
+    transform: [{ translateX: 20 }],
+    backgroundColor: '#fff',
+  },
+  versionText: {
+    textAlign: 'center',
+    color: COLORS.subtext,
+    fontSize: 12,
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  badgeContainer: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
 });
 
 export default ProfileScreen;

@@ -1,1261 +1,1542 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
     View,
     Text,
     StyleSheet,
+    Image,
     TouchableOpacity,
-    Modal,
+    Dimensions,
     ScrollView,
     Animated,
-    Image,
-    Dimensions,
-    TextInput,
-    ImageBackground,
+    StatusBar,
+    ActivityIndicator,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import MapView, { Marker, Region } from "react-native-maps";
-import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import MapView, { Marker, PROVIDER_DEFAULT, Region } from "react-native-maps";
 import * as Location from "expo-location";
-import { useNavigation } from "@react-navigation/native";
-import { theme, images } from "../constants/theme";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { BlurView } from "expo-blur";
+import MapScreenFilter, {
+    DEFAULT_FILTER_SELECTIONS,
+    FilterSelections,
+} from "../components/MapScreenFilter";
+import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
-import FloatingNavBar from "../components/FloatingNavBar";
+import { mobileApi, Venue, VenueMatch } from "../services/mobileApi";
 
-// Default user avatar
-const DEFAULT_AVATAR = "https://api.dicebear.com/7.x/adventurer/png?seed=Match";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
-const MapScreen = () => {
-    const navigation = useNavigation<any>();
-    const { venues, setVenues, filteredVenues, applyFilters, filters } =
-        useStore();
-    const [showFilters, setShowFilters] = useState(false);
-    const [showSearch, setShowSearch] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [userLocation, setUserLocation] = useState<{
-        latitude: number;
-        longitude: number;
-    } | null>(null);
-    const [isLocationLoading, setIsLocationLoading] = useState(true);
-    const [selectedFilters, setSelectedFilters] = useState(filters);
-    const [selectedVenue, setSelectedVenue] = useState<any>(null);
+const DARK_MAP_STYLE = [
+    {
+        "elementType": "geometry",
+        "stylers": [{ "color": "#212121" }]
+    },
+    {
+        "elementType": "labels.icon",
+        "stylers": [{ "visibility": "off" }]
+    },
+    {
+        "elementType": "labels.text.fill",
+        "stylers": [{ "color": "#757575" }]
+    },
+    {
+        "elementType": "labels.text.stroke",
+        "stylers": [{ "color": "#212121" }]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry",
+        "stylers": [{ "color": "#757575" }]
+    },
+    {
+        "featureType": "administrative.country",
+        "elementType": "labels.text.fill",
+        "stylers": [{ "color": "#9e9e9e" }]
+    },
+    {
+        "featureType": "administrative.land_parcel",
+        "stylers": [{ "visibility": "off" }]
+    },
+    {
+        "featureType": "administrative.locality",
+        "elementType": "labels.text.fill",
+        "stylers": [{ "color": "#bdbdbd" }]
+    },
+    {
+        "featureType": "poi",
+        "elementType": "labels.text.fill",
+        "stylers": [{ "color": "#757575" }]
+    },
+    {
+        "featureType": "poi.park",
+        "elementType": "geometry",
+        "stylers": [{ "color": "#181818" }]
+    },
+    {
+        "featureType": "poi.park",
+        "elementType": "labels.text.fill",
+        "stylers": [{ "color": "#616161" }]
+    },
+    {
+        "featureType": "poi.park",
+        "elementType": "labels.text.stroke",
+        "stylers": [{ "color": "#1b1b1b" }]
+    },
+    {
+        "featureType": "road",
+        "elementType": "geometry.fill",
+        "stylers": [{ "color": "#2c2c2c" }]
+    },
+    {
+        "featureType": "road",
+        "elementType": "labels.text.fill",
+        "stylers": [{ "color": "#8a8a8a" }]
+    },
+    {
+        "featureType": "road.arterial",
+        "elementType": "geometry",
+        "stylers": [{ "color": "#373737" }]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "geometry",
+        "stylers": [{ "color": "#3c3c3c" }]
+    },
+    {
+        "featureType": "road.highway.controlled_access",
+        "elementType": "geometry",
+        "stylers": [{ "color": "#4e4e4e" }]
+    },
+    {
+        "featureType": "road.local",
+        "elementType": "labels.text.fill",
+        "stylers": [{ "color": "#616161" }]
+    },
+    {
+        "featureType": "transit",
+        "elementType": "labels.text.fill",
+        "stylers": [{ "color": "#757575" }]
+    },
+    {
+        "featureType": "water",
+        "elementType": "geometry",
+        "stylers": [{ "color": "#000000" }]
+    },
+    {
+        "featureType": "water",
+        "elementType": "labels.text.fill",
+        "stylers": [{ "color": "#3d3d3d" }]
+    }
+];
 
-    const searchHistory = [
-        "Bars avec terrasse",
-        "Happy hour",
-        "NBA ce soir",
-        "Match du moment",
-    ];
-    const trendingSearches = [
-        "PSG vs OM",
-        "Roland Garros",
-        "Final ATP",
-        "Premier League",
-    ];
-    const [region, setRegion] = useState<Region | null>(null);
+const LIGHT_MAP_STYLE = [
+    {
+        "featureType": "water",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#e9e9e9"
+            },
+            {
+                "lightness": 17
+            }
+        ]
+    },
+    {
+        "featureType": "landscape",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#f5f5f5"
+            },
+            {
+                "lightness": 20
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 17
+            }
+        ]
+    },
+    {
+        "featureType": "road.highway",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 29
+            },
+            {
+                "weight": 0.2
+            }
+        ]
+    },
+    {
+        "featureType": "road.arterial",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 18
+            }
+        ]
+    },
+    {
+        "featureType": "road.local",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 16
+            }
+        ]
+    },
+    {
+        "featureType": "poi",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#f5f5f5"
+            },
+            {
+                "lightness": 21
+            }
+        ]
+    },
+    {
+        "featureType": "poi.park",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#dedede"
+            },
+            {
+                "lightness": 21
+            }
+        ]
+    },
+    {
+        "elementType": "labels.text.stroke",
+        "stylers": [
+            {
+                "visibility": "on"
+            },
+            {
+                "color": "#ffffff"
+            },
+            {
+                "lightness": 16
+            }
+        ]
+    },
+    {
+        "elementType": "labels.text.fill",
+        "stylers": [
+            {
+                "saturation": 36
+            },
+            {
+                "color": "#333333"
+            },
+            {
+                "lightness": 40
+            }
+        ]
+    },
+    {
+        "elementType": "labels.icon",
+        "stylers": [
+            {
+                "visibility": "off"
+            }
+        ]
+    },
+    {
+        "featureType": "transit",
+        "elementType": "geometry",
+        "stylers": [
+            {
+                "color": "#f2f2f2"
+            },
+            {
+                "lightness": 19
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.fill",
+        "stylers": [
+            {
+                "color": "#fefefe"
+            },
+            {
+                "lightness": 20
+            }
+        ]
+    },
+    {
+        "featureType": "administrative",
+        "elementType": "geometry.stroke",
+        "stylers": [
+            {
+                "color": "#fefefe"
+            },
+            {
+                "lightness": 17
+            },
+            {
+                "weight": 1.2
+            }
+        ]
+    }
+];
 
+const MapScreen = ({ navigation }: { navigation: any }) => {
+    const { colors, themeMode } = useStore();
     const mapRef = useRef<MapView>(null);
-    const [isMapMoving, setIsMapMoving] = useState(false);
-    const buttonOpacity = useRef(new Animated.Value(1)).current;
-    const cardSlideAnim = useRef(new Animated.Value(300)).current;
+    const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
+    const [venues, setVenues] = useState<Venue[]>([]);
+    const [upcomingMatches, setUpcomingMatches] = useState<VenueMatch[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const handleRegionChangeComplete = (newRegion: Region) => {
-        setRegion(newRegion);
-        setIsMapMoving(false);
-    };
+    // Area search state
+    const [showSearchButton, setShowSearchButton] = useState(false);
+    const [isSearchingArea, setIsSearchingArea] = useState(false);
+    const [hasSearchedArea, setHasSearchedArea] = useState(false);
+    const [noVenuesFound, setNoVenuesFound] = useState(false);
+    const [currentRegion, setCurrentRegion] = useState<Region>({
+        latitude: 48.8566,
+        longitude: 2.3522,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+    });
+    const lastSearchedRegion = useRef<Region | null>(null);
+    const searchButtonAnim = useRef(new Animated.Value(0)).current;
+    const emptyStateTimer = useRef<NodeJS.Timeout | null>(null);
 
+    // Cleanup timers on unmount
     useEffect(() => {
-        Animated.timing(buttonOpacity, {
-            toValue: isMapMoving ? 0 : 1,
-            duration: 200,
-            useNativeDriver: true,
-        }).start();
-    }, [isMapMoving]);
-
-    const centerOnUser = () => {
-        if (userLocation && mapRef.current) {
-            mapRef.current.animateToRegion({
-                latitude: userLocation.latitude,
-                longitude: userLocation.longitude,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
-            });
-        }
-    };
-
-    useEffect(() => {
-        getUserLocation();
+        return () => {
+            if (emptyStateTimer.current) {
+                clearTimeout(emptyStateTimer.current);
+            }
+        };
     }, []);
 
-    const loadVenues = async (currentRegion: Region | null) => {
-        const { fetchNearbyVenues } = useStore.getState();
-        if (currentRegion) {
-            const radius = (currentRegion.latitudeDelta * 111 * 1000) / 2;
-            await fetchNearbyVenues(
-                currentRegion.latitude,
-                currentRegion.longitude,
-                radius,
-            );
-        }
-    };
+    // Location Logic
+    useEffect(() => {
+        (async () => {
+            let { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                console.log('Permission to access location was denied');
+                return;
+            }
 
-    const getUserLocation = async () => {
-        setIsLocationLoading(true);
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        let initialRegion;
-        if (status !== "granted") {
-            const defaultLocation = { latitude: 48.8566, longitude: 2.3522 };
-            setUserLocation(defaultLocation);
-            initialRegion = {
-                ...defaultLocation,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
-            };
-        } else {
-            try {
-                const location = await Location.getCurrentPositionAsync({});
-                const userCoords = {
+            let location = await Location.getCurrentPositionAsync({});
+            if (mapRef.current && location) {
+                mapRef.current.animateToRegion({
                     latitude: location.coords.latitude,
                     longitude: location.coords.longitude,
-                };
-                setUserLocation(userCoords);
-                initialRegion = {
-                    ...userCoords,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
-                };
-            } catch (error) {
-                const defaultLocation = {
-                    latitude: 48.8566,
-                    longitude: 2.3522,
-                };
-                setUserLocation(defaultLocation);
-                initialRegion = {
-                    ...defaultLocation,
-                    latitudeDelta: 0.0922,
-                    longitudeDelta: 0.0421,
-                };
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                }, 1000);
+            }
+        })();
+    }, []);
+
+    const handleCenterOnUser = async () => {
+        let { status } = await Location.getForegroundPermissionsAsync();
+        if (status !== 'granted') {
+            status = (await Location.requestForegroundPermissionsAsync()).status;
+        }
+
+        if (status === 'granted') {
+            const location = await Location.getCurrentPositionAsync({});
+            if (mapRef.current && location) {
+                mapRef.current.animateToRegion({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                }, 1000);
             }
         }
-        setRegion(initialRegion);
-        await loadVenues(initialRegion);
-        setIsLocationLoading(false);
     };
 
-    const toggleFilter = (
-        category: "sports" | "ambiance" | "foodTypes" | "priceRange",
-        value: string,
-    ) => {
-        setSelectedFilters((prev) => {
-            const categoryArray = prev[category];
-            const newArray = categoryArray.includes(value)
-                ? categoryArray.filter((v) => v !== value)
-                : [...categoryArray, value];
-
-            return { ...prev, [category]: newArray };
-        });
+    // Check if region has changed significantly from last search
+    const hasRegionChangedSignificantly = (newRegion: Region): boolean => {
+        if (!lastSearchedRegion.current) return true;
+        const last = lastSearchedRegion.current;
+        const latDiff = Math.abs(newRegion.latitude - last.latitude);
+        const lngDiff = Math.abs(newRegion.longitude - last.longitude);
+        const deltaDiff = Math.abs(newRegion.latitudeDelta - last.latitudeDelta);
+        // Show button if moved more than 20% of the view or zoom changed significantly
+        const threshold = last.latitudeDelta * 0.2;
+        return latDiff > threshold || lngDiff > threshold || deltaDiff > last.latitudeDelta * 0.3;
     };
 
-    const handleSortSelection = (
-        sortOption: "distance" | "rating" | null,
-        sortDirection: "asc" | "desc",
-    ) => {
-        setSelectedFilters((prev) => ({
-            ...prev,
-            sortOption,
-            sortDirection,
-        }));
+    // Hide button while user is moving the map
+    const handleRegionChange = () => {
+        if (showSearchButton && hasSearchedArea) {
+            setShowSearchButton(false);
+            Animated.timing(searchButtonAnim, {
+                toValue: 0,
+                duration: 100,
+                useNativeDriver: true,
+            }).start();
+        }
     };
 
-    const applyFilterChanges = () => {
-        applyFilters(selectedFilters);
-        setShowFilters(false);
+    // Handle map region change - this fires when user STOPS moving the map
+    const handleRegionChangeComplete = (region: Region) => {
+        setCurrentRegion(region);
+        
+        // Show search button when user stops moving (after first search)
+        if (hasSearchedArea && hasRegionChangedSignificantly(region)) {
+            setShowSearchButton(true);
+            Animated.spring(searchButtonAnim, {
+                toValue: 1,
+                useNativeDriver: true,
+                friction: 8,
+            }).start();
+        }
     };
 
-    const clearFilters = () => {
-        const cleared: typeof filters = {
-            sports: [] as string[],
-            ambiance: [] as string[],
-            foodTypes: [] as string[],
-            priceRange: [] as string[],
-            sortOption: null,
-            sortDirection: "asc" as const,
-        };
-        setSelectedFilters(cleared);
-        applyFilters(cleared);
-    };
-
-    const handleVenueSelect = (venue: any) => {
-        setSelectedVenue(venue);
-        Animated.spring(cardSlideAnim, {
+    // Search venues in the current area
+    const handleSearchArea = async () => {
+        setIsSearchingArea(true);
+        setNoVenuesFound(false);
+        setShowSearchButton(false);
+        
+        // Clear any existing empty state timer
+        if (emptyStateTimer.current) {
+            clearTimeout(emptyStateTimer.current);
+        }
+        
+        Animated.timing(searchButtonAnim, {
             toValue: 0,
-            tension: 50,
-            friction: 8,
-            useNativeDriver: true,
-        }).start();
-    };
-
-    const closeVenueCard = () => {
-        Animated.timing(cardSlideAnim, {
-            toValue: 300,
             duration: 200,
             useNativeDriver: true,
-        }).start(() => setSelectedVenue(null));
+        }).start();
+
+        try {
+            const fetchedVenues = await mobileApi.fetchVenuesInArea(
+                currentRegion.latitude,
+                currentRegion.longitude,
+                currentRegion.latitudeDelta,
+                currentRegion.longitudeDelta
+            );
+            
+            setVenues(fetchedVenues);
+            lastSearchedRegion.current = currentRegion;
+            setHasSearchedArea(true);
+            
+            if (fetchedVenues.length === 0) {
+                setNoVenuesFound(true);
+                // Auto-dismiss empty state after 4 seconds
+                emptyStateTimer.current = setTimeout(() => {
+                    setNoVenuesFound(false);
+                }, 4000);
+            } else {
+                setNoVenuesFound(false);
+            }
+        } catch (error) {
+            console.warn("Search area failed", error);
+            setNoVenuesFound(true);
+            // Auto-dismiss error state after 4 seconds
+            emptyStateTimer.current = setTimeout(() => {
+                setNoVenuesFound(false);
+            }, 4000);
+        } finally {
+            setIsSearchingArea(false);
+        }
     };
 
-    const renderVenueCard = () => {
-        if (!selectedVenue) return null;
+    // Bottom Sheet Animation
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const sheetAnim = useRef(new Animated.Value(0)).current; // 0 = collapsed, 1 = expanded
+    const bottomSheetHeight = height * 0.5; // Expand to 50% of screen
+    const collapsedOffset = 104; // The bottom position of the handle in collapsed state
 
-        return (
-            <Modal
-                visible={!!selectedVenue}
-                transparent={true}
-                animationType="none"
-                onRequestClose={closeVenueCard}
-            >
-                <TouchableOpacity
-                    style={styles.venueCardOverlay}
-                    activeOpacity={1}
-                    onPress={closeVenueCard}
-                >
-                    <Animated.View
-                        style={[
-                            styles.venueCard,
-                            { transform: [{ translateY: cardSlideAnim }] },
-                        ]}
-                    >
-                        <TouchableOpacity activeOpacity={1}>
-                            <View style={styles.venueCardHeader}>
-                                <View>
-                                    <Text style={styles.venueCardName}>
-                                        {selectedVenue.name}
-                                    </Text>
-                                    <Text style={styles.venueCardAddress}>
-                                        {selectedVenue.type} -{" "}
-                                        {selectedVenue.address}
-                                    </Text>
-                                </View>
-                                <Text style={styles.venueCardDistance}>
-                                    {selectedVenue.distance || "0.9"} KM
-                                </Text>
-                            </View>
+    // Animate Sheet
+    useEffect(() => {
+        Animated.spring(sheetAnim, {
+            toValue: isSheetOpen ? 1 : 0,
+            useNativeDriver: false, // height/bottom sometimes don't support native driver with layout anims, but transform does. Let's use transform Y.
+            friction: 8,
+            tension: 40,
+        }).start();
+    }, [isSheetOpen]);
 
-                            <View style={styles.venueCardImageContainer}>
-                                <View style={styles.venueCardImagePlaceholder}>
-                                    <Text style={styles.venueCardImageText}>
-                                        📷
-                                    </Text>
-                                </View>
-                                <TouchableOpacity style={styles.addPhotoButton}>
-                                    <Text style={styles.addPhotoText}>
-                                        + 📷
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
+    const [filterSelections, setFilterSelections] = useState<FilterSelections>(DEFAULT_FILTER_SELECTIONS);
+    const [filterSheetVisible, setFilterSheetVisible] = useState(false);
 
-                            <View style={styles.venueCardTags}>
-                                {selectedVenue.sports
-                                    ?.slice(0, 1)
-                                    .map((sport: string, index: number) => (
-                                        <View key={index} style={styles.tag}>
-                                            <Text style={styles.tagText}>
-                                                {sport}
-                                            </Text>
-                                        </View>
-                                    ))}
-                                <View style={styles.tag}>
-                                    <Text style={styles.tagText}>
-                                        {selectedVenue.priceRange || "5-10€"}
-                                    </Text>
-                                </View>
-                                <View style={styles.tag}>
-                                    <Text style={styles.tagText}>
-                                        {selectedVenue.ambiance || "Conviviale"}
-                                    </Text>
-                                </View>
-                                <View style={styles.tag}>
-                                    <Text style={styles.tagText}>
-                                        {selectedVenue.foodTypes?.[0] ||
-                                            "Bière"}
-                                    </Text>
-                                </View>
-                                <View style={styles.tag}>
-                                    <Text style={styles.tagText}>
-                                        +{selectedVenue.rating || "4.5"}⭐
-                                    </Text>
-                                </View>
-                            </View>
-
-                            <View style={styles.venueCardActions}>
-                                <View style={styles.attendeesContainer}>
-                                    <Text style={styles.attendeesText}>👥</Text>
-                                </View>
-                                <View style={styles.actionButtons}>
-                                    <TouchableOpacity
-                                        style={styles.actionButton}
-                                    >
-                                        <Ionicons
-                                            name="share-outline"
-                                            size={22}
-                                            color={theme.colors.secondary}
-                                        />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.actionButton}
-                                    >
-                                        <Ionicons
-                                            name="link-outline"
-                                            size={22}
-                                            color={theme.colors.secondary}
-                                        />
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
-                                        style={styles.actionButton}
-                                    >
-                                        <Ionicons
-                                            name="heart-outline"
-                                            size={22}
-                                            color={theme.colors.secondary}
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            </View>
-
-                            <TouchableOpacity
-                                style={styles.viewVenueButton}
-                                onPress={() => {
-                                    closeVenueCard();
-                                    navigation.navigate("VenueDetails", {
-                                        venue: selectedVenue,
-                                    });
-                                }}
-                            >
-                                <Text style={styles.viewVenueButtonText}>
-                                    Voir le lieu
-                                </Text>
-                            </TouchableOpacity>
-                        </TouchableOpacity>
-                    </Animated.View>
-
-                    <TouchableOpacity
-                        style={styles.closeCardButton}
-                        onPress={closeVenueCard}
-                    >
-                        <Ionicons
-                            name="close"
-                            size={24}
-                            color={theme.colors.text}
-                        />
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            </Modal>
-        );
+    const toggleSheet = () => {
+        setIsSheetOpen(!isSheetOpen);
     };
 
-    const renderFilterModal = () => (
-        <Modal
-            visible={showFilters}
-            animationType="fade"
-            transparent={true}
-            onRequestClose={() => setShowFilters(false)}
-        >
-            <TouchableOpacity
-                style={styles.modalOverlay}
-                activeOpacity={1}
-                onPressOut={() => setShowFilters(false)}
-            >
-                <ImageBackground
-                    source={images.background}
-                    style={styles.modalContent}
-                    imageStyle={{ borderRadius: 28 }}
-                    // onStartShouldSetResponder={() => true}
-                >
-                    <View style={styles.modalHeader}>
-                        <Text style={styles.modalTitle}>Filtres</Text>
-                        <MaterialCommunityIcons
-                            name="tune-variant"
-                            size={24}
-                            color={theme.colors.text}
-                        />
-                    </View>
+    useEffect(() => {
+        let active = true;
+        const load = async () => {
+            try {
+                // Only load upcoming matches on initial load
+                // Venues will be loaded when user clicks "Search in this area"
+                const fetchedMatches = await mobileApi.fetchUpcomingMatches();
+                if (!active) return;
+                setUpcomingMatches(fetchedMatches);
+            } catch (error) {
+                console.warn("Failed to load map data", error);
+            } finally {
+                if (active) setIsLoading(false);
+            }
+        };
+        load();
+        return () => {
+            active = false;
+        };
+    }, []);
 
-                    <ScrollView style={styles.filtersList}>
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterSectionTitle}>
-                                • Trier par
-                            </Text>
-                            <View style={styles.filterOptions}>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.filterChip,
-                                        selectedFilters.sortOption ===
-                                            "distance" &&
-                                            styles.filterChipSelected,
-                                    ]}
-                                    onPress={() =>
-                                        handleSortSelection("distance", "asc")
-                                    }
-                                >
-                                    <Text
-                                        style={[
-                                            styles.filterChipText,
-                                            selectedFilters.sortOption ===
-                                                "distance" &&
-                                                styles.filterChipTextSelected,
-                                        ]}
-                                    >
-                                        Distance
-                                    </Text>
-                                </TouchableOpacity>
+    const handleMarkerPress = (venue: Venue) => {
+        setSelectedVenue(venue);
+        setIsSheetOpen(true);
+    };
 
-                                <TouchableOpacity
-                                    style={[
-                                        styles.filterChip,
-                                        selectedFilters.sortOption ===
-                                            "rating" &&
-                                            styles.filterChipSelected,
-                                    ]}
-                                    onPress={() =>
-                                        handleSortSelection("rating", "desc")
-                                    }
-                                >
-                                    <Text
-                                        style={[
-                                            styles.filterChipText,
-                                            selectedFilters.sortOption ===
-                                                "rating" &&
-                                                styles.filterChipTextSelected,
-                                        ]}
-                                    >
-                                        Note
-                                    </Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
+    const handleMapPress = () => {
+        setSelectedVenue(null);
+        setIsSheetOpen(false);
+    };
 
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterSectionTitle}>
-                                • Lieux
-                            </Text>
-                            <View style={styles.filterOptions}>
-                                {["Bar", "Fast-Food", "Chicha"].map(
-                                    (option) => (
-                                        <TouchableOpacity
-                                            key={option}
-                                            style={[
-                                                styles.filterChip,
-                                                selectedFilters.foodTypes.includes(
-                                                    option,
-                                                ) && styles.filterChipSelected,
-                                            ]}
-                                            onPress={() =>
-                                                toggleFilter(
-                                                    "foodTypes",
-                                                    option,
-                                                )
-                                            }
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.filterChipText,
-                                                    selectedFilters.foodTypes.includes(
-                                                        option,
-                                                    ) &&
-                                                        styles.filterChipTextSelected,
-                                                ]}
-                                            >
-                                                {option}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ),
-                                )}
-                            </View>
-                        </View>
+    const openFilterSheet = () => {
+        setFilterSheetVisible(true);
+    };
 
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterSectionTitle}>
-                                • Prix
-                            </Text>
-                            <View style={styles.filterOptions}>
-                                {["-5€", "5-10€", "10-20€", "+20€"].map(
-                                    (option) => (
-                                        <TouchableOpacity
-                                            key={option}
-                                            style={[
-                                                styles.filterChip,
-                                                selectedFilters.priceRange.includes(
-                                                    option,
-                                                ) && styles.filterChipSelected,
-                                            ]}
-                                            onPress={() =>
-                                                toggleFilter(
-                                                    "priceRange",
-                                                    option,
-                                                )
-                                            }
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.filterChipText,
-                                                    selectedFilters.priceRange.includes(
-                                                        option,
-                                                    ) &&
-                                                        styles.filterChipTextSelected,
-                                                ]}
-                                            >
-                                                {option}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ),
-                                )}
-                            </View>
-                        </View>
+    const closeFilterSheet = () => {
+        setFilterSheetVisible(false);
+    };
 
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterSectionTitle}>
-                                • Sports
-                            </Text>
-                            <View style={styles.filterOptions}>
-                                {["Foot", "Basket", "Rugby", "Tennis"].map(
-                                    (option) => (
-                                        <TouchableOpacity
-                                            key={option}
-                                            style={[
-                                                styles.filterChip,
-                                                selectedFilters.sports.includes(
-                                                    option,
-                                                ) && styles.filterChipSelected,
-                                            ]}
-                                            onPress={() =>
-                                                toggleFilter("sports", option)
-                                            }
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.filterChipText,
-                                                    selectedFilters.sports.includes(
-                                                        option,
-                                                    ) &&
-                                                        styles.filterChipTextSelected,
-                                                ]}
-                                            >
-                                                {option}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ),
-                                )}
-                            </View>
-                        </View>
+    const handleApplyFilters = (nextSelections: FilterSelections) => {
+        setFilterSelections(nextSelections);
+        setFilterSheetVisible(false);
+    };
 
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterSectionTitle}>
-                                • Ambiance
-                            </Text>
-                            <View style={styles.filterOptions}>
-                                {["Conviviale", "Ultra", "Posée"].map(
-                                    (option) => (
-                                        <TouchableOpacity
-                                            key={option}
-                                            style={[
-                                                styles.filterChip,
-                                                selectedFilters.ambiance.includes(
-                                                    option,
-                                                ) && styles.filterChipSelected,
-                                            ]}
-                                            onPress={() =>
-                                                toggleFilter("ambiance", option)
-                                            }
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.filterChipText,
-                                                    selectedFilters.ambiance.includes(
-                                                        option,
-                                                    ) &&
-                                                        styles.filterChipTextSelected,
-                                                ]}
-                                            >
-                                                {option}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ),
-                                )}
-                            </View>
-                        </View>
+    // Interpolate sheet position
+    const sheetTranslateY = sheetAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, -bottomSheetHeight + 100] // Move up by height roughly
+    });
 
-                        <View style={styles.filterSection}>
-                            <Text style={styles.filterSectionTitle}>
-                                • Food & Drinks
-                            </Text>
-                            <View style={styles.filterOptions}>
-                                {["Bière", "Tacos", "Pizza", "Grec"].map(
-                                    (option) => (
-                                        <TouchableOpacity
-                                            key={option}
-                                            style={[
-                                                styles.filterChip,
-                                                selectedFilters.foodTypes.includes(
-                                                    option,
-                                                ) && styles.filterChipSelected,
-                                            ]}
-                                            onPress={() =>
-                                                toggleFilter(
-                                                    "foodTypes",
-                                                    option,
-                                                )
-                                            }
-                                        >
-                                            <Text
-                                                style={[
-                                                    styles.filterChipText,
-                                                    selectedFilters.foodTypes.includes(
-                                                        option,
-                                                    ) &&
-                                                        styles.filterChipTextSelected,
-                                                ]}
-                                            >
-                                                {option}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ),
-                                )}
-                            </View>
-                        </View>
-                    </ScrollView>
+    // Better approach: 
+    // Collapsed: just the handle at bottom 104.
+    // Expanded: Sheet occupies bottom 0 to ~50%.
+    // Let's implement a fixed Bottom Sheet View that translates Y.
+    // Initial position (Collapsed): TranslateY = height - (Handle Position + Safety)
+    // Actually, let's look at the styles. the handle was absolute bottom 104.
 
-                    <TouchableOpacity
-                        style={styles.validateButton}
-                        onPress={applyFilterChanges}
-                    >
-                        <Text style={styles.validateButtonText}>VALIDER</Text>
-                    </TouchableOpacity>
-                </ImageBackground>
+    // Let's refactor:
+    // The Sheet will be a container at the bottom.
+    // We animate its translateY.
 
-                {/*<TouchableOpacity
-                    style={styles.closeModalButton}
-                    onPress={() => setShowFilters(false)}
-                >
-                    <Ionicons
-                        name="close"
-                        size={24}
-                        color={theme.colors.primary}
-                    />
-                </TouchableOpacity>*/}
-            </TouchableOpacity>
-        </Modal>
-    );
-
-    const renderSearchModal = () => (
-        <Modal
-            visible={showSearch}
-            animationType="fade"
-            transparent={true}
-            onRequestClose={() => setShowSearch(false)}
-        >
-            <TouchableOpacity
-                style={styles.searchModalOverlay}
-                activeOpacity={1}
-                onPressOut={() => setShowSearch(false)}
-            >
-                <ImageBackground
-                    source={images.background}
-                    style={styles.searchModalContent}
-                    imageStyle={{ borderRadius: 28 }}
-                    // onStartShouldSetResponder={() => true}
-                >
-                    <View style={styles.searchModalHeader}>
-                        <Text style={styles.searchModalTitle}>Recherche</Text>
-                        <Ionicons
-                            name="search"
-                            size={24}
-                            color={theme.colors.text}
-                        />
-                    </View>
-
-                    <View style={styles.searchInputContainer}>
-                        <TextInput
-                            style={styles.searchInput}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            placeholder=""
-                            placeholderTextColor={theme.colors.textSecondary}
-                            autoFocus={true}
-                        />
-                    </View>
-
-                    <View style={styles.searchSection}>
-                        <View style={styles.searchSectionHeader}>
-                            <Ionicons
-                                name="time-outline"
-                                size={18}
-                                color={theme.colors.secondary}
-                            />
-                            <Text style={styles.searchSectionTitle}>
-                                Historique
-                            </Text>
-                        </View>
-                        {searchHistory.map((item, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                onPress={() => setSearchQuery(item)}
-                                style={styles.searchItem}
-                            >
-                                <Text style={styles.searchItemText}>
-                                    "{item}"
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    <View style={styles.searchSection}>
-                        <View style={styles.searchSectionHeader}>
-                            <Ionicons
-                                name="trending-up"
-                                size={18}
-                                color={theme.colors.secondary}
-                            />
-                            <Text style={styles.searchSectionTitle}>
-                                Tendances
-                            </Text>
-                        </View>
-                        {trendingSearches.map((item, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                onPress={() => setSearchQuery(item)}
-                                style={styles.searchItem}
-                            >
-                                <Text style={styles.searchItemText}>
-                                    "{item}"
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    <TouchableOpacity
-                        style={styles.searchValidateButton}
-                        onPress={() => {
-                            console.log("Search:", searchQuery);
-                            setShowSearch(false);
-                        }}
-                    >
-                        <Text style={styles.searchValidateButtonText}>
-                            VALIDER
-                        </Text>
-                    </TouchableOpacity>
-                </ImageBackground>
-
-                <TouchableOpacity
-                    style={styles.closeModalButton}
-                    onPress={() => setShowSearch(false)}
-                >
-                    <Ionicons
-                        name="close"
-                        size={24}
-                        color={theme.colors.primary}
-                    />
-                </TouchableOpacity>
-            </TouchableOpacity>
-        </Modal>
-    );
-
-    if (isLocationLoading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Image
-                    source={images.logo}
-                    style={styles.loadingLogo}
-                    resizeMode="contain"
-                />
-            </View>
-        );
-    }
+    const sheetY = sheetAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [160, -160] // 0 state: pushed down 160px (hidden), 1 state: pulled up 160px (under widget)
+    });
 
     return (
         <View style={styles.container}>
+            <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
+
+            {/* Map Custom */}
             <MapView
                 ref={mapRef}
-                style={styles.map}
-                initialRegion={region}
                 showsUserLocation={true}
                 showsMyLocationButton={false}
-                onRegionChange={() => setIsMapMoving(true)}
+                provider={PROVIDER_DEFAULT}
+                style={StyleSheet.absoluteFillObject}
+                customMapStyle={themeMode === 'light' ? LIGHT_MAP_STYLE : DARK_MAP_STYLE}
+                onPress={handleMapPress}
+                onRegionChange={handleRegionChange}
                 onRegionChangeComplete={handleRegionChangeComplete}
+                initialRegion={{
+                    latitude: 48.8566,
+                    longitude: 2.3522,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                }}
             >
-                {filteredVenues.map((venue) => (
-                    <Marker
-                        key={venue.id}
-                        coordinate={{
-                            latitude: venue.latitude,
-                            longitude: venue.longitude,
-                        }}
-                        onPress={() => handleVenueSelect(venue)}
-                    >
-                        <View style={styles.markerContainer}>
-                            <View style={styles.markerPin}>
-                                <View style={styles.markerPinHead} />
-                                <View style={styles.markerPinTail} />
+                {venues.map((venue) => {
+                    const isSelected = selectedVenue?.id === venue.id;
+                    return (
+                        <Marker
+                            key={venue.id}
+                            coordinate={{ latitude: venue.latitude, longitude: venue.longitude }}
+                            anchor={{ x: 0.5, y: 0.5 }}
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                handleMarkerPress(venue);
+                            }}
+                        >
+                            <View style={{ alignItems: "center" }}>
+                                <View style={styles.activePin}>
+                                    <MaterialIcons
+                                        name="location-on"
+                                        size={isSelected ? 60 : 45}
+                                        color={colors.primary}
+                                    />
+                                    {isSelected && <View style={[styles.activePinDot, { backgroundColor: colors.white }]} />}
+                                </View>
+                                {isSelected && (
+                                    <View style={[styles.pinLabel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                        <Text style={[styles.pinLabelText, { color: colors.text }]}>{venue.name}</Text>
+                                    </View>
+                                )}
                             </View>
-                        </View>
-                    </Marker>
-                ))}
+                        </Marker>
+                    );
+                })}
             </MapView>
 
-            <SafeAreaView style={styles.headerOverlay}>
-                {/* Globe icon - navigate to matches list */}
-                <TouchableOpacity
-                    style={styles.globeButton}
-                    onPress={() => navigation.navigate("Matches")}
-                >
-                    <Feather
-                        name="globe"
-                        size={28}
-                        color={theme.colors.secondary}
-                    />
-                </TouchableOpacity>
+            {/* Header */}
+            <LinearGradient
+                colors={themeMode === 'light'
+                    ? ['rgba(255, 255, 255, 0.95)', 'rgba(255, 255, 255, 0.5)', 'transparent']
+                    : ['rgba(15, 23, 42, 0.95)', 'transparent']}
+                style={styles.header}
+            >
+                <SafeAreaView edges={['top']}>
+                    <View style={styles.headerTop}>
+                        <View style={{ width: 40 }} />
+                        <Text style={[styles.headerTitle, { color: colors.text, textShadowColor: themeMode === 'light' ? 'transparent' : 'rgba(0,0,0,0.5)' }]}>AUTOUR DE MOI</Text>
+                        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.primary }]} onPress={openFilterSheet}>
+                            <MaterialIcons name="tune" size={24} color={colors.white} />
+                        </TouchableOpacity>
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.headerTabs} contentContainerStyle={{ paddingHorizontal: 16 }}>
+                        <FilterTab label="Tout" active colors={colors} />
+                        <FilterTab label="Football" colors={colors} />
+                        <FilterTab label="Rugby" colors={colors} />
+                        <FilterTab label="Tennis" colors={colors} />
+                    </ScrollView>
+                </SafeAreaView>
+            </LinearGradient>
 
-                <Animated.View style={{ opacity: buttonOpacity }}>
+            {/* Search in this area button */}
+            {(showSearchButton || !hasSearchedArea) && !isSearchingArea && (
+                <Animated.View
+                    style={[
+                        styles.searchAreaButtonContainer,
+                        {
+                            opacity: hasSearchedArea ? searchButtonAnim : 1,
+                            transform: [{
+                                translateY: hasSearchedArea 
+                                    ? searchButtonAnim.interpolate({
+                                        inputRange: [0, 1],
+                                        outputRange: [-20, 0],
+                                    })
+                                    : 0,
+                            }],
+                        },
+                    ]}
+                >
                     <TouchableOpacity
-                        onPress={() => region && loadVenues(region)}
-                        style={styles.locationBadge}
+                        style={[
+                            styles.searchAreaButton,
+                            { backgroundColor: colors.surfaceDark, borderColor: colors.border }
+                        ]}
+                        onPress={handleSearchArea}
+                        activeOpacity={0.8}
                     >
-                        <Text style={styles.headerTitle}>AUTOUR DE MOI</Text>
+                        <MaterialIcons name="search" size={18} color={colors.text} />
+                        <Text style={[styles.searchAreaButtonText, { color: colors.text }]}>
+                            Rechercher dans cette zone
+                        </Text>
                     </TouchableOpacity>
                 </Animated.View>
+            )}
 
-                {/* Profile avatar */}
+            {/* Area Search Loading */}
+            {isSearchingArea && (
+                <View style={styles.searchAreaButtonContainer}>
+                    <View style={[styles.searchAreaButton, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
+                        <ActivityIndicator color={colors.primary} size="small" />
+                        <Text style={[styles.searchAreaButtonText, { color: colors.textMuted }]}>
+                            Recherche en cours...
+                        </Text>
+                    </View>
+                </View>
+            )}
+
+            {/* Empty State - No venues found (auto-dismisses after 4 seconds) */}
+            {noVenuesFound && !isSearchingArea && (
+                <View style={styles.emptyStateContainer}>
+                    <View style={[styles.emptyStateCard, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
+                        <View style={[styles.emptyStateIcon, { backgroundColor: 'rgba(248, 113, 113, 0.2)' }]}>
+                            <MaterialIcons name="search-off" size={24} color={colors.red400} />
+                        </View>
+                        <View style={styles.emptyStateContent}>
+                            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
+                                Aucun lieu trouvé dans cette zone
+                            </Text>
+                            <Text style={[styles.emptyStateSubtitle, { color: colors.textMuted }]}>
+                                Essaye de changer de sport ou de zoomer en arrière.
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+            )}
+
+            {/* Loading */}
+            {isLoading && (
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator color={COLORS.primary} size="large" />
+                    <Text style={styles.loadingText}>Chargement des bars...</Text>
+                </View>
+            )}
+
+            {/* Venue Card - Only Conditionally Rendered */}
+            {selectedVenue && (
+                <View style={styles.venueCardContainer}>
+                    <View style={[styles.venueCard, { backgroundColor: colors.card }]}>
+                        <Image
+                            source={{ uri: selectedVenue.image }}
+                            style={styles.venueImage}
+                        />
+                        <View style={styles.venueInfo}>
+                            <View>
+                                <View style={styles.venueHeaderRow}>
+                                    <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>{selectedVenue.name}</Text>
+                                    <View style={[styles.openBadge, !selectedVenue.isOpen && styles.closedBadge]}>
+                                        <Text style={[styles.openBadgeText, !selectedVenue.isOpen && styles.closedBadgeText]}>
+                                            {selectedVenue.isOpen ? "OUVERT" : "FERMÉ"}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <View style={styles.ratingRow}>
+                                    <MaterialIcons name="star" size={16} color={colors.yellow400} />
+                                    <Text style={[styles.ratingText, { color: colors.text }]}>{selectedVenue.rating.toFixed(1)}</Text>
+                                    <Text style={[styles.venueSubText, { color: colors.textMuted }]}>• {selectedVenue.tags[0]} • {selectedVenue.priceLevel} • {selectedVenue.distance}</Text>
+                                </View>
+                            </View>
+                            <View style={styles.broadcastRow}>
+                                <View style={styles.broadcastBadge}>
+                                    <MaterialIcons name="live-tv" size={14} color={colors.primary} />
+                                    <Text style={[styles.broadcastText, { color: colors.primary }]}>Diffusé ici</Text>
+                                </View>
+                            </View>
+                        </View>
+                    </View>
+                    <View style={[styles.venueActions, { backgroundColor: colors.card }]}>
+                        <TouchableOpacity style={styles.venueBtnSecondary}>
+                            <MaterialIcons name="directions" size={18} color={colors.slate400} />
+                            <Text style={[styles.venueBtnTextSecondary, { color: colors.slate400 }]}>Itinéraire</Text>
+                        </TouchableOpacity>
+                        <View style={[styles.venueBtnDivider, { backgroundColor: colors.divider }]} />
+                        <TouchableOpacity
+                            style={[styles.venueBtnPrimary, { backgroundColor: colors.primary }]}
+                            onPress={() => navigation.navigate('VenueProfile', { venueId: selectedVenue?.id })}
+                        >
+                            <Text style={styles.venueBtnTextPrimary}>Voir détails</Text>
+                            <MaterialIcons name="arrow-forward" size={18} color={COLORS.white} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+
+            {/* Expandable Prochains Matchs Sheet */}
+            <Animated.View
+                style={[
+                    styles.bottomSheetContainer,
+                    {
+                        transform: [{ translateY: sheetY }],
+                        zIndex: 35
+                    }
+                ]}
+            >
                 <TouchableOpacity
-                    style={styles.profileButton}
-                    onPress={() => navigation.navigate("Profile")}
+                    style={styles.sheetHandleArea}
+                    activeOpacity={0.9}
+                    onPress={toggleSheet}
                 >
-                    <Image
-                        source={{ uri: DEFAULT_AVATAR }}
-                        style={styles.profileAvatar}
+                    <View style={styles.handleBar} />
+                    <Text style={[styles.handleText, { color: colors.text }]}>
+                        {isSheetOpen ? "Masquer les matchs" : "Prochains Matchs"}
+                    </Text>
+                    <MaterialIcons
+                        name={isSheetOpen ? "keyboard-arrow-down" : "keyboard-arrow-up"}
+                        size={20}
+                        color={colors.slate400}
+                        style={{ marginTop: 4 }}
                     />
                 </TouchableOpacity>
-            </SafeAreaView>
 
-            <FloatingNavBar
-                onListPress={() => navigation.navigate("Matches")}
-                onSearchPress={() => setShowSearch(true)}
-                onFilterPress={() => setShowFilters(true)}
+                {/* Content */}
+                <View style={[styles.sheetContent, { backgroundColor: colors.backgroundElevated }]}>
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        {upcomingMatches.map((match) => (
+                            <MatchItem
+                                key={match.id}
+                                date={match.date}
+                                month={match.month}
+                                team1={match.team1}
+                                team2={match.team2}
+                                team1Color={match.team1Color}
+                                team2Color={match.team2Color}
+                                time={match.time}
+                                league={match.league}
+                                colors={colors}
+                            />
+                        ))}
+                        <View style={{ height: 100 }} />
+                    </ScrollView>
+                </View>
+            </Animated.View>
+
+            {/* Near Me Button */}
+            <TouchableOpacity
+                style={styles.nearMeButton}
+                activeOpacity={0.8}
+                onPress={handleCenterOnUser}
+            >
+                <MaterialIcons name="near-me" size={24} color={COLORS.white} />
+            </TouchableOpacity>
+
+            <MapScreenFilter
+                visible={filterSheetVisible}
+                initialSelections={filterSelections}
+                onClose={() => setFilterSheetVisible(false)}
+                onApply={handleApplyFilters}
             />
-
-            {renderFilterModal()}
-            {renderSearchModal()}
-            {renderVenueCard()}
         </View>
     );
 };
 
+const FilterTab = ({ label, active, colors }: any) => (
+    <TouchableOpacity style={[
+        styles.filterTab,
+        { backgroundColor: colors.inputBackground, borderColor: colors.border },
+        active && { backgroundColor: colors.white, borderColor: colors.white }
+    ]}>
+        <Text style={[
+            styles.filterTabText,
+            { color: colors.text }, // Default to text color (white in dark, black in light?) Wait.
+            // If active, it should be inverted.
+            active && { color: colors.black }
+        ]}>{label}</Text>
+    </TouchableOpacity>
+);
+
+const MatchItem = ({ date, month, team1, team2, team1Color, team2Color, time, league, divider = "vs", colors }: any) => (
+    <TouchableOpacity style={[styles.matchItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <View style={styles.matchDate}>
+            <Text style={[styles.matchMonth, { color: colors.textMuted }]}>{month}</Text>
+            <Text style={[styles.matchDay, { color: colors.text }]}>{date}</Text>
+        </View>
+        <View style={styles.matchInfo}>
+            <View style={styles.teamsRow}>
+                <Text style={[styles.teamName, { color: team1Color }]}>{team1}</Text>
+                <Text style={[styles.teamDivider, { color: colors.textMuted }]}>{divider}</Text>
+                <Text style={[styles.teamName, { color: team2Color }]}>{team2}</Text>
+            </View>
+            <View style={styles.matchMeta}>
+                <MaterialIcons name="schedule" size={12} color={colors.slate400} />
+                <Text style={[styles.matchMetaText, { color: colors.textMuted }]}>{time} • {league}</Text>
+            </View>
+        </View>
+        <MaterialIcons name="chevron-right" size={24} color={colors.slate500} />
+    </TouchableOpacity>
+);
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: theme.colors.background,
+        // backgroundColor: COLORS.background, // Handled dynamically
     },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: theme.colors.background,
+    // Map
+    mapContainer: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: COLORS.slate900,
+        zIndex: 0,
     },
-    loadingLogo: {
-        width: 150,
-        height: 150,
+    mapImage: {
+        width: '100%',
+        height: '100%',
     },
-    map: {
-        flex: 1,
-        width: "100%",
-        height: "100%",
+    pinContainer: {
+        position: 'absolute',
+        alignItems: 'center',
     },
-    headerOverlay: {
-        position: "absolute",
+    activePin: {
+        position: 'relative',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    activePinDot: {
+        position: 'absolute',
+        top: 22,
+        width: 12,
+        height: 12,
+        backgroundColor: COLORS.white,
+        borderRadius: 6,
+    },
+    pinLabel: {
+        marginTop: 4,
+        backgroundColor: COLORS.surfaceDark,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    pinLabelText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: COLORS.white,
+    },
+
+    // Header
+    header: {
+        position: 'absolute',
         top: 0,
         left: 0,
         right: 0,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        paddingHorizontal: 16,
-        paddingTop: 10,
-        zIndex: 10,
+        zIndex: 20,
+        paddingBottom: 4, // Reduced padding
     },
-    globeButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
-        backgroundColor: "transparent",
-        borderWidth: 2,
-        borderColor: theme.colors.secondary,
-        justifyContent: "center",
-        alignItems: "center",
-    },
-    locationBadge: {
-        backgroundColor: "rgba(255, 255, 255, 0.95)",
+    headerTop: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingVertical: 8,
+        marginBottom: 16,
+        marginTop: 12, // More top margin
+    },
+    menuButton: {
+        width: 40,
+        height: 40,
         borderRadius: 20,
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
-        elevation: 3,
+        backgroundColor: 'rgba(255,255,255,0.1)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
     },
     headerTitle: {
-        fontSize: 14,
-        fontWeight: "800",
-        fontStyle: "italic",
-        color: theme.colors.primary,
-        letterSpacing: 0.5,
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: COLORS.white,
+        textShadowColor: 'rgba(0,0,0,0.5)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 2,
+        letterSpacing: 0.5, // Tracking tight
     },
-    profileButton: {
+    filterButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: COLORS.primary,
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0.5,
+        shadowRadius: 10,
+    },
+    headerTabs: {
+        paddingBottom: 12, // Increased padding
+    },
+    filterTab: {
+        paddingHorizontal: 16,
+        paddingVertical: 6,
+        borderRadius: 20,
+        backgroundColor: 'rgba(30, 41, 59, 0.8)', // Surface dark / 80
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        marginRight: 8,
+    },
+    filterTabActive: {
+        backgroundColor: COLORS.white,
+        borderColor: COLORS.white,
+    },
+    filterTabText: {
+        color: COLORS.white,
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    filterTabTextActive: {
+        color: COLORS.slate900,
+        fontWeight: 'bold',
+    },
+
+    // Floating Elements
+    nearMeButton: {
+        position: 'absolute',
+        bottom: 168, // As per HTML
+        right: 16,
+        zIndex: 40,
         width: 48,
         height: 48,
         borderRadius: 24,
-        overflow: "hidden",
-        borderWidth: 3,
-        borderColor: theme.colors.secondary,
+        backgroundColor: COLORS.slate900,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 32,
     },
-    profileAvatar: {
-        width: "100%",
-        height: "100%",
-        borderRadius: 24,
+
+    // Floating Elements
+    // We are replacing floatingHandle with bottomSheetContainer styles
+
+    bottomSheetContainer: {
+        position: 'absolute',
+        bottom: -320, // Hide most content
+        left: 0,
+        right: 0,
+        height: 480, // Enough height for content
+        backgroundColor: 'rgba(39, 39, 42, 0.98)',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -8 },
+        shadowOpacity: 0.5,
+        shadowRadius: 20,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.05)',
+        alignItems: 'center',
     },
-    markerContainer: {
-        alignItems: "center",
-        justifyContent: "center",
+    sheetHandleArea: {
+        width: '100%',
+        alignItems: 'center',
+        paddingVertical: 12,
+        // Make this area hit slop large
     },
-    markerPin: {
-        alignItems: "center",
+    handleBar: {
+        width: 48,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: COLORS.slate500,
+        marginBottom: 8,
     },
-    markerPinHead: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: theme.colors.secondary,
-        borderWidth: 3,
-        borderColor: "#fff",
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3,
-        elevation: 4,
+    handleText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: COLORS.slate400,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
-    markerPinTail: {
-        width: 0,
-        height: 0,
-        borderLeftWidth: 6,
-        borderRightWidth: 6,
-        borderTopWidth: 10,
-        borderLeftColor: "transparent",
-        borderRightColor: "transparent",
-        borderTopColor: theme.colors.secondary,
-        marginTop: -2,
-    },
-    modalOverlay: {
+    sheetContent: {
+        width: '100%',
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.4)",
-        justifyContent: "center",
-        alignItems: "center",
+        paddingHorizontal: 16,
     },
-    modalContent: {
-        width: width - 48,
-        borderRadius: 28,
-        padding: 24,
-        maxHeight: "70%",
-        borderWidth: 3,
-        borderColor: theme.colors.primary,
-        overflow: "hidden",
-    },
-    modalHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 20,
-        paddingBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: "rgba(123, 47, 254, 0.1)",
-    },
-    modalTitle: {
-        fontSize: 26,
-        fontWeight: "bold",
-        color: theme.colors.primary,
-    },
-    filtersList: {
-        paddingVertical: 8,
-    },
-    filterSection: {
-        marginBottom: 20,
-    },
-    filterSectionTitle: {
-        fontSize: 15,
-        fontWeight: "700",
-        color: theme.colors.primary,
-        marginBottom: 10,
-    },
-    filterOptions: {
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 8,
-    },
-    filterChip: {
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: 18,
-        backgroundColor: theme.colors.secondary,
-        borderWidth: 2,
-        borderColor: theme.colors.secondary,
-    },
-    filterChipSelected: {
-        backgroundColor: theme.colors.primary,
-        borderColor: theme.colors.primary,
-    },
-    filterChipText: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: theme.colors.primary,
-    },
-    filterChipTextSelected: {
-        color: "#fff",
-    },
-    validateButton: {
-        marginTop: 16,
-        backgroundColor: theme.colors.secondary,
-        paddingVertical: 14,
-        borderRadius: 24,
-        alignItems: "center",
-    },
-    validateButtonText: {
-        color: theme.colors.primary,
-        fontSize: 16,
-        fontWeight: "bold",
-        fontStyle: "italic",
-    },
-    closeModalButton: {
-        position: "absolute",
-        bottom: 100,
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: "rgba(255,255,255,0.9)",
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 2,
-        borderColor: theme.colors.primary,
-    },
-    venueCardOverlay: {
-        flex: 1,
-        backgroundColor: "rgba(0,0,0,0.4)",
-        justifyContent: "center",
-        alignItems: "center",
+
+    // Venue Card
+    venueCardContainer: {
+        position: 'absolute',
+        left: 16,
+        right: 16,
+        bottom: '36%', // Approximate
+        zIndex: 20,
+        backgroundColor: COLORS.surfaceDark,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        overflow: 'hidden',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
     },
     venueCard: {
-        backgroundColor: theme.colors.primary,
-        borderRadius: 28,
-        padding: 20,
-        width: width - 48,
-        maxWidth: 380,
-        borderWidth: 3,
-        borderColor: theme.colors.secondary,
+        flexDirection: 'row',
+        padding: 16,
+        gap: 16,
     },
-    venueCardHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        marginBottom: 12,
+    venueImage: {
+        width: 96,
+        height: 96,
+        borderRadius: 8,
+        backgroundColor: COLORS.slate600,
     },
-    venueCardName: {
-        fontSize: 18,
-        fontWeight: "bold",
-        color: theme.colors.secondary,
-        marginBottom: 4,
-        textTransform: "uppercase",
-    },
-    venueCardAddress: {
-        fontSize: 13,
-        color: theme.colors.text,
-        opacity: 0.9,
-    },
-    venueCardDistance: {
-        fontSize: 13,
-        fontWeight: "bold",
-        color: theme.colors.secondary,
-    },
-    venueCardImageContainer: {
-        flexDirection: "row",
-        gap: 8,
-        marginBottom: 12,
-        borderRadius: 12,
-        overflow: "hidden",
-        borderWidth: 2,
-        borderColor: "rgba(255,255,255,0.3)",
-    },
-    venueCardImagePlaceholder: {
+    venueInfo: {
         flex: 1,
-        height: 100,
-        backgroundColor: "rgba(255,255,255,0.15)",
-        justifyContent: "center",
-        alignItems: "center",
+        justifyContent: 'space-between',
     },
-    venueCardImageText: {
-        fontSize: 32,
+    venueHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
     },
-    addPhotoButton: {
-        width: 60,
-        height: 120,
-        backgroundColor: "rgba(255,255,255,0.2)",
-        borderRadius: 12,
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 2,
-        borderColor: theme.colors.text,
-        borderStyle: "dashed",
+    venueName: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.white,
+        flex: 1,
+        marginRight: 8,
     },
-    addPhotoText: {
-        fontSize: 16,
-        color: theme.colors.text,
+    openBadge: {
+        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
     },
-    venueCardTags: {
-        flexDirection: "row",
-        flexWrap: "wrap",
+    openBadgeText: {
+        color: COLORS.emerald400,
+        fontSize: 10,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+    },
+    ratingRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
+        gap: 4,
+    },
+    ratingText: {
+        color: COLORS.white,
+        fontWeight: 'bold',
+        fontSize: 14,
+    },
+    venueSubText: {
+        color: COLORS.slate400,
+        fontSize: 12,
+    },
+    broadcastRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 'auto',
+    },
+    broadcastBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: 'rgba(244, 123, 37, 0.1)',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: 'rgba(244, 123, 37, 0.2)',
+    },
+    broadcastText: {
+        color: COLORS.primary,
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    venueActions: {
+        flexDirection: 'row',
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.05)',
+        backgroundColor: 'rgba(0,0,0,0.2)',
+    },
+    venueBtnSecondary: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
         gap: 8,
-        marginBottom: 16,
     },
-    tag: {
-        backgroundColor: theme.colors.secondary,
-        paddingHorizontal: 10,
-        paddingVertical: 5,
-        borderRadius: 14,
+    venueBtnTextSecondary: {
+        color: COLORS.slate400,
+        fontSize: 14,
+        fontWeight: '500',
     },
-    tagText: {
-        fontSize: 11,
-        fontWeight: "700",
-        color: theme.colors.primary,
+    venueBtnDivider: {
+        width: 1,
+        backgroundColor: 'rgba(255,255,255,0.05)',
     },
-    venueCardActions: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 12,
+    venueBtnPrimary: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 12,
+        backgroundColor: COLORS.primary,
+        gap: 6,
     },
-    attendeesContainer: {
-        flexDirection: "row",
-        alignItems: "center",
+    venueBtnTextPrimary: {
+        color: COLORS.white,
+        fontSize: 14,
+        fontWeight: 'bold',
     },
-    attendeesText: {
-        fontSize: 24,
-        color: theme.colors.text,
+
+    // Bottom Sheet
+
+    viewAllText: {
+        color: COLORS.primary,
+        fontSize: 14,
+        fontWeight: '500',
     },
-    actionButtons: {
-        flexDirection: "row",
+    matchesList: {
+        padding: 16,
         gap: 12,
     },
-    actionButton: {
+    matchItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 12,
+        borderRadius: 12,
+        backgroundColor: COLORS.surfaceDark,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.05)',
+    },
+    matchDate: {
+        width: 48,
+        height: 48,
+        borderRadius: 8,
+        backgroundColor: 'rgba(255,255,255,0.05)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.05)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    matchMonth: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        color: COLORS.slate400,
+        textTransform: 'uppercase',
+    },
+    matchDay: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: COLORS.white,
+        lineHeight: 20,
+    },
+    matchInfo: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    teamsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+    },
+    teamName: {
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    teamDivider: {
+        fontSize: 12,
+        color: COLORS.slate500,
+        marginHorizontal: 8,
+    },
+    matchMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
+        gap: 6,
+    },
+    matchMetaText: {
+        fontSize: 12,
+        color: COLORS.slate400,
+    },
+
+    // Floating Nav Bar
+    navBar: {
+        position: 'absolute',
+        bottom: 32,
+        left: 16,
+        right: 16,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        borderRadius: 32,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.5,
+        shadowRadius: 20,
+        zIndex: 50,
+    },
+    navItem: {
+        alignItems: 'center',
+        gap: 4,
+        width: 64,
+    },
+    navItemLabel: {
+        fontSize: 10,
+        fontWeight: '500',
+        color: COLORS.slate400,
+    },
+    navItemLabelActive: {
+        color: COLORS.primary,
+        fontWeight: 'bold',
+    },
+    loadingOverlay: {
+        position: 'absolute',
+        top: 0,
+        bottom: 0,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(8,8,12,0.8)',
+        zIndex: 80,
+    },
+    loadingText: {
+        marginTop: 12,
+        color: COLORS.textSecondary,
+        fontSize: 14,
+    },
+    closedBadge: {
+        backgroundColor: 'rgba(248,113,113,0.15)',
+        borderColor: 'rgba(248,113,113,0.4)',
+    },
+    closedBadgeText: {
+        color: COLORS.red400,
+    },
+    filterBackdrop: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: '#09090b',
+        zIndex: 80,
+    },
+    filterSheet: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        top: 0,
+        backgroundColor: COLORS.backgroundDark,
+        zIndex: 90,
+    },
+    filterHeader: {
+        paddingTop: 20,
+        paddingHorizontal: 20,
+        paddingBottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(255,255,255,0.08)',
+    },
+    filterHeaderButton: {
         width: 36,
         height: 36,
         borderRadius: 18,
-        backgroundColor: theme.colors.secondary,
-        justifyContent: "center",
-        alignItems: "center",
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(255,255,255,0.08)',
     },
-    viewVenueButton: {
-        backgroundColor: theme.colors.secondary,
-        paddingVertical: 12,
-        borderRadius: 22,
-        alignItems: "center",
-    },
-    viewVenueButtonText: {
-        fontSize: 15,
-        fontWeight: "bold",
-        fontStyle: "italic",
-        color: theme.colors.primary,
-    },
-    closeCardButton: {
-        position: "absolute",
-        bottom: 100,
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: "rgba(255,255,255,0.9)",
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 2,
-        borderColor: theme.colors.primary,
-    },
-    // Search Modal Styles
-    searchModalOverlay: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "rgba(0,0,0,0.4)",
-    },
-    searchModalContent: {
-        width: width - 48,
-        borderRadius: 28,
-        padding: 24,
-        maxHeight: "65%",
-        borderWidth: 3,
-        borderColor: theme.colors.secondary,
-        overflow: "hidden",
-    },
-    searchModalHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 16,
-    },
-    searchModalTitle: {
-        fontSize: 26,
-        fontWeight: "bold",
-        color: theme.colors.text,
-    },
-    searchInputContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-        borderBottomWidth: 2,
-        borderBottomColor: "rgba(255,255,255,0.5)",
-        marginBottom: 20,
-        paddingBottom: 8,
-    },
-    searchInput: {
-        flex: 1,
+    filterTitle: {
+        color: COLORS.white,
         fontSize: 18,
-        color: theme.colors.text,
-        paddingVertical: 4,
+        fontWeight: '700',
     },
-    searchSection: {
-        marginBottom: 16,
-    },
-    searchSectionHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-        marginBottom: 10,
-    },
-    searchSectionTitle: {
-        fontSize: 15,
-        fontWeight: "bold",
-        color: theme.colors.secondary,
-    },
-    searchItem: {
-        paddingVertical: 5,
-    },
-    searchItemText: {
+    filterReset: {
+        color: COLORS.textMuted,
         fontSize: 14,
-        color: theme.colors.text,
+        fontWeight: '600',
     },
-    searchValidateButton: {
-        backgroundColor: theme.colors.secondary,
+    filterContent: {
+        padding: 20,
+        paddingBottom: 160,
+        gap: 24,
+    },
+    filterSection: {
+        gap: 12,
+    },
+    filterSectionTitle: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    chipWrap: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 10,
+    },
+    chip: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 999,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: COLORS.surfaceDark,
+    },
+    chipActive: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+        shadowColor: COLORS.primary,
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 6 },
+    },
+    chipHighlighted: {
+        backgroundColor: 'rgba(244,123,37,0.15)',
+        borderColor: 'rgba(244,123,37,0.4)',
+    },
+    chipLabel: {
+        color: COLORS.textMuted,
+        fontWeight: '600',
+    },
+    chipLabelActive: {
+        color: COLORS.white,
+    },
+    chipLabelHighlighted: {
+        color: COLORS.primary,
+    },
+    priceRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    priceButton: {
+        flex: 1,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: COLORS.surfaceDark,
+        paddingVertical: 14,
+        alignItems: 'center',
+    },
+    priceButtonActive: {
+        backgroundColor: COLORS.primary,
+        borderColor: COLORS.primary,
+        shadowColor: COLORS.primary,
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
+    },
+    priceButtonText: {
+        color: COLORS.textMuted,
+        fontWeight: '700',
+        fontSize: 14,
+    },
+    priceButtonTextActive: {
+        color: COLORS.white,
+    },
+    filterFooter: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 20,
+        paddingBottom: 32,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: 'rgba(255,255,255,0.08)',
+        backgroundColor: 'rgba(0,0,0,0.7)',
+    },
+    validateButton: {
+        height: 56,
+        borderRadius: 16,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: COLORS.primary,
+        shadowOpacity: 0.4,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 10 },
+    },
+    validateLabel: {
+        color: COLORS.white,
+        fontSize: 16,
+        fontWeight: '800',
+        letterSpacing: 1,
+    },
+
+    // Search Area Button
+    searchAreaButtonContainer: {
+        position: 'absolute',
+        top: 160,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 30,
+    },
+    searchAreaButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 20,
         paddingVertical: 12,
-        borderRadius: 22,
-        alignItems: "center",
-        marginTop: 12,
+        borderRadius: 24,
+        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        gap: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 16,
+        elevation: 8,
     },
-    searchValidateButtonText: {
-        fontSize: 15,
-        fontWeight: "bold",
-        fontStyle: "italic",
-        color: theme.colors.primary,
+    searchAreaButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: COLORS.white,
+    },
+
+    // Empty State
+    emptyStateContainer: {
+        position: 'absolute',
+        top: 150,
+        left: 16,
+        right: 16,
+        zIndex: 20,
+    },
+    emptyStateCard: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        padding: 16,
+        borderRadius: 16,
+        backgroundColor: 'rgba(30, 41, 59, 0.95)',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.6,
+        shadowRadius: 32,
+        elevation: 10,
+        gap: 12,
+    },
+    emptyStateIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyStateContent: {
+        flex: 1,
+    },
+    emptyStateTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: COLORS.white,
+        marginBottom: 4,
+    },
+    emptyStateSubtitle: {
+        fontSize: 12,
+        color: COLORS.slate400,
+        lineHeight: 18,
     },
 });
 

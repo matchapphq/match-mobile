@@ -1,615 +1,843 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import {
     View,
     Text,
-    StyleSheet,
-    TouchableOpacity,
-    ScrollView,
-    ImageBackground,
-    Image,
-    Animated,
     TextInput,
-    Alert,
+    TouchableOpacity,
+    StyleSheet,
     Modal,
     FlatList,
-    ActivityIndicator,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialIcons } from "@expo/vector-icons";
+import { createStackNavigator } from "@react-navigation/stack";
+import type { StackScreenProps } from "@react-navigation/stack";
 import { useNavigation } from "@react-navigation/native";
-import { theme, images } from "../constants/theme";
+import OnboardingLayout from "./onboarding/OnboardingLayout";
+import { sharedStyles, BRAND_PRIMARY, SUCCESS } from "./onboarding/styles";
+import {
+    USERNAME_SUGGESTIONS,
+    SPORTS_OPTIONS,
+    MOOD_OPTIONS,
+    VENUE_OPTIONS,
+    BUDGET_OPTIONS,
+} from "./onboarding/options";
+import { useOnboardingForm } from "../store/useOnboardingForm";
 import { useStore } from "../store/useStore";
 
-type OnboardingStep = "credentials" | "sports" | "ambiance" | "food" | "budget";
-
-const OnboardingScreen = () => {
-    const navigation = useNavigation<any>();
-    const { signup, isLoading } = useStore();
-    const [currentStep, setCurrentStep] =
-        useState<OnboardingStep>("credentials");
-
-    // Country code state
-    const [countryCodeModalVisible, setCountryCodeModalVisible] = useState(false);
-    const [selectedCountry, setSelectedCountry] = useState({
-        code: "+33",
-        flag: "🇫🇷",
-        name: "France",
-    });
-
-    const [selections, setSelections] = useState({
-        sports: [] as string[],
-        ambiance: [] as string[],
-        foodTypes: [] as string[],
-        budget: "" as string,
-    });
-
-    const [credentials, setCredentials] = useState({
-        firstName: "",
-        lastName: "",
-        email: "",
-        password: "",
-        phoneNumber: "",
-    });
-
-    const countryOptions = [
-        { code: "+33", flag: "🇫🇷", name: "France" },
-        { code: "+1", flag: "🇺🇸", name: "United States" },
-        { code: "+44", flag: "🇬🇧", name: "United Kingdom" },
-        { code: "+49", flag: "🇩🇪", name: "Germany" },
-        { code: "+34", flag: "🇪🇸", name: "Spain" },
-        { code: "+39", flag: "🇮🇹", name: "Italy" },
-        { code: "+351", flag: "🇵🇹", name: "Portugal" },
-        { code: "+32", flag: "🇧🇪", name: "Belgium" },
-        { code: "+41", flag: "🇨🇭", name: "Switzerland" },
-        { code: "+86", flag: "🇨🇳", name: "China" }
-    ];
-
-    const sportsOptions = [
-        { id: "foot", label: "Foot", icon: "⚽" },
-        { id: "rugby", label: "Rugby", icon: "🏉" },
-        { id: "basket", label: "Basket", icon: "🏀" },
-        { id: "tennis", label: "Tennis", icon: "🎾" },
-    ];
-
-    const ambianceOptions = [
-        { id: "posee", label: "Posée", icon: "😌" },
-        { id: "chaude", label: "Ultra / Ambiance chaude", icon: "🔥" },
-        { id: "conviviale", label: "Conviviale", icon: "🤗" },
-    ];
-
-    const foodOptions = [
-        { id: "restaurant", label: "Restaurant", icon: "🍴" },
-        { id: "bar", label: "Bars / Pubs", icon: "🍺" },
-        { id: "fastfood", label: "Fast-foods", icon: "🍔" },
-    ];
-
-    const budgetOptions = [
-        { id: "5-10", label: "5-10 €" },
-        { id: "10-20", label: "10-20 €" },
-        { id: "+20", label: "+20 €" },
-    ];
-
-    const handleCredentialChange = (name: string, value: string) => {
-        setCredentials((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const toggleSelection = (
-        category: "sports" | "ambiance" | "foodTypes",
-        item: string,
-    ) => {
-        setSelections((prev) => ({
-            ...prev,
-            [category]: prev[category].includes(item)
-                ? prev[category].filter((i) => i !== item)
-                : [...prev[category], item],
-        }));
-    };
-
-    const selectBudget = (budget: string) => {
-        setSelections((prev) => ({ ...prev, budget }));
-    };
-
-    const handleContinue = () => {
-        switch (currentStep) {
-            case "credentials":
-                setCurrentStep("sports");
-                break;
-            case "sports":
-                setCurrentStep("ambiance");
-                break;
-            case "ambiance":
-                setCurrentStep("food");
-                break;
-            case "food":
-                setCurrentStep("budget");
-                break;
-            case "budget":
-                completeOnboarding();
-                break;
-        }
-    };
-
-    const completeOnboarding = async () => {
-        const success = await signup({
-            ...credentials,
-            phone: `${selectedCountry.code}${credentials.phoneNumber}`,
-            ...selections,
-        });
-
-        if (success) {
-            navigation.navigate("Main");
-        } else {
-            Alert.alert(
-                "Erreur",
-                "L'inscription a échoué. Veuillez réessayer.",
-            );
-        }
-    };
-
-    const renderCountryItem = ({ item }: { item: typeof countryOptions[0] }) => (
-        <TouchableOpacity
-            style={styles.countryItem}
-            onPress={() => {
-                setSelectedCountry(item);
-                setCountryCodeModalVisible(false);
-            }}
-        >
-            <Text style={styles.countryFlag}>{item.flag}</Text>
-            <Text style={styles.countryName}>{item.name}</Text>
-            <Text style={styles.countryCode}>{item.code}</Text>
-        </TouchableOpacity>
-    );
-
-    const renderCredentialsStep = () => (
-        <>
-            <Text style={styles.title}>Créez votre compte</Text>
-            <View style={styles.optionsContainer}>
-                <TextInput
-                    style={styles.input}
-                    placeholder="Prénom"
-                    value={credentials.firstName}
-                    onChangeText={(val) =>
-                        handleCredentialChange("firstName", val)
-                    }
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Nom"
-                    value={credentials.lastName}
-                    onChangeText={(val) =>
-                        handleCredentialChange("lastName", val)
-                    }
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Email"
-                    value={credentials.email}
-                    onChangeText={(val) => handleCredentialChange("email", val)}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                />
-
-                {/* Phone Number Input with Country Code */}
-                <View style={styles.phoneInputContainer}>
-                    <TouchableOpacity
-                        style={styles.countrySelector}
-                        onPress={() => setCountryCodeModalVisible(true)}
-                    >
-                        <Text style={styles.countrySelectorText}>
-                            {selectedCountry.flag} {selectedCountry.code}
-                        </Text>
-                    </TouchableOpacity>
-                    <TextInput
-                        style={styles.phoneInput}
-                        placeholder="Téléphone"
-                        value={credentials.phoneNumber}
-                        onChangeText={(val) =>
-                            handleCredentialChange("phoneNumber", val)
-                        }
-                        keyboardType="phone-pad"
-                    />
-                </View>
-
-                <TextInput
-                    style={styles.input}
-                    placeholder="Mot de passe"
-                    value={credentials.password}
-                    onChangeText={(val) =>
-                        handleCredentialChange("password", val)
-                    }
-                    secureTextEntry
-                />
-            </View>
-
-            {/* Country Code Selection Modal */}
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={countryCodeModalVisible}
-                onRequestClose={() => setCountryCodeModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Choisir un pays</Text>
-                            <TouchableOpacity
-                                onPress={() => setCountryCodeModalVisible(false)}
-                            >
-                                <Text style={styles.closeButton}>Fermer</Text>
-                            </TouchableOpacity>
-                        </View>
-                        <FlatList
-                            data={countryOptions}
-                            renderItem={renderCountryItem}
-                            keyExtractor={(item) => item.code}
-                            showsVerticalScrollIndicator={false}
-                        />
-                    </View>
-                </View>
-            </Modal>
-        </>
-    );
-
-    const renderSportsStep = () => (
-        <>
-            <Text style={styles.title}>Quels sports t'intéressent ?</Text>
-            <Text style={styles.subtitle}>Sélectionne 1 ou plusieurs</Text>
-            <View style={styles.optionsContainer}>
-                {sportsOptions.map((option) => (
-                    <TouchableOpacity
-                        key={option.id}
-                        style={[
-                            styles.optionButton,
-                            selections.sports.includes(option.id) &&
-                            styles.optionButtonSelected,
-                        ]}
-                        onPress={() => toggleSelection("sports", option.id)}
-                    >
-                        <Text style={styles.optionIcon}>{option.icon}</Text>
-                        <Text
-                            style={[
-                                styles.optionLabel,
-                                selections.sports.includes(option.id) &&
-                                styles.optionLabelSelected,
-                            ]}
-                        >
-                            {option.label}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-                <TouchableOpacity style={styles.optionButton}>
-                    <Text style={styles.optionLabel}>Ajouter</Text>
-                </TouchableOpacity>
-            </View>
-        </>
-    );
-
-    const renderAmbianceStep = () => (
-        <>
-            <Text style={styles.title}>Quelle ambiance préfères-tu</Text>
-            <Text style={styles.subtitle}>Sélectionne 1 ou plusieurs</Text>
-            <View style={styles.optionsContainer}>
-                {ambianceOptions.map((option) => (
-                    <TouchableOpacity
-                        key={option.id}
-                        style={[
-                            styles.optionButton,
-                            selections.ambiance.includes(option.id) &&
-                            styles.optionButtonSelected,
-                        ]}
-                        onPress={() => toggleSelection("ambiance", option.id)}
-                    >
-                        <Text style={styles.optionIcon}>{option.icon}</Text>
-                        <Text
-                            style={[
-                                styles.optionLabel,
-                                selections.ambiance.includes(option.id) &&
-                                styles.optionLabelSelected,
-                            ]}
-                        >
-                            {option.label}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-        </>
-    );
-
-    const renderFoodStep = () => (
-        <>
-            <Text style={styles.title}>Plutôt bar ou fast-food ?</Text>
-            <View style={styles.optionsContainer}>
-                {foodOptions.map((option) => (
-                    <TouchableOpacity
-                        key={option.id}
-                        style={[
-                            styles.optionButton,
-                            selections.foodTypes.includes(option.id) &&
-                            styles.optionButtonSelected,
-                        ]}
-                        onPress={() => toggleSelection("foodTypes", option.id)}
-                    >
-                        <Text style={styles.optionIcon}>{option.icon}</Text>
-                        <Text
-                            style={[
-                                styles.optionLabel,
-                                selections.foodTypes.includes(option.id) &&
-                                styles.optionLabelSelected,
-                            ]}
-                        >
-                            {option.label}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-        </>
-    );
-
-    const renderBudgetStep = () => (
-        <>
-            <Text style={styles.title}>Ton budget habituel ?</Text>
-            <View style={styles.optionsContainer}>
-                {budgetOptions.map((option) => (
-                    <TouchableOpacity
-                        key={option.id}
-                        style={[
-                            styles.optionButton,
-                            selections.budget === option.id &&
-                            styles.optionButtonSelected,
-                        ]}
-                        onPress={() => selectBudget(option.id)}
-                    >
-                        <Text
-                            style={[
-                                styles.optionLabel,
-                                selections.budget === option.id &&
-                                styles.optionLabelSelected,
-                            ]}
-                        >
-                            {option.label}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-        </>
-    );
-
-    const isStepValid = () => {
-        switch (currentStep) {
-            case "credentials":
-                return (
-                    credentials.email.includes("@") &&
-                    credentials.password.length >= 6 &&
-                    credentials.firstName.length > 0 &&
-                    credentials.lastName.length > 0 &&
-                    credentials.phoneNumber.length > 0
-                );
-            case "sports":
-                return selections.sports.length > 0;
-            case "ambiance":
-                return selections.ambiance.length > 0;
-            case "food":
-                return selections.foodTypes.length > 0;
-            case "budget":
-                return selections.budget !== "";
-            default:
-                return false;
-        }
-    };
-
-    return (
-        <ImageBackground
-            source={images.background}
-            style={styles.container}
-            resizeMode="cover"
-        >
-            <SafeAreaView style={styles.safeArea}>
-                <View style={styles.logoContainer}>
-                    <Image
-                        source={images.logo}
-                        style={styles.logoImage}
-                        resizeMode="contain"
-                    />
-                </View>
-
-                <ScrollView
-                    contentContainerStyle={styles.content}
-                    showsVerticalScrollIndicator={false}
-                >
-                    {currentStep === "credentials" && renderCredentialsStep()}
-                    {currentStep === "sports" && renderSportsStep()}
-                    {currentStep === "ambiance" && renderAmbianceStep()}
-                    {currentStep === "food" && renderFoodStep()}
-                    {currentStep === "budget" && renderBudgetStep()}
-                </ScrollView>
-
-                <TouchableOpacity
-                    style={[
-                        styles.continueButton,
-                        (!isStepValid() || isLoading) && styles.continueButtonDisabled,
-                    ]}
-                    onPress={handleContinue}
-                    disabled={!isStepValid() || isLoading}
-                    activeOpacity={0.8}
-                >
-                    {isLoading ? (
-                        <ActivityIndicator
-                            size="small"
-                            color={theme.colors.primary}
-                        />
-                    ) : (
-                        <Text style={styles.continueButtonText}>Continuer</Text>
-                    )}
-                </TouchableOpacity>
-            </SafeAreaView>
-        </ImageBackground>
-    );
+type OnboardingStackParamList = {
+    OnboardingName: undefined;
+    OnboardingContact: undefined;
+    OnboardingSecurity: undefined;
+    OnboardingUsername: undefined;
+    OnboardingSports: undefined;
+    OnboardingMood: undefined;
+    OnboardingVenue: undefined;
+    OnboardingBudget: undefined;
 };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: theme.colors.background,
-    },
-    safeArea: {
-        flex: 1,
-    },
-    logoContainer: {
-        alignItems: "center",
-        paddingTop: theme.spacing.md,
-    },
-    logoImage: {
-        width: 100,
-        height: 100,
-    },
-    content: {
-        flexGrow: 1,
-        paddingHorizontal: theme.spacing.lg,
-        paddingTop: theme.spacing.xxl,
-    },
-    title: {
-        fontSize: theme.fonts.sizes.xl,
-        fontWeight: "bold",
-        color: theme.colors.secondary,
+const Stack = createStackNavigator<OnboardingStackParamList>();
+
+const COUNTRY_OPTIONS = [
+    { code: "FR", flag: "🇫🇷", name: "France", dialCode: "+33", maxLength: 9, pattern: "# ## ## ## ##" },
+    { code: "CN", flag: "🇨🇳", name: "Chine", dialCode: "+86", maxLength: 11, pattern: "### #### ####" },
+    { code: "US", flag: "🇺🇸", name: "États-Unis", dialCode: "+1", maxLength: 10, pattern: "(###) ###-####" },
+    { code: "GB", flag: "🇬🇧", name: "Royaume-Uni", dialCode: "+44", maxLength: 10, pattern: "#### ######" },
+    { code: "ES", flag: "🇪🇸", name: "Espagne", dialCode: "+34", maxLength: 9, pattern: "### ### ###" },
+    { code: "DE", flag: "🇩🇪", name: "Allemagne", dialCode: "+49", maxLength: 11, pattern: "#### #######" },
+    { code: "BE", flag: "🇧🇪", name: "Belgique", dialCode: "+32", maxLength: 9, pattern: "### ## ## ##" },
+];
+
+const formatPhoneNumber = (value: string, pattern: string) => {
+    const cleaned = value.replace(/\D/g, "");
+    let result = "";
+    let vIndex = 0;
+    
+    for (let i = 0; i < pattern.length; i++) {
+        if (vIndex >= cleaned.length) break;
+        if (pattern[i] === "#") {
+            result += cleaned[vIndex++];
+        } else {
+            result += pattern[i];
+        }
+    }
+    return result;
+};
+
+const localStyles = StyleSheet.create({
+    errorText: {
+        color: "#ff6b6b",
         textAlign: "center",
-        marginBottom: theme.spacing.sm,
+        marginTop: 16,
     },
-    subtitle: {
-        fontSize: theme.fonts.sizes.md,
-        color: theme.colors.secondary,
+    loadingText: {
+        fontSize: 12,
         textAlign: "center",
-        marginBottom: theme.spacing.xl,
-        opacity: 0.8,
-    },
-    optionsContainer: {
-        alignItems: "center",
-        gap: theme.spacing.md,
-    },
-    optionButton: {
-        backgroundColor: theme.colors.secondary,
-        paddingHorizontal: theme.spacing.xl,
-        paddingVertical: theme.spacing.md,
-        borderRadius: theme.borderRadius.full,
-        minWidth: 250,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: theme.spacing.sm,
-    },
-    optionButtonSelected: {
-        backgroundColor: theme.colors.text,
-    },
-    optionIcon: {
-        fontSize: 20,
-    },
-    optionLabel: {
-        fontSize: theme.fonts.sizes.lg,
-        fontWeight: "600",
-        color: theme.colors.primary,
-    },
-    optionLabelSelected: {
-        color: theme.colors.secondary,
-    },
-    continueButton: {
-        backgroundColor: theme.colors.text,
-        paddingHorizontal: theme.spacing.xl,
-        paddingVertical: theme.spacing.md,
-        borderRadius: theme.borderRadius.full,
-        marginHorizontal: theme.spacing.lg,
-        marginBottom: theme.spacing.xl,
-    },
-    continueButtonDisabled: {
-        opacity: 0.5,
-    },
-    continueButtonText: {
-        color: theme.colors.primary,
-        fontSize: theme.fonts.sizes.lg,
-        fontWeight: "bold",
-        textAlign: "center",
-    },
-    input: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.md,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: 16,
-        color: theme.colors.text,
-        fontSize: theme.fonts.sizes.md,
-        width: "100%",
-    },
-    phoneInputContainer: {
-        flexDirection: "row",
-        width: "100%",
-        gap: theme.spacing.sm,
-    },
-    countrySelector: {
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.md,
-        paddingHorizontal: theme.spacing.md,
-        justifyContent: "center",
-        alignItems: "center",
-        minWidth: 80,
-    },
-    countrySelectorText: {
-        color: theme.colors.text,
-        fontSize: theme.fonts.sizes.md,
-        fontWeight: "bold",
-    },
-    phoneInput: {
-        flex: 1,
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.borderRadius.md,
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: 16,
-        color: theme.colors.text,
-        fontSize: theme.fonts.sizes.md,
+        marginTop: 12,
+        color: "rgba(255,255,255,0.6)",
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: "rgba(0,0,0,0.5)",
+        backgroundColor: "rgba(0,0,0,0.8)",
         justifyContent: "flex-end",
     },
     modalContent: {
-        backgroundColor: theme.colors.background,
-        borderTopLeftRadius: theme.borderRadius.xl,
-        borderTopRightRadius: theme.borderRadius.xl,
-        padding: theme.spacing.lg,
-        height: "50%",
-    },
-    modalHeader: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: theme.spacing.lg,
+        backgroundColor: "#1c1c21",
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        padding: 24,
+        maxHeight: "70%",
     },
     modalTitle: {
-        fontSize: theme.fonts.sizes.lg,
-        fontWeight: "bold",
-        color: theme.colors.secondary,
-    },
-    closeButton: {
-        color: theme.colors.primary,
-        fontSize: theme.fonts.sizes.md,
+        fontSize: 18,
+        fontWeight: "700",
+        color: "#fff",
+        marginBottom: 16,
     },
     countryItem: {
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: theme.spacing.md,
+        paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: theme.colors.surface,
+        borderBottomColor: "rgba(255,255,255,0.08)",
     },
-    countryFlag: {
+    countryItemFlag: {
         fontSize: 24,
-        marginRight: theme.spacing.md,
+        marginRight: 12,
     },
-    countryName: {
+    countryItemName: {
+        fontSize: 16,
+        color: "#fff",
         flex: 1,
-        fontSize: theme.fonts.sizes.md,
-        color: theme.colors.text,
     },
-    countryCode: {
-        fontSize: theme.fonts.sizes.md,
-        color: theme.colors.secondary,
-        fontWeight: "bold",
+    countryItemCode: {
+        fontSize: 16,
+        color: "rgba(255,255,255,0.6)",
     },
 });
+
+type StepScreenProps<RouteName extends keyof OnboardingStackParamList> =
+    StackScreenProps<OnboardingStackParamList, RouteName>;
+
+const accent = { color: BRAND_PRIMARY };
+
+const NameStepScreen: React.FC<StepScreenProps<"OnboardingName">> = ({
+    navigation,
+}) => {
+    const { data, updateField } = useOnboardingForm();
+    const canContinue =
+        data.firstName.trim().length > 0 && data.lastName.trim().length > 0;
+
+    return (
+        <OnboardingLayout
+            step={1}
+            title={
+                <>
+                    Parlons de <Text style={accent}>toi</Text>
+                </>
+            }
+            subtitle="Dis-nous comment tu t'appelles pour personnaliser ton expérience sur Match."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("OnboardingContact")}
+            onBack={() => navigation.goBack()}
+            footerNote="En continuant, tu acceptes nos CGU et notre Politique de confidentialité."
+        >
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Prénom</Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <TextInput
+                        style={sharedStyles.input}
+                        placeholder="Ex: Thomas"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.firstName}
+                        onChangeText={(value) =>
+                            updateField("firstName", value)
+                        }
+                    />
+                    <MaterialIcons
+                        name="person"
+                        size={20}
+                        color="rgba(255,255,255,0.3)"
+                        style={sharedStyles.inputIcon}
+                    />
+                </View>
+            </View>
+
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Nom</Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <TextInput
+                        style={sharedStyles.input}
+                        placeholder="Ex: Dubois"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.lastName}
+                        onChangeText={(value) => updateField("lastName", value)}
+                    />
+                    <MaterialIcons
+                        name="badge"
+                        size={20}
+                        color="rgba(255,255,255,0.3)"
+                        style={sharedStyles.inputIcon}
+                    />
+                </View>
+            </View>
+        </OnboardingLayout>
+    );
+};
+
+const ContactStepScreen: React.FC<StepScreenProps<"OnboardingContact">> = ({
+    navigation,
+}) => {
+    const { data, updateField } = useOnboardingForm();
+    const [selectedCountry, setSelectedCountry] = useState(COUNTRY_OPTIONS[0]);
+    const [modalVisible, setModalVisible] = useState(false);
+
+    const canContinue =
+        data.email.includes("@") && 
+        data.phone.replace(/\D/g, "").length === selectedCountry.maxLength;
+
+    const handlePhoneChange = (text: string) => {
+        // Strip non-digits
+        const cleaned = text.replace(/\D/g, "");
+        // Truncate to max digits
+        const truncated = cleaned.slice(0, selectedCountry.maxLength);
+        // Format
+        const formatted = formatPhoneNumber(truncated, selectedCountry.pattern);
+        updateField("phone", formatted);
+    };
+
+    return (
+        <OnboardingLayout
+            step={2}
+            title="Coordonnées"
+            subtitle="Comment peut-on te joindre pour confirmer tes réservations ?"
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("OnboardingSecurity")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Adresse email</Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <MaterialIcons
+                        name="mail"
+                        size={20}
+                        color="rgba(255,255,255,0.5)"
+                        style={sharedStyles.inputIconLeft}
+                    />
+                    <TextInput
+                        style={[
+                            sharedStyles.input,
+                            sharedStyles.inputWithLeftIcon,
+                        ]}
+                        placeholder="Entrez votre email"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.email}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                        onChangeText={(value) => updateField("email", value)}
+                    />
+                    {data.email.includes("@") && (
+                        <MaterialIcons
+                            name="check-circle"
+                            size={20}
+                            color={SUCCESS}
+                            style={sharedStyles.inputIcon}
+                        />
+                    )}
+                </View>
+            </View>
+
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Numéro de téléphone</Text>
+                <View style={sharedStyles.phoneRow}>
+                    <TouchableOpacity
+                        style={sharedStyles.countryCode}
+                        onPress={() => setModalVisible(true)}
+                    >
+                        <Text style={sharedStyles.countryFlag}>{selectedCountry.flag}</Text>
+                        <Text style={sharedStyles.countryCodeText}>{selectedCountry.dialCode}</Text>
+                        <MaterialIcons
+                            name="expand-more"
+                            size={16}
+                            color="rgba(255,255,255,0.3)"
+                        />
+                    </TouchableOpacity>
+                    <View
+                        style={[
+                            sharedStyles.inputWrapper,
+                            sharedStyles.phoneInput,
+                        ]}
+                    >
+                        <TextInput
+                            style={sharedStyles.input}
+                            placeholder={selectedCountry.pattern.replace(/#/g, "0")}
+                            placeholderTextColor="rgba(255,255,255,0.2)"
+                            value={data.phone}
+                            onChangeText={handlePhoneChange}
+                            keyboardType="phone-pad"
+                            maxLength={selectedCountry.pattern.length}
+                        />
+                    </View>
+                </View>
+                <Text style={sharedStyles.hint}>
+                    Un code de vérification te sera envoyé par SMS.
+                </Text>
+            </View>
+
+            <Modal
+                visible={modalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <TouchableOpacity
+                    style={localStyles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setModalVisible(false)}
+                >
+                    <View style={localStyles.modalContent}>
+                        <Text style={localStyles.modalTitle}>Choisir un pays</Text>
+                        <FlatList
+                            data={COUNTRY_OPTIONS}
+                            keyExtractor={(item) => item.code}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={localStyles.countryItem}
+                                    onPress={() => {
+                                        setSelectedCountry(item);
+                                        // Reset phone when country changes to avoid mismatched formats
+                                        updateField("phone", "");
+                                        setModalVisible(false);
+                                    }}
+                                >
+                                    <Text style={localStyles.countryItemFlag}>{item.flag}</Text>
+                                    <Text style={localStyles.countryItemName}>{item.name}</Text>
+                                    <Text style={localStyles.countryItemCode}>{item.dialCode}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                    </View>
+                </TouchableOpacity>
+            </Modal>
+        </OnboardingLayout>
+    );
+};
+
+const SecurityStepScreen: React.FC<
+    StepScreenProps<"OnboardingSecurity">
+> = ({ navigation }) => {
+    const { data, updateField } = useOnboardingForm();
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const passwordsMatch =
+        data.password.trim().length >= 6 &&
+        data.password === data.confirmPassword &&
+        data.confirmPassword.length >= 6;
+
+    return (
+        <OnboardingLayout
+            step={3}
+            title="Sécurité"
+            subtitle="Protège ton compte en définissant un mot de passe sécurisé."
+            canContinue={passwordsMatch}
+            onNext={() => navigation.navigate("OnboardingUsername")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>Mot de passe</Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <MaterialIcons
+                        name="lock"
+                        size={20}
+                        color="rgba(255,255,255,0.5)"
+                        style={sharedStyles.inputIconLeft}
+                    />
+                    <TextInput
+                        style={[
+                            sharedStyles.input,
+                            sharedStyles.inputWithLeftIcon,
+                        ]}
+                        placeholder="••••••••"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.password}
+                        secureTextEntry={!showPassword}
+                        onChangeText={(value) => updateField("password", value)}
+                    />
+                    <TouchableOpacity
+                        style={sharedStyles.visibilityBtn}
+                        onPress={() => setShowPassword(!showPassword)}
+                    >
+                        <MaterialIcons
+                            name={
+                                showPassword ? "visibility-off" : "visibility"
+                            }
+                            size={20}
+                            color="rgba(255,255,255,0.4)"
+                        />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <View style={sharedStyles.formGroup}>
+                <Text style={sharedStyles.label}>
+                    Confirmer le mot de passe
+                </Text>
+                <View style={sharedStyles.inputWrapper}>
+                    <MaterialIcons
+                        name="lock-reset"
+                        size={20}
+                        color="rgba(255,255,255,0.5)"
+                        style={sharedStyles.inputIconLeft}
+                    />
+                    <TextInput
+                        style={[
+                            sharedStyles.input,
+                            sharedStyles.inputWithLeftIcon,
+                        ]}
+                        placeholder="••••••••"
+                        placeholderTextColor="rgba(255,255,255,0.2)"
+                        value={data.confirmPassword}
+                        secureTextEntry={!showConfirmPassword}
+                        onChangeText={(value) =>
+                            updateField("confirmPassword", value)
+                        }
+                    />
+                    <TouchableOpacity
+                        style={sharedStyles.visibilityBtn}
+                        onPress={() =>
+                            setShowConfirmPassword(!showConfirmPassword)
+                        }
+                    >
+                        <MaterialIcons
+                            name={
+                                showConfirmPassword
+                                    ? "visibility-off"
+                                    : "visibility"
+                            }
+                            size={20}
+                            color="rgba(255,255,255,0.4)"
+                        />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </OnboardingLayout>
+    );
+};
+
+const UsernameStepScreen: React.FC<
+    StepScreenProps<"OnboardingUsername">
+> = ({ navigation }) => {
+    const { data, updateField } = useOnboardingForm();
+    const canContinue = data.username.trim().length >= 3;
+
+    return (
+        <OnboardingLayout
+            step={4}
+            title="Ton identité unique"
+            subtitle="Choisis un nom d'utilisateur pour que tes amis te trouvent facilement."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("OnboardingSports")}
+            onBack={() => navigation.goBack()}
+            footerNote="Tu pourras le modifier plus tard dans ton profil."
+        >
+            <View style={sharedStyles.usernameInputWrapper}>
+                <Text style={sharedStyles.atSymbol}>@</Text>
+                <TextInput
+                    style={sharedStyles.usernameInput}
+                    placeholder="username"
+                    placeholderTextColor="rgba(255,255,255,0.2)"
+                    value={data.username}
+                    autoCapitalize="none"
+                    onChangeText={(value) => updateField("username", value)}
+                />
+                {data.username.length > 2 && (
+                    <MaterialIcons
+                        name="check-circle"
+                        size={24}
+                        color={SUCCESS}
+                    />
+                )}
+            </View>
+            {data.username.length > 2 && (
+                <Text style={sharedStyles.availableText}>
+                    Ce nom d'utilisateur est disponible !
+                </Text>
+            )}
+
+            <View style={sharedStyles.suggestionsSection}>
+                <Text style={sharedStyles.suggestionsLabel}>SUGGESTIONS</Text>
+                <View style={sharedStyles.suggestionsRow}>
+                    {USERNAME_SUGGESTIONS.map((suggestion) => (
+                        <TouchableOpacity
+                            key={suggestion}
+                            style={sharedStyles.suggestionChip}
+                            onPress={() => updateField("username", suggestion)}
+                        >
+                            <Text style={sharedStyles.suggestionText}>
+                                {suggestion}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </View>
+        </OnboardingLayout>
+    );
+};
+
+const SportsStepScreen: React.FC<StepScreenProps<"OnboardingSports">> = ({
+    navigation,
+}) => {
+    const { data, toggleArrayValue } = useOnboardingForm();
+    const canContinue = data.fav_sports.length > 0;
+
+    return (
+        <OnboardingLayout
+            step={5}
+            title={
+                <>
+                    Quels sports {"\n"}
+                    <Text style={accent}>t'intéressent ?</Text>
+                </>
+            }
+            subtitle="Sélectionne tes favoris pour personnaliser ton flux et trouver les meilleurs bars."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("OnboardingMood")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.optionsList}>
+                {SPORTS_OPTIONS.map((sport) => {
+                    const isSelected = data.fav_sports.includes(sport.id);
+                    return (
+                        <TouchableOpacity
+                            key={sport.id}
+                            style={[
+                                sharedStyles.sportOption,
+                                isSelected && sharedStyles.sportOptionSelected,
+                            ]}
+                            onPress={() =>
+                                toggleArrayValue("fav_sports", sport.id)
+                            }
+                            activeOpacity={0.9}
+                        >
+                            <View style={sharedStyles.sportLeft}>
+                                <View
+                                    style={[
+                                        sharedStyles.sportIconWrapper,
+                                        isSelected &&
+                                            sharedStyles.sportIconSelected,
+                                    ]}
+                                >
+                                    <MaterialIcons
+                                        name={sport.icon}
+                                        size={28}
+                                        color={
+                                            isSelected
+                                                ? "#fff"
+                                                : "rgba(255,255,255,0.4)"
+                                        }
+                                    />
+                                </View>
+                                <Text
+                                    style={[
+                                        sharedStyles.sportLabel,
+                                        isSelected &&
+                                            sharedStyles.sportLabelSelected,
+                                    ]}
+                                >
+                                    {sport.label}
+                                </Text>
+                            </View>
+                            {isSelected ? (
+                                <View style={sharedStyles.checkCircle}>
+                                    <MaterialIcons
+                                        name="check"
+                                        size={20}
+                                        color={BRAND_PRIMARY}
+                                    />
+                                </View>
+                            ) : (
+                                <MaterialIcons
+                                    name="add-circle"
+                                    size={24}
+                                    color="rgba(255,255,255,0.3)"
+                                />
+                            )}
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </OnboardingLayout>
+    );
+};
+
+const MoodStepScreen: React.FC<StepScreenProps<"OnboardingMood">> = ({
+    navigation,
+}) => {
+    const { data, updateField } = useOnboardingForm();
+    const canContinue = Boolean(data.ambiances[0]);
+
+    const handleSelectMood = (id: string) => {
+        updateField("ambiances", [id]);
+    };
+
+    return (
+        <OnboardingLayout
+            step={6}
+            title="Quelle ambiance ?"
+            subtitle="Choisis ton style pour que nous puissions te proposer les meilleurs spots."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("OnboardingVenue")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.moodGrid}>
+                {MOOD_OPTIONS.map((mood) => {
+                    const isSelected = data.ambiances.includes(mood.id);
+                    return (
+                        <TouchableOpacity
+                            key={mood.id}
+                            style={[
+                                sharedStyles.moodCard,
+                                isSelected && sharedStyles.moodCardSelected,
+                            ]}
+                            onPress={() => handleSelectMood(mood.id)}
+                            activeOpacity={0.9}
+                        >
+                            <MaterialIcons
+                                name={mood.icon}
+                                size={48}
+                                color={
+                                    isSelected
+                                        ? BRAND_PRIMARY
+                                        : "rgba(255,255,255,0.3)"
+                                }
+                            />
+                            <Text
+                                style={[
+                                    sharedStyles.moodLabel,
+                                    isSelected &&
+                                        sharedStyles.moodLabelSelected,
+                                ]}
+                            >
+                                {mood.label}
+                            </Text>
+                            <Text style={sharedStyles.moodSubtitle}>
+                                {mood.subtitle}
+                            </Text>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </OnboardingLayout>
+    );
+};
+
+const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
+    navigation,
+}) => {
+    const { data, updateField } = useOnboardingForm();
+    const canContinue = data.venue_types.length > 0;
+
+    const handleSelectVenue = (id: string) => {
+        updateField("venue_types", [id]);
+    };
+
+    return (
+        <OnboardingLayout
+            step={7}
+            title={
+                <>
+                    Quel est votre {"\n"}
+                    <Text style={accent}>style ?</Text>
+                </>
+            }
+            subtitle="Choisis l'ambiance qui correspond à ton envie du moment."
+            canContinue={canContinue}
+            onNext={() => navigation.navigate("OnboardingBudget")}
+            onBack={() => navigation.goBack()}
+        >
+            <View style={sharedStyles.optionsList}>
+                {VENUE_OPTIONS.map((venue) => {
+                    const isSelected = data.venue_types.includes(venue.id);
+                    return (
+                        <TouchableOpacity
+                            key={venue.id}
+                            style={[
+                                sharedStyles.venueOption,
+                                isSelected && sharedStyles.venueOptionSelected,
+                            ]}
+                            onPress={() => handleSelectVenue(venue.id)}
+                            activeOpacity={0.9}
+                        >
+                            <View style={sharedStyles.venueLeft}>
+                                <View
+                                    style={[
+                                        sharedStyles.venueIconWrapper,
+                                        isSelected &&
+                                            sharedStyles.venueIconSelected,
+                                    ]}
+                                >
+                                    <MaterialIcons
+                                        name={venue.icon}
+                                        size={26}
+                                        color={
+                                            isSelected
+                                                ? "#000"
+                                                : "rgba(255,255,255,0.4)"
+                                        }
+                                    />
+                                </View>
+                                <View style={sharedStyles.venueTexts}>
+                                    <Text
+                                        style={[
+                                            sharedStyles.venueLabel,
+                                            isSelected &&
+                                                sharedStyles.venueLabelSelected,
+                                        ]}
+                                    >
+                                        {venue.label}
+                                    </Text>
+                                    <Text style={sharedStyles.venueSubtitle}>
+                                        {venue.subtitle}
+                                    </Text>
+                                </View>
+                            </View>
+                            <View
+                                style={[
+                                    sharedStyles.radioCircle,
+                                    isSelected &&
+                                        sharedStyles.radioCircleSelected,
+                                ]}
+                            >
+                                {isSelected && (
+                                    <MaterialIcons
+                                        name="check"
+                                        size={16}
+                                        color="#000"
+                                    />
+                                )}
+                            </View>
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </OnboardingLayout>
+    );
+};
+
+const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
+    navigation,
+}) => {
+    const { data, updateField, buildRequestPayload, reset } =
+        useOnboardingForm();
+    const signup = useStore((state) => state.signup);
+    const isLoading = useStore((state) => state.isLoading);
+    const storeError = useStore((state) => state.error);
+    const [submissionError, setSubmissionError] = useState<string | null>(null);
+    const rootNavigation = useNavigation<any>();
+
+    const handleNext = async () => {
+        if (!data.budget || isLoading) return;
+        setSubmissionError(null);
+        const payload = buildRequestPayload();
+        const success = await signup(payload);
+        if (success) {
+            reset();
+            rootNavigation.reset({
+                index: 0,
+                routes: [{ name: "Tab" }],
+            });
+        } else {
+            setSubmissionError(
+                "Impossible de finaliser ton compte pour le moment. Réessaie dans un instant.",
+            );
+        }
+    };
+
+    return (
+        <OnboardingLayout
+            step={8}
+            title={<>Quel est {"\n"}votre budget ?</>}
+            subtitle="Nous trouverons les bars qui correspondent à tes attentes."
+            canContinue={Boolean(data.budget) && !isLoading}
+            nextLabel={isLoading ? "Connexion..." : "Terminer"}
+            onNext={handleNext}
+            onBack={() => navigation.goBack()}
+            footerNote="Choix modifiable plus tard dans les réglages."
+        >
+            <View style={sharedStyles.budgetList}>
+                {BUDGET_OPTIONS.map((budget) => {
+                    const isSelected = data.budget === budget.id;
+                    return (
+                        <TouchableOpacity
+                            key={budget.id}
+                            style={[
+                                sharedStyles.budgetOption,
+                                isSelected && sharedStyles.budgetOptionSelected,
+                            ]}
+                            onPress={() => updateField("budget", budget.id)}
+                            activeOpacity={0.9}
+                        >
+                            <View style={sharedStyles.budgetCenter}>
+                                <Text style={sharedStyles.budgetAmount}>
+                                    {budget.label}
+                                </Text>
+                                <Text style={sharedStyles.budgetTier}>
+                                    {budget.subtitle}
+                                </Text>
+                            </View>
+                            {isSelected && (
+                                <View style={sharedStyles.budgetCheck}>
+                                    <MaterialIcons
+                                        name="check-circle"
+                                        size={24}
+                                        color={BRAND_PRIMARY}
+                                    />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    );
+                })}
+            </View>
+        </OnboardingLayout>
+    );
+};
+
+const OnboardingScreen = () => {
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Screen
+                name="OnboardingName"
+                component={NameStepScreen}
+            />
+            <Stack.Screen
+                name="OnboardingContact"
+                component={ContactStepScreen}
+            />
+            <Stack.Screen
+                name="OnboardingSecurity"
+                component={SecurityStepScreen}
+            />
+            <Stack.Screen
+                name="OnboardingUsername"
+                component={UsernameStepScreen}
+            />
+            <Stack.Screen
+                name="OnboardingSports"
+                component={SportsStepScreen}
+            />
+            <Stack.Screen
+                name="OnboardingMood"
+                component={MoodStepScreen}
+            />
+            <Stack.Screen
+                name="OnboardingVenue"
+                component={VenueStepScreen}
+            />
+            <Stack.Screen
+                name="OnboardingBudget"
+                component={BudgetStepScreen}
+            />
+        </Stack.Navigator>
+    );
+};
 
 export default OnboardingScreen;
