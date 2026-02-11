@@ -9,6 +9,7 @@ import {
     StatusBar,
     ActivityIndicator,
     Dimensions,
+    Platform,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -262,20 +263,38 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                         {/* Top Header Buttons */}
                         <View style={[styles.headerButtons, { paddingTop: insets.top + 12 }]}>
                             <TouchableOpacity style={styles.headerButton} onPress={handleBack}>
-                                <BlurView intensity={30} tint="dark" style={styles.headerButtonBlur}>
-                                    <MaterialIcons name="arrow-back" size={22} color={COLORS.white} />
-                                </BlurView>
+                                {Platform.OS === 'ios' ? (
+                                    <BlurView intensity={30} tint="dark" style={styles.headerButtonBlur}>
+                                        <MaterialIcons name="arrow-back" size={22} color={COLORS.white} />
+                                    </BlurView>
+                                ) : (
+                                    <View style={[styles.headerButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                                        <MaterialIcons name="arrow-back" size={22} color={COLORS.white} />
+                                    </View>
+                                )}
                             </TouchableOpacity>
                             <View style={styles.headerButtonsRight}>
                                 <TouchableOpacity style={styles.headerButton}>
-                                    <BlurView intensity={30} tint="dark" style={styles.headerButtonBlur}>
-                                        <MaterialIcons name="notifications-none" size={22} color={COLORS.white} />
-                                    </BlurView>
+                                    {Platform.OS === 'ios' ? (
+                                        <BlurView intensity={30} tint="dark" style={styles.headerButtonBlur}>
+                                            <MaterialIcons name="notifications-none" size={22} color={COLORS.white} />
+                                        </BlurView>
+                                    ) : (
+                                        <View style={[styles.headerButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                                            <MaterialIcons name="notifications-none" size={22} color={COLORS.white} />
+                                        </View>
+                                    )}
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.headerButton}>
-                                    <BlurView intensity={30} tint="dark" style={styles.headerButtonBlur}>
-                                        <MaterialIcons name="share" size={22} color={COLORS.white} />
-                                    </BlurView>
+                                    {Platform.OS === 'ios' ? (
+                                        <BlurView intensity={30} tint="dark" style={styles.headerButtonBlur}>
+                                            <MaterialIcons name="share" size={22} color={COLORS.white} />
+                                        </BlurView>
+                                    ) : (
+                                        <View style={[styles.headerButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                                            <MaterialIcons name="share" size={22} color={COLORS.white} />
+                                        </View>
+                                    )}
                                 </TouchableOpacity>
                             </View>
                         </View>

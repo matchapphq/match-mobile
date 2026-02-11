@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from "react-native";
 import { BlurView } from "expo-blur";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useStore } from "../store/useStore";
@@ -13,11 +13,21 @@ interface BottomTabPillProps {
 const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) => {
     const { colors, themeMode } = useStore();
 
+    const TabBarWrapper = Platform.OS === 'ios' ? BlurView : View;
+    const wrapperProps = Platform.OS === 'ios'
+        ? { intensity: 80, tint: themeMode === 'light' ? 'light' : 'dark' }
+        : {};
+
     return (
-        <BlurView
-            intensity={80}
-            tint={themeMode === 'light' ? 'light' : 'dark'}
-            style={[styles.navBar, { borderColor: colors.border }]}
+        <TabBarWrapper
+            {...wrapperProps as any}
+            style={[
+                styles.navBar,
+                { borderColor: colors.border },
+                Platform.OS === 'android' && {
+                    backgroundColor: colors.background,
+                },
+            ]}
         >
             {state.routes.map((route: any, index: number) => {
                 const { options } = descriptors[route.key];
@@ -72,7 +82,7 @@ const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) =
                     />
                 );
             })}
-        </BlurView>
+        </TabBarWrapper>
     );
 };
 

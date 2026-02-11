@@ -34,11 +34,8 @@ const LoginScreen = () => {
             Alert.alert("Erreur", "Identifiants incorrects");
             return;
         }
-
-        navigation.reset({
-            index: 0,
-            routes: [{ name: "Tab", params: { screen: "Map" } }],
-        });
+        // Navigation is handled automatically by AppNavigator's conditional rendering
+        // when isAuthenticated changes to true — no manual reset needed.
     };
 
     const handleForgotPassword = () => {

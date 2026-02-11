@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, ImageBackground, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, ImageBackground, StatusBar, ActivityIndicator, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -115,9 +115,15 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             style={styles.imageGradient}
                         />
                         <TouchableOpacity style={[styles.backButton, { top: insets.top + 16 }]} onPress={handleBack}>
-                            <BlurView intensity={30} tint="dark" style={styles.backButtonBlur}>
-                                <MaterialIcons name="arrow-back-ios" size={20} color={COLORS.white} style={{ marginLeft: 6 }} />
-                            </BlurView>
+                            {Platform.OS === 'ios' ? (
+                                <BlurView intensity={30} tint="dark" style={styles.backButtonBlur}>
+                                    <MaterialIcons name="arrow-back-ios" size={20} color={COLORS.white} style={{ marginLeft: 6 }} />
+                                </BlurView>
+                            ) : (
+                                <View style={[styles.backButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                                    <MaterialIcons name="arrow-back-ios" size={20} color={COLORS.white} style={{ marginLeft: 6 }} />
+                                </View>
+                            )}
                         </TouchableOpacity>
                     </ImageBackground>
                 </View>
