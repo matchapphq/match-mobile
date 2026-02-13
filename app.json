@@ -33,10 +33,10 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
+      "apiBase": "https://api.matchapp.fr/api",
       "eas": {
-        "projectId": "1e086af0-e36f-4595-8a11-d3a89f870462"
-      },
-      "apiBase": "https://api.matchapp.fr/api"
+        "projectId": "b0afe468-de21-49eb-b749-5e26c466e72f"
+      }
     }
   }
 }
