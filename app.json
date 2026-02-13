@@ -2,6 +2,7 @@
   "expo": {
     "name": "Match",
     "slug": "match",
+    "scheme": "match",
     "version": "0.8.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,9 +15,12 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.rfl775.matchmobile",
+      "bundleIdentifier": "com.rfl775.match",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Match utilise votre position pour trouver les bars diffusant des matchs près de vous.",
+        "NSPhotoLibraryUsageDescription": "Match a besoin d'accéder à vos photos pour vous permettre de personnaliser votre profil.",
+        "NSCameraUsageDescription": "Match a besoin d'accéder à votre appareil photo pour vous permettre de prendre une photo de profil."
       }
     },
     "android": {
