@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.rfl775.match",
+      "bundleIdentifier": "com.matchapps.match",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Match utilise votre position pour trouver les bars diffusant des matchs près de vous.",
@@ -31,7 +31,7 @@
       "privacy": "https://matchapphq.github.io/match-privacy/",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.rfl775.match"
+      "package": "com.matchapps.match"
     },
     "web": {
       "favicon": "./assets/favicon.png"
