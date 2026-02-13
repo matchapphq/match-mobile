@@ -32,7 +32,6 @@
     "production": {
       "ios": {
         "appleId": "YOUR_APPLE_ID",
-        "ascAppIdentifier": "YOUR_ASC_APP_IDENTIFIER",
         "appleTeamId": "YOUR_APPLE_TEAM_ID"
       }
     }
