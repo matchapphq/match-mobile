@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import { useStore, transformApiReservation } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
 import { apiService, MatchVenue } from "../services/api";
 import type { Match, Reservation } from "../types";
 
@@ -104,6 +105,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
         refreshReservations,
     } = useStore();
     const insets = useSafeAreaInsets();
+    const posthog = usePostHog();
     const [guests, setGuests] = useState(4);
     const [specialRequest, setSpecialRequest] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -312,6 +314,13 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                 specialRequests: specialRequest.trim() ? specialRequest.trim() : undefined,
             });
 
+            posthog.capture("reservation_confirmed", {
+                venue_id: selectedMatch.venueMatchId,
+                match_id: selectedMatch.id,
+                party_size: guests,
+                venue_name: selectedMatch.venueName,
+            });
+
             const dateLabel = formatFullDateLabel(selectedDate) || selectedMatch.dateIso;
             const reference = response.reservation?.id || `#BK-${Date.now()}`;
             if (response.reservation) {
@@ -333,6 +342,12 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                 image: selectedMatch.bgImage,
             });
         } catch (error) {
+            posthog.capture("reservation_failed", {
+                venue_id: selectedMatch.venueMatchId,
+                match_id: selectedMatch.id,
+                party_size: guests,
+                reason: extractErrorMessage(error),
+            });
             removeReservation(tempId);
             setIsSubmitting(false);
             setReservationError(extractErrorMessage(error));
@@ -348,6 +363,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
         selectedMatch,
         specialRequest,
         updateReservation,
+        posthog,
     ]);
 
     const confirmDisabled = !selectedMatch || isSubmitting;

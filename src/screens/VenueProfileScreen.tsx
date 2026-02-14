@@ -9,10 +9,13 @@ import { COLORS } from '../constants/colors';
 import { mobileApi, Venue, VenueMatch } from '../services/mobileApi';
 
 import { useStore } from '../store/useStore';
+import { usePostHog } from "posthog-react-native";
+
 const { width } = Dimensions.get('window');
 
 const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const { colors, themeMode } = useStore();
+    const posthog = usePostHog();
     const insets = useSafeAreaInsets();
     const venueId: string | undefined = route?.params?.venueId;
     const [venue, setVenue] = useState<Venue | null>(null);
@@ -235,7 +238,13 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                     {/* Reserve Button */}
                     <TouchableOpacity
                         style={[styles.reserveButton, { backgroundColor: colors.primary }]}
-                        onPress={() => navigation.navigate("ReservationsScreen")}
+                        onPress={() => {
+                            posthog.capture("reservation_initiated", {
+                                venue_id: venue.id,
+                                venue_name: venue.name,
+                            });
+                            navigation.navigate("ReservationsScreen", { venue });
+                        }}
                     >
                         <MaterialIcons name="calendar-today" size={20} color={colors.white} />
                         <Text style={styles.reserveButtonText}>Réserver une table</Text>

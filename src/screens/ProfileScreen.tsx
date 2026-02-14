@@ -147,10 +147,7 @@ const ProfileScreen = () => {
         style: 'destructive',
         onPress: () => {
           logout();
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'Welcome' }],
-          });
+          // Navigation is handled automatically by AppNavigator's conditional rendering
         },
       },
     ]);
