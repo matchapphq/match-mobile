@@ -787,10 +787,7 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
             }
             
             reset();
-            rootNavigation.reset({
-                index: 0,
-                routes: [{ name: "Tab" }],
-            });
+            // Navigation is handled automatically by AppNavigator's conditional rendering
         } else {
             posthog.capture("signup_failed", { email: data.email });
             setSubmissionError(
