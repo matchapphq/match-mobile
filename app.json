@@ -5,7 +5,7 @@
     "scheme": "match",
     "version": "0.8.4",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo_app.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
