@@ -16,11 +16,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import { mobileApi, SearchMatchResult, SearchResult, SearchTrend } from "../services/mobileApi";
 import { useStore } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
 
 type TabFilter = "all" | "matches" | "venues";
 
 const SearchMenu = ({ navigation }: { navigation: any }) => {
     const { colors, themeMode } = useStore();
+    const posthog = usePostHog();
     const [searchQuery, setSearchQuery] = useState("");
     const filterAnim = useRef(new Animated.Value(0)).current;
     const activeContentAnim = useRef(new Animated.Value(0)).current;
@@ -153,6 +155,14 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
             }
 
             const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate);
+
+            if (!append && debouncedQuery.trim().length > 0) {
+                posthog.capture("venue_searched", {
+                    query: debouncedQuery,
+                    tab: activeTab,
+                    selected_date: selectedFilterDate,
+                });
+            }
 
             if (append) {
                 if (activeTab === "matches" || activeTab === "all") {
