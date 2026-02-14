@@ -40,9 +40,9 @@ export const AppNavigator = () => {
     return (
         <NavigationContainer>
             <PostHogProvider 
-                apiKey="phc_D5J8pzzDbu6lg71LqggFYi78bT4HDzpBryJObRAbhm4" 
+                apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY} 
                 options={{
-                    host: "https://us.i.posthog.com",
+                    host: process.env.EXPO_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
                 }}
             >
                 <Stack.Navigator

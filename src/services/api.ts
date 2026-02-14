@@ -11,6 +11,7 @@ import {
 import Constants from "expo-constants";
 import { cacheService } from "./cache";
 import { tokenStorage } from "../utils/tokenStorage";
+import PostHog from 'posthog-react-native';
 
 const API_BASE_URL = Constants.expoConfig?.extra?.apiBase || "http://localhost:8008/api";
 
@@ -20,6 +21,11 @@ const api = axios.create({
     headers: {
         "Content-Type": "application/json",
     },
+});
+
+// PostHog instance for background/service tracking
+const posthog = new PostHog(process.env.EXPO_PUBLIC_POSTHOG_API_KEY || "", {
+    host: process.env.EXPO_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
 });
 
 // Add auth token to requests
@@ -55,6 +61,15 @@ api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+
+        if (error.response?.status !== 401) {
+            posthog.capture("api_error", {
+                status: error.response?.status,
+                url: originalRequest.url,
+                method: originalRequest.method,
+                message: error.message,
+            });
+        }
 
         if (error.response?.status === 401 && !originalRequest._retry) {
             if (isRefreshing) {
