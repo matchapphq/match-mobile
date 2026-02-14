@@ -15,10 +15,12 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../constants/theme";
 import { useStore } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
 
 const LoginScreen = () => {
     const navigation = useNavigation<any>();
-    const { login, isLoading } = useStore();
+    const { login, isLoading, user } = useStore();
+    const posthog = usePostHog();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -31,9 +33,22 @@ const LoginScreen = () => {
 
         const success = await login(email, password);
         if (!success) {
+            posthog.capture("login_failed", { email });
             Alert.alert("Erreur", "Identifiants incorrects");
             return;
         }
+
+        // Identify user in PostHog
+        const userData = user?.user ?? user;
+        if (userData?.id) {
+            posthog.identify(userData.id, {
+                email: userData.email,
+                first_name: userData.first_name,
+                last_name: userData.last_name,
+            });
+            posthog.capture("login_success");
+        }
+        
         // Navigation is handled automatically by AppNavigator's conditional rendering
         // when isAuthenticated changes to true — no manual reset needed.
     };
