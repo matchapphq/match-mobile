@@ -3,7 +3,7 @@
     "name": "Match",
     "slug": "match",
     "scheme": "match",
-    "version": "0.8.3",
+    "version": "0.8.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
