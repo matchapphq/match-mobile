@@ -57,7 +57,10 @@ const DeleteAccountFinalScreen = () => {
                 password: password,
             });
             await logout();
-            Alert.alert("Compte supprimé", "Ton compte a été supprimé avec succès.");
+            navigation.reset({
+                index: 0,
+                routes: [{ name: "DeleteAccountSuccess" }],
+            });
         } catch (error: any) {
             console.error("Delete account error:", error);
             const errorMessage =
@@ -65,7 +68,6 @@ const DeleteAccountFinalScreen = () => {
                 error?.response?.data?.message ||
                 "Mot de passe incorrect ou erreur serveur.";
             Alert.alert("Erreur", errorMessage);
-        } finally {
             setIsDeleting(false);
         }
     };
