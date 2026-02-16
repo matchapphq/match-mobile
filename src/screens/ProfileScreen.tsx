@@ -96,20 +96,14 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
 const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { logout, user, themeMode, colors, updateUser, fetchUserProfile, isLoading } = useStore();
+  const { logout, user, themeMode, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading } = useStore();
   const userData = user?.user ?? user ?? null;
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useFocusEffect(
-    useCallback(() => {
-      fetchUserProfile();
-    }, [fetchUserProfile])
-  );
-
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchUserProfile();
+    await refreshUserProfile();
     setIsRefreshing(false);
   };
 
@@ -193,45 +187,39 @@ const ProfileScreen = () => {
         </View>
 
         <View style={styles.avatarSection}>
-          {isLoading && !isRefreshing ? (
-            <ActivityIndicator color={colors.primary} size="large" style={{ marginVertical: 40 }} />
-          ) : (
-            <>
-              <View style={styles.avatarWrapper}>
-                <ImageBackground
-                  source={{
-                    uri: profile.avatar,
-                  }}
-                  style={styles.avatar}
-                  imageStyle={{ borderRadius: 64 }}
-                />
-                <TouchableOpacity 
-                  style={[styles.avatarEditBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} 
-                  activeOpacity={0.9}
-                  onPress={handlePickImage}
-                >
-                  <MaterialIcons name="edit" size={22} color={colors.text} />
-                </TouchableOpacity>
-              </View>
-              <Text style={[styles.name, { color: colors.text }]}>
-                {profile.name}
-              </Text>
-              <Text style={[styles.memberSince, { color: colors.subtext }]}>{profile.email}</Text>
-              {profile.bio && (
-                <Text style={[styles.bioText, { color: colors.textSecondary }]}>{profile.bio}</Text>
-              )}
-              <TouchableOpacity
-                style={styles.badge}
-                activeOpacity={0.85}
-                onPress={() =>
-                  Alert.alert(`Avantages Membre ${profile.tier}`, "Accédez à vos avantages exclusifs prochainement.")
-                }
-              >
-                <MaterialIcons name="emoji-events" size={16} color={colors.primary} style={{ marginRight: 6 }} />
-                <Text style={[styles.badgeLabel, { color: colors.primary }]}>{profile.badgeLabel}</Text>
-              </TouchableOpacity>
-            </>
+          <View style={styles.avatarWrapper}>
+            <ImageBackground
+              source={{
+                uri: profile.avatar,
+              }}
+              style={styles.avatar}
+              imageStyle={{ borderRadius: 64 }}
+            />
+            <TouchableOpacity 
+              style={[styles.avatarEditBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} 
+              activeOpacity={0.9}
+              onPress={handlePickImage}
+            >
+              <MaterialIcons name="edit" size={22} color={colors.text} />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.name, { color: colors.text }]}>
+            {profile.name}
+          </Text>
+          <Text style={[styles.memberSince, { color: colors.subtext }]}>{profile.email}</Text>
+          {profile.bio && (
+            <Text style={[styles.bioText, { color: colors.textSecondary }]}>{profile.bio}</Text>
           )}
+          <TouchableOpacity
+            style={styles.badge}
+            activeOpacity={0.85}
+            onPress={() =>
+              Alert.alert(`Avantages Membre ${profile.tier}`, "Accédez à vos avantages exclusifs prochainement.")
+            }
+          >
+            <MaterialIcons name="emoji-events" size={16} color={colors.primary} style={{ marginRight: 6 }} />
+            <Text style={[styles.badgeLabel, { color: colors.primary }]}>{profile.badgeLabel}</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.sectionsWrapper}>
