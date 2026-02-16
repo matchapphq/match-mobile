@@ -1,8 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 
@@ -13,12 +12,12 @@ const LOSS_ITEMS = [
         subtitle: "Vos statistiques et scores passés",
     },
     {
-        icon: "social_leaderboard",
+        icon: "leaderboard",
         title: "Points Social Sport",
         subtitle: "Votre rang et progression",
     },
     {
-        icon: "emoji_events",
+        icon: "emoji-events",
         title: "Badges débloqués",
         subtitle: "Toutes vos récompenses",
     },
@@ -42,58 +41,67 @@ const DeleteAccountWarningScreen = () => {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}> 
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar barStyle={themeMode === "light" ? "dark-content" : "light-content"} />
 
-            <View style={styles.header}> 
+            {/* Header */}
+            <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
                 <TouchableOpacity
-                    style={[styles.closeButton, { marginTop: insets.top, backgroundColor: "rgba(255,255,255,0.08)" }]}
+                    style={styles.closeButton}
                     onPress={handleClose}
                     activeOpacity={0.85}
                 >
-                    <MaterialIcons name="close" size={22} color={colors.text} />
+                    <MaterialIcons name="close" size={24} color={colors.text} />
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.contentWrapper}>
-                <View style={styles.warningIconWrapper}>
-                    <LinearGradient
-                        colors={["rgba(239,68,68,0.45)", "rgba(0,0,0,0)"]}
-                        style={styles.warningGlow}
-                    />
-                    <View style={[styles.warningIcon, { backgroundColor: colors.surface }]}> 
-                        <MaterialIcons name="warning" size={44} color="#fb7185" />
+            {/* Main Content */}
+            <View style={styles.mainContent}>
+                {/* Warning Icon with Glow */}
+                <View style={styles.iconContainer}>
+                    <View style={styles.iconGlow} />
+                    <View style={[styles.iconCircle, { backgroundColor: colors.surface }]}>
+                        <MaterialIcons name="warning" size={48} color="#ef4444" />
                     </View>
                 </View>
 
-                <Text style={[styles.title, { color: colors.text }]}>Supprimer mon compte ?</Text>
-                <Text style={[styles.subtitle, { color: colors.textMuted }]}>Cette action est irréversible. Si tu continues, tu perdras définitivement l'accès aux éléments suivants :</Text>
+                <Text style={[styles.title, { color: colors.text }]}>
+                    Supprimer mon{"\n"}compte ?
+                </Text>
+                <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                    Cette action est irréversible. Si vous continuez, vous perdrez définitivement l'accès aux éléments suivants :
+                </Text>
 
-                <View style={styles.lossList}>
+                {/* Loss Cards */}
+                <View style={styles.cardsList}>
                     {LOSS_ITEMS.map((item) => (
-                        <View key={item.title} style={[styles.lossCard, { backgroundColor: colors.surface, borderColor: colors.border }]}> 
+                        <View
+                            key={item.title}
+                            style={[styles.lossCard, { backgroundColor: colors.surface, borderColor: "rgba(255,255,255,0.05)" }]}
+                        >
                             <View style={styles.lossIconCircle}>
-                                <MaterialIcons name={item.icon as any} size={22} color="#fb7185" />
+                                <MaterialIcons name={item.icon as any} size={22} color="#ef4444" />
                             </View>
-                            <View style={{ flex: 1 }}>
+                            <View style={styles.lossTextContainer}>
                                 <Text style={[styles.lossTitle, { color: colors.text }]}>{item.title}</Text>
-                                <Text style={[styles.lossSubtitle, { color: colors.textMuted }]}>{item.subtitle}</Text>
+                                <Text style={[styles.lossSubtitle, { color: "rgba(255,255,255,0.4)" }]}>{item.subtitle}</Text>
                             </View>
                         </View>
                     ))}
                 </View>
             </View>
 
-            <View style={[styles.footer, { paddingBottom: 28 + insets.bottom }]}> 
+            {/* Footer */}
+            <View style={[styles.footer, { paddingBottom: 40 + insets.bottom }]}>
                 <TouchableOpacity
-                    style={[styles.primaryButton, { backgroundColor: colors.primary }]}
-                    activeOpacity={0.92}
+                    style={styles.primaryButton}
+                    activeOpacity={0.9}
                     onPress={handleKeepAccount}
                 >
                     <Text style={styles.primaryButtonText}>Garder mon compte</Text>
                 </TouchableOpacity>
-                <TouchableOpacity activeOpacity={0.75} onPress={handleContinue}>
-                    <Text style={[styles.secondaryAction, { color: "#fb7185" }]}>Continuer la suppression</Text>
+                <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.7} onPress={handleContinue}>
+                    <Text style={styles.secondaryButtonText}>Continuer la suppression</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -103,107 +111,120 @@ const DeleteAccountWarningScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingHorizontal: 24,
     },
     header: {
-        width: "100%",
-        alignItems: "flex-start",
+        paddingHorizontal: 16,
     },
     closeButton: {
-        alignSelf: "flex-start",
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: "rgba(255,255,255,0.05)",
         alignItems: "center",
         justifyContent: "center",
     },
-    contentWrapper: {
+    mainContent: {
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        paddingHorizontal: 8,
+        paddingHorizontal: 24,
+        marginTop: -40,
     },
-    warningIconWrapper: {
-        marginBottom: 20,
+    iconContainer: {
+        marginBottom: 32,
+        position: "relative",
         alignItems: "center",
         justifyContent: "center",
     },
-    warningGlow: {
+    iconGlow: {
         position: "absolute",
-        width: 160,
-        height: 160,
-        borderRadius: 80,
-        opacity: 0.8,
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        backgroundColor: "rgba(239,68,68,0.2)",
     },
-    warningIcon: {
+    iconCircle: {
         width: 96,
         height: 96,
         borderRadius: 48,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: "rgba(255,255,255,0.05)",
     },
     title: {
-        fontSize: 28,
-        fontWeight: "800",
+        fontSize: 30,
+        fontWeight: "700",
         textAlign: "center",
         marginBottom: 12,
+        letterSpacing: -0.5,
     },
     subtitle: {
         fontSize: 14,
         textAlign: "center",
-        lineHeight: 20,
-        marginBottom: 28,
+        lineHeight: 22,
+        marginBottom: 40,
+        paddingHorizontal: 16,
     },
-    lossList: {
+    cardsList: {
         width: "100%",
-        gap: 14,
+        gap: 16,
     },
     lossCard: {
         flexDirection: "row",
         alignItems: "center",
         padding: 16,
-        borderRadius: 24,
+        borderRadius: 16,
         borderWidth: 1,
     },
     lossIconCircle: {
-        width: 42,
-        height: 42,
-        borderRadius: 21,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         marginRight: 16,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(248,113,113,0.12)",
+        backgroundColor: "rgba(239,68,68,0.1)",
+    },
+    lossTextContainer: {
+        flex: 1,
     },
     lossTitle: {
-        fontSize: 16,
-        fontWeight: "600",
-        marginBottom: 4,
+        fontSize: 15,
+        fontWeight: "500",
+        marginBottom: 2,
     },
     lossSubtitle: {
         fontSize: 12,
     },
     footer: {
+        paddingHorizontal: 24,
         gap: 16,
     },
     primaryButton: {
-        paddingVertical: 18,
-        borderRadius: 28,
+        paddingVertical: 16,
+        borderRadius: 16,
         alignItems: "center",
+        backgroundColor: "#f47b25",
         shadowColor: "#f47b25",
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.35,
-        shadowRadius: 20,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 16,
+        elevation: 8,
     },
     primaryButtonText: {
         color: "#fff",
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: "700",
     },
-    secondaryAction: {
+    secondaryButton: {
+        alignItems: "center",
+        paddingVertical: 12,
+    },
+    secondaryButtonText: {
+        color: "rgba(248,113,113,0.8)",
         fontSize: 14,
-        textAlign: "center",
+        fontWeight: "500",
     },
 });
 

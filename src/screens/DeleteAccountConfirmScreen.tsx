@@ -8,14 +8,12 @@ import {
     TextInput,
     ScrollView,
     Alert,
-    ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStore } from "../store/useStore";
-import { apiService } from "../services/api";
 
 const REASONS = [
     "Je reçois trop de notifications",
@@ -28,52 +26,25 @@ const REASONS = [
 const DeleteAccountConfirmScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
-    const { colors, themeMode, logout } = useStore();
+    const { colors, themeMode } = useStore();
 
     const [selectedReason, setSelectedReason] = useState<string | null>(null);
     const [details, setDetails] = useState("");
-    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleBack = () => {
         navigation.goBack();
     };
 
-    const handleConfirmDelete = async () => {
+    const handleContinue = () => {
         if (!selectedReason) {
             Alert.alert("Raison requise", "Merci de sélectionner une raison.");
             return;
         }
 
-        Alert.alert(
-            "Confirmer la suppression",
-            "Cette action est irréversible. Ton compte et toutes tes données seront supprimés définitivement.",
-            [
-                { text: "Annuler", style: "cancel" },
-                {
-                    text: "Supprimer",
-                    style: "destructive",
-                    onPress: async () => {
-                        setIsDeleting(true);
-                        try {
-                            await apiService.deleteAccount({
-                                reason: selectedReason,
-                                details: details.trim() || undefined,
-                            });
-                            await logout();
-                            Alert.alert("Compte supprimé", "Ton compte a été supprimé avec succès.");
-                        } catch (error: any) {
-                            console.error("Delete account error:", error);
-                            Alert.alert(
-                                "Erreur",
-                                error?.response?.data?.error || "Impossible de supprimer le compte pour le moment."
-                            );
-                        } finally {
-                            setIsDeleting(false);
-                        }
-                    },
-                },
-            ]
-        );
+        navigation.navigate("DeleteAccountFinal", {
+            reason: selectedReason,
+            details: details.trim() || undefined,
+        });
     };
 
     return (
@@ -160,16 +131,11 @@ const DeleteAccountConfirmScreen = () => {
                 style={[styles.footer, { paddingBottom: 24 + insets.bottom }]}
             >
                 <TouchableOpacity
-                    style={[styles.confirmButton, isDeleting && { opacity: 0.6 }]}
+                    style={styles.confirmButton}
                     activeOpacity={0.9}
-                    onPress={handleConfirmDelete}
-                    disabled={isDeleting}
+                    onPress={handleContinue}
                 >
-                    {isDeleting ? (
-                        <ActivityIndicator color="#ef4444" />
-                    ) : (
-                        <Text style={styles.confirmButtonText}>Confirmer la suppression</Text>
-                    )}
+                    <Text style={styles.confirmButtonText}>Continuer</Text>
                 </TouchableOpacity>
             </LinearGradient>
         </View>

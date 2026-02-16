@@ -579,7 +579,7 @@ export const apiService = {
     /**
      * Delete user account
      */
-    deleteAccount: async (payload: { reason: string; details?: string }): Promise<void> => {
+    deleteAccount: async (payload: { reason: string; details?: string; password?: string }): Promise<void> => {
         await api.delete("/users/me", { data: payload });
     },
 };

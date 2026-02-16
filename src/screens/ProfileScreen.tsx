@@ -291,7 +291,7 @@ const ProfileScreen = () => {
                               handleLogout();
                               return;
                           case 'Supprimer le compte':
-                              Alert.alert('Supprimer le compte', 'Cette fonctionnalité sera disponible prochainement.');
+                              navigation.navigate('DeleteAccountWarning');
                               return;
                           case 'Langue':
                               navigation.navigate('LanguageSelection');
