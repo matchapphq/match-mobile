@@ -11,13 +11,20 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, CommonActions } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStore } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
 
 const DeleteAccountSuccessScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const { colors, themeMode } = useStore();
+    const posthog = usePostHog();
+
+    React.useEffect(() => {
+        posthog?.capture("delete_account_success_screen_view");
+    }, []);
 
     const handleReturnHome = () => {
+        posthog?.capture("delete_account_return_to_auth");
         navigation.dispatch(
             CommonActions.reset({
                 index: 0,

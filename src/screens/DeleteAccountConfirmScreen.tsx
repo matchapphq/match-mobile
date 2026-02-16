@@ -14,6 +14,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStore } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
 
 const REASONS = [
     "Je reçois trop de notifications",
@@ -27,11 +28,13 @@ const DeleteAccountConfirmScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const { colors, themeMode } = useStore();
+    const posthog = usePostHog();
 
     const [selectedReason, setSelectedReason] = useState<string | null>(null);
     const [details, setDetails] = useState("");
 
     const handleBack = () => {
+        posthog?.capture("delete_account_back_from_confirm");
         navigation.goBack();
     };
 
@@ -40,6 +43,11 @@ const DeleteAccountConfirmScreen = () => {
             Alert.alert("Raison requise", "Merci de sélectionner une raison.");
             return;
         }
+
+        posthog?.capture("delete_account_step_2_continued", {
+            reason: selectedReason,
+            has_details: !!details.trim(),
+        });
 
         navigation.navigate("DeleteAccountFinal", {
             reason: selectedReason,

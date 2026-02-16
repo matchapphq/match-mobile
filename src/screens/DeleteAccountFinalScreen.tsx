@@ -15,6 +15,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 import { apiService } from "../services/api";
+import { usePostHog } from "posthog-react-native";
 
 type RouteParams = {
     DeleteAccountFinal: {
@@ -28,6 +29,7 @@ const DeleteAccountFinalScreen = () => {
     const navigation = useNavigation<any>();
     const route = useRoute<RouteProp<RouteParams, "DeleteAccountFinal">>();
     const { colors, themeMode, logout } = useStore();
+    const posthog = usePostHog();
 
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -35,11 +37,17 @@ const DeleteAccountFinalScreen = () => {
 
     const { reason, details } = route.params || {};
 
+    React.useEffect(() => {
+        posthog?.capture("delete_account_final_step_reached", { reason });
+    }, []);
+
     const handleBack = () => {
+        posthog?.capture("delete_account_back_from_final");
         navigation.goBack();
     };
 
     const handleCancel = () => {
+        posthog?.capture("delete_account_cancelled_final");
         navigation.navigate("Tab", { screen: "Profile" });
     };
 
@@ -50,12 +58,17 @@ const DeleteAccountFinalScreen = () => {
         }
 
         setIsDeleting(true);
+        posthog?.capture("delete_account_execution_attempt", { reason });
+        
         try {
             await apiService.deleteAccount({
                 reason: reason || "Non spécifié",
                 details: details,
                 password: password,
             });
+            
+            posthog?.capture("delete_account_execution_success", { reason });
+            
             await logout();
             navigation.reset({
                 index: 0,
@@ -67,6 +80,13 @@ const DeleteAccountFinalScreen = () => {
                 error?.response?.data?.error ||
                 error?.response?.data?.message ||
                 "Mot de passe incorrect ou erreur serveur.";
+            
+            posthog?.capture("delete_account_execution_failed", { 
+                reason, 
+                error: errorMessage,
+                status: error?.response?.status 
+            });
+            
             Alert.alert("Erreur", errorMessage);
             setIsDeleting(false);
         }

@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
 
 const LOSS_ITEMS = [
     {
@@ -27,16 +28,24 @@ const DeleteAccountWarningScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const { colors, themeMode } = useStore();
+    const posthog = usePostHog();
+
+    React.useEffect(() => {
+        posthog?.capture("delete_account_started");
+    }, []);
 
     const handleClose = () => {
+        posthog?.capture("delete_account_cancelled_warning", { method: "close_button" });
         navigation.goBack();
     };
 
     const handleKeepAccount = () => {
+        posthog?.capture("delete_account_cancelled_warning", { method: "keep_account_button" });
         navigation.goBack();
     };
 
     const handleContinue = () => {
+        posthog?.capture("delete_account_step_1_continued");
         navigation.navigate("DeleteAccountConfirm");
     };
 
