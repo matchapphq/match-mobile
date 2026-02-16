@@ -63,8 +63,10 @@ const DeleteAccountConfirmScreen = () => {
                     <Text style={[styles.stepIndicator, { color: colors.textMuted }]}>Étape 2 sur 3</Text>
                     <View style={{ width: 44 }} />
                 </View>
-                <View style={styles.progressBarTrack}>
-                    <View style={[styles.progressBarFill, { width: "66%" }]} />
+                <View style={styles.progressBarContainer}>
+                    <View style={[styles.progressBarSegment, { backgroundColor: "#f47b25" }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: "#f47b25" }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: "rgba(255,255,255,0.1)" }]} />
                 </View>
             </View>
 
@@ -166,15 +168,14 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: "500",
     },
-    progressBarTrack: {
-        height: 4,
-        backgroundColor: "rgba(255,255,255,0.1)",
-        borderRadius: 2,
-        overflow: "hidden",
+    progressBarContainer: {
+        flexDirection: "row",
+        gap: 8,
+        paddingHorizontal: 8,
     },
-    progressBarFill: {
-        height: "100%",
-        backgroundColor: "#f47b25",
+    progressBarSegment: {
+        flex: 1,
+        height: 4,
         borderRadius: 2,
     },
     scrollContent: {
