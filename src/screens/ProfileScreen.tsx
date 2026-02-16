@@ -144,7 +144,7 @@ const ProfileScreen = () => {
   // Build profile from store user data
   const profile: UserProfile = {
     name: userData
-      ? [userData.first_name, userData.last_name].filter(Boolean).join(' ') || 'Utilisateur'
+      ? [userData.first_name, userData.last_name].filter(Boolean).join(' ') || userData.username || userData.email || 'Utilisateur'
       : DEFAULT_PROFILE.name,
     email: userData?.email || DEFAULT_PROFILE.email,
     badgeLabel: 'Fan',
@@ -214,9 +214,7 @@ const ProfileScreen = () => {
                 </TouchableOpacity>
               </View>
               <Text style={[styles.name, { color: colors.text }]}>
-                {profile.first_name && profile.last_name
-                  ? `${profile.first_name} ${profile.last_name}`
-                  : profile.name}
+                {profile.name}
               </Text>
               <Text style={[styles.memberSince, { color: colors.subtext }]}>{profile.email}</Text>
               {profile.bio && (
