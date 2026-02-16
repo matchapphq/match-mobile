@@ -575,6 +575,13 @@ export const apiService = {
         const response = await api.get("/discovery/search", { params });
         return response.data;
     },
+
+    /**
+     * Delete user account
+     */
+    deleteAccount: async (payload: { reason: string; details?: string }): Promise<void> => {
+        await api.delete("/users/me", { data: payload });
+    },
 };
 
 // Mock data for development

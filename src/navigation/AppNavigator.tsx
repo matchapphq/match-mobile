@@ -21,6 +21,8 @@ import VenueReviewsScreen from "../screens/VenueReviewsScreen";
 import LanguageSelectionScreen from "../screens/LanguageSelectionScreen";
 import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
+import DeleteAccountWarningScreen from "../screens/DeleteAccountWarningScreen";
+import DeleteAccountConfirmScreen from "../screens/DeleteAccountConfirmScreen";
 import { PostHogProvider } from 'posthog-react-native';
 
 const Stack = createStackNavigator();
@@ -63,6 +65,8 @@ export const AppNavigator = () => {
                         <>
                             <Stack.Screen name="Tab" component={TabNavigator} />
                             <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+                            <Stack.Screen name="DeleteAccountWarning" component={DeleteAccountWarningScreen} />
+                            <Stack.Screen name="DeleteAccountConfirm" component={DeleteAccountConfirmScreen} />
                             <Stack.Screen name="VenueProfile" component={VenueProfileScreen} />
                             <Stack.Screen name="VenueMatches" component={VenueMatchesScreen} />
                             <Stack.Screen name="VenueReviews" component={VenueReviewsScreen} />

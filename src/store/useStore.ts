@@ -10,7 +10,7 @@ import {
     Reservation,
     Notification,
 } from "../types";
-import { apiService, mockData, ApiReservation } from "../services/api";
+import { apiService, ApiReservation } from "../services/api";
 import { tokenStorage } from "../utils/tokenStorage";
 
 // Transform API reservation to mobile Reservation type
