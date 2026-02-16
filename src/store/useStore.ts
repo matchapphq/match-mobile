@@ -99,6 +99,7 @@ interface AppState {
     updateUserPreferences: (preferences: UserPreferences) => void;
     updateUser: (updates: Partial<User>) => Promise<void>;
     fetchUserProfile: () => Promise<void>;
+    refreshUserProfile: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
     updateComputedTheme: () => void;
 
@@ -255,6 +256,10 @@ export const useStore = create<AppState>((set, get) => ({
                 isAuthenticated: true,
                 isLoading: false,
             });
+
+            // Trigger background refresh to get full profile (bio, created_at, etc)
+            get().refreshUserProfile();
+
             return true;
         } catch (error: any) {
             set({ error: error.message || "Login failed", isLoading: false });
@@ -379,6 +384,9 @@ export const useStore = create<AppState>((set, get) => ({
 
                 set({ user: finalUser, isLoading: false });
                 await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+
+                // Optional: Trigger a background refresh to be absolutely sure we're in sync
+                get().refreshUserProfile();
             } catch (error: any) {
                 set({ 
                     error: error?.response?.data?.error || error.message || "Failed to update user", 
@@ -400,6 +408,25 @@ export const useStore = create<AppState>((set, get) => ({
         } catch (error: any) {
             console.error("Error fetching user profile:", error);
             set({ isLoading: false });
+        }
+    },
+
+    refreshUserProfile: async () => {
+        try {
+            const user = await apiService.getMe();
+            if (user) {
+                const currentUser = get().user;
+                // Preserve local nested structure if it exists
+                const finalUser = { ...currentUser, ...user };
+                if (currentUser?.user) {
+                    finalUser.user = { ...currentUser.user, ...user };
+                }
+                
+                set({ user: finalUser });
+                await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+            }
+        } catch (error) {
+            console.warn("Background profile refresh failed:", error);
         }
     },
 
@@ -736,6 +763,11 @@ export const initializeStore = async () => {
             computedTheme,
             colors,
         });
+
+        // Trigger background refresh if we have a token
+        if (token) {
+            useStore.getState().refreshUserProfile();
+        }
     } catch (error) {
         console.error("Error initializing store:", error);
     }
