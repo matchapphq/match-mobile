@@ -246,6 +246,10 @@ const ProfileScreen = () => {
                   const displayMeta = row.label === 'Thème' ? getThemeLabel(themeMode) : row.meta;
 
                   const handlePress = () => {
+                    if (row.label === 'Modifier le profil') {
+                      navigation.navigate('EditProfile');
+                      return;
+                    }
                     if (row.label === 'Questions fréquentes') {
                       navigation.navigate('FaqSupport');
                       return;
