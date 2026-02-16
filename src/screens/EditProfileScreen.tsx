@@ -30,9 +30,21 @@ const EditProfileScreen = () => {
     const [firstName, setFirstName] = useState(userData?.first_name || "");
     const [lastName, setLastName] = useState(userData?.last_name || "");
     const [email, setEmail] = useState(userData?.email || "");
-    const [bio, setBio] = useState((userData as any)?.bio || "");
-    const [phone, setPhone] = useState((userData as any)?.phone || "");
+    const [bio, setBio] = useState(userData?.bio || "");
+    const [phone, setPhone] = useState(userData?.phone || "");
     const [isSaving, setIsSaving] = useState(false);
+
+    // Sync state with userData when it's loaded
+    React.useEffect(() => {
+        if (userData) {
+            setAvatar(userData.avatar || AVATAR_PLACEHOLDER);
+            setFirstName(userData.first_name || "");
+            setLastName(userData.last_name || "");
+            setEmail(userData.email || "");
+            setBio(userData.bio || "");
+            setPhone(userData.phone || "");
+        }
+    }, [userData]);
 
     const handlePickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({

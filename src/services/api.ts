@@ -515,6 +515,11 @@ export const apiService = {
         return response.data;
     },
 
+    updateProfile: async (data: any): Promise<User> => {
+        const response = await api.put("/users/me", data);
+        return response.data?.data || response.data;
+    },
+
     // Discovery
     discoverNearby: async (
         lat: number,

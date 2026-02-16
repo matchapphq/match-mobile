@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,10 +9,11 @@ import {
   ImageBackground,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import * as ImagePicker from 'expo-image-picker';
 import { useStore } from '../store/useStore';
@@ -95,9 +96,22 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
 const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { logout, user, themeMode, colors, updateUser } = useStore();
+  const { logout, user, themeMode, colors, updateUser, fetchUserProfile, isLoading } = useStore();
   const userData = user?.user ?? user ?? null;
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchUserProfile();
+    }, [fetchUserProfile])
+  );
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchUserProfile();
+    setIsRefreshing(false);
+  };
 
   const handlePickImage = async () => {
     // No permissions request is necessary for launching the image library
@@ -110,7 +124,11 @@ const ProfileScreen = () => {
 
     if (!result.canceled) {
       const newAvatar = result.assets[0].uri;
-      updateUser({ avatar: newAvatar });
+      try {
+        await updateUser({ avatar: newAvatar });
+      } catch (error) {
+        Alert.alert("Erreur", "Impossible de mettre à jour l'avatar.");
+      }
     }
   };
 
@@ -135,9 +153,9 @@ const ProfileScreen = () => {
     tier: 'Gold',
     first_name: userData?.first_name,
     last_name: userData?.last_name,
+    bio: userData?.bio,
+    phone: userData?.phone,
   };
-
-  const isLoading = false;
 
   const handleLogout = () => {
     Alert.alert('Déconnexion', 'Veux-tu te déconnecter de Match ?', [
@@ -156,7 +174,16 @@ const ProfileScreen = () => {
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}>
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+          />
+        }
+      >
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surface }]} onPress={() => navigation.goBack?.()}>
             <MaterialIcons name="arrow-back" size={22} color={colors.text} />
@@ -166,7 +193,7 @@ const ProfileScreen = () => {
         </View>
 
         <View style={styles.avatarSection}>
-          {isLoading ? (
+          {isLoading && !isRefreshing ? (
             <ActivityIndicator color={colors.primary} size="large" style={{ marginVertical: 40 }} />
           ) : (
             <>
@@ -192,6 +219,9 @@ const ProfileScreen = () => {
                   : profile.name}
               </Text>
               <Text style={[styles.memberSince, { color: colors.subtext }]}>{profile.email}</Text>
+              {profile.bio && (
+                <Text style={[styles.bioText, { color: colors.textSecondary }]}>{profile.bio}</Text>
+              )}
               <TouchableOpacity
                 style={styles.badge}
                 activeOpacity={0.85}
@@ -246,30 +276,47 @@ const ProfileScreen = () => {
                   const displayMeta = row.label === 'Thème' ? getThemeLabel(themeMode) : row.meta;
 
                   const handlePress = () => {
-                    if (row.label === 'Modifier le profil') {
-                      navigation.navigate('EditProfile');
-                      return;
-                    }
-                    if (row.label === 'Questions fréquentes') {
-                      navigation.navigate('FaqSupport');
-                      return;
-                    }
-                    if (row.label === 'Langue') {
-                      navigation.navigate('LanguageSelection');
-                      return;
-                    }
-                    if (row.label === 'Thème') {
-                      navigation.navigate('ThemeSelection');
-                      return;
-                    }
-                    if (row.label === 'Parler à un conseiller') {
-                      Alert.alert('Support', 'Nous connectons cette option prochainement.');
-                      return;
-                    }
-                    if (row.label === 'Déconnexion') {
-                      handleLogout();
-                      return;
-                    }
+                      switch (row.label) {
+                          case 'Modifier le profil':
+                              navigation.navigate('EditProfile');
+                              return;
+                          case 'Mes favoris':
+                              Alert.alert('Mes favoris', 'Cette fonctionnalité sera disponible prochainement.');
+                              return;
+                          case 'Mon Portefeuille':
+                              Alert.alert('Mon Portefeuille', 'Cette fonctionnalité sera disponible prochainement.');
+                              return;
+                          case 'Mes Coupons':
+                              Alert.alert('Mes Coupons', 'Cette fonctionnalité sera disponible prochainement.');
+                              return;
+                          case 'Mot de passe':
+                              Alert.alert('Mot de passe', 'Cette fonctionnalité sera disponible prochainement.');
+                              return;
+                          case 'Données personnelles':
+                              Alert.alert('Données personnelles', 'Cette fonctionnalité sera disponible prochainement.');
+                              return;
+                          case 'Questions fréquentes':
+                              navigation.navigate('FaqSupport');
+                              return;
+                          case 'Parler à un conseiller':
+                              Alert.alert('Support', 'Nous connectons cette option prochainement.');
+                              return;
+                          case 'Déconnexion':
+                              handleLogout();
+                              return;
+                          case 'Supprimer le compte':
+                              Alert.alert('Supprimer le compte', 'Cette fonctionnalité sera disponible prochainement.');
+                              return;
+                          case 'Langue':
+                              navigation.navigate('LanguageSelection');
+                              return;
+                          case 'Thème':
+                              navigation.navigate('ThemeSelection');
+                              return;
+                          default:
+                              Alert.alert(row.label, 'Cette fonctionnalité sera disponible prochainement.');
+                              return;
+                      }
                   };
 
                   return (
@@ -393,6 +440,13 @@ const styles = StyleSheet.create({
     color: COLORS.subtext,
     fontSize: 14,
     marginBottom: 8,
+  },
+  bioText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 20,
+    lineHeight: 20,
   },
   badge: {
     flexDirection: 'row',

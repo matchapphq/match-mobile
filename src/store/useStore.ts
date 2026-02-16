@@ -97,7 +97,8 @@ interface AppState {
     setUser: (user: User | null) => void;
     setOnboardingCompleted: (completed: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
-    updateUser: (updates: Partial<User>) => void;
+    updateUser: (updates: Partial<User>) => Promise<void>;
+    fetchUserProfile: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
     updateComputedTheme: () => void;
 
@@ -362,31 +363,43 @@ export const useStore = create<AppState>((set, get) => ({
         }
     },
 
-    updateUser: (updates) => {
+    updateUser: async (updates) => {
         const { user } = get();
         if (user) {
-            // The User interface has a weird redundant structure where 'user' is both nested and top-level.
-            // We'll update both to stay consistent.
-            const updatedUser = { 
-                ...user, 
-                ...updates,
-            };
+            set({ isLoading: true, error: null });
+            try {
+                const updatedUser = await apiService.updateProfile(updates);
+                // Merge with existing user data to ensure all fields are preserved
+                const finalUser = { ...user, ...updatedUser };
+                
+                // Keep nested user object in sync if it exists
+                if (finalUser.user) {
+                    finalUser.user = { ...finalUser.user, ...updatedUser };
+                }
 
-            // Only sync to nested user object if it exists to avoid creating a partial object
-            // that shadows top-level properties in views using user?.user ?? user
-            if (user.user) {
-                updatedUser.user = {
-                    ...user.user,
-                    ...(updates.user || {}),
-                    // If top level fields are updated, sync them to nested user object if they exist there
-                    ...(updates.avatar ? { avatar: updates.avatar } : {}),
-                    ...(updates.first_name ? { first_name: updates.first_name } : {}),
-                    ...(updates.last_name ? { last_name: updates.last_name } : {}),
-                };
+                set({ user: finalUser, isLoading: false });
+                await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+            } catch (error: any) {
+                set({ 
+                    error: error?.response?.data?.error || error.message || "Failed to update user", 
+                    isLoading: false 
+                });
+                throw error;
             }
+        }
+    },
 
-            set({ user: updatedUser });
-            AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+    fetchUserProfile: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const user = await apiService.getMe();
+            set({ user, isAuthenticated: !!user, isLoading: false });
+            if (user) {
+                await AsyncStorage.setItem("user", JSON.stringify(user));
+            }
+        } catch (error: any) {
+            console.error("Error fetching user profile:", error);
+            set({ isLoading: false });
         }
     },
 

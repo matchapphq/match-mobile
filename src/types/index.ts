@@ -5,6 +5,7 @@ export interface User {
         last_name?: string;
         email?: string;
         avatar?: string;
+        bio?: string;
         created_at?: string;
         preferences?: UserPreferences;
     };
@@ -13,6 +14,7 @@ export interface User {
     last_name?: string;
     email?: string;
     avatar?: string;
+    bio?: string;
     created_at?: string;
     preferences?: UserPreferences;
 }
