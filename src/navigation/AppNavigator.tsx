@@ -62,6 +62,7 @@ export const AppNavigator = () => {
                             <Stack.Screen name="AuthEntry" component={AuthEntryScreen} />
                             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
                             <Stack.Screen name="Login" component={LoginScreen} />
+                            <Stack.Screen name="DeleteAccountSuccess" component={DeleteAccountSuccessScreen} />
                         </>
                     ) : (
                         <>
@@ -70,7 +71,6 @@ export const AppNavigator = () => {
                             <Stack.Screen name="DeleteAccountWarning" component={DeleteAccountWarningScreen} />
                             <Stack.Screen name="DeleteAccountConfirm" component={DeleteAccountConfirmScreen} />
                             <Stack.Screen name="DeleteAccountFinal" component={DeleteAccountFinalScreen} />
-                            <Stack.Screen name="DeleteAccountSuccess" component={DeleteAccountSuccessScreen} />
                             <Stack.Screen name="VenueProfile" component={VenueProfileScreen} />
                             <Stack.Screen name="VenueMatches" component={VenueMatchesScreen} />
                             <Stack.Screen name="VenueReviews" component={VenueReviewsScreen} />
