@@ -26,6 +26,7 @@ import DeleteAccountConfirmScreen from "../screens/DeleteAccountConfirmScreen";
 import DeleteAccountFinalScreen from "../screens/DeleteAccountFinalScreen";
 import DeleteAccountSuccessScreen from "../screens/DeleteAccountSuccessScreen";
 import ChangePasswordScreen from "../screens/ChangePasswordScreen";
+import FavouritesScreen from "../screens/FavouritesScreen";
 import { PostHogProvider } from 'posthog-react-native';
 
 const Stack = createStackNavigator();
@@ -82,6 +83,7 @@ export const AppNavigator = () => {
                             <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
                             <Stack.Screen name="ThemeSelection" component={ThemeSelectionScreen} />
                             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+                            <Stack.Screen name="Favourites" component={FavouritesScreen} />
                         </>
                     )}
                 </Stack.Navigator>

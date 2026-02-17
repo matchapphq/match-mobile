@@ -267,7 +267,7 @@ const ProfileScreen = () => {
                               navigation.navigate('EditProfile');
                               return;
                           case 'Mes favoris':
-                              Alert.alert('Mes favoris', 'Cette fonctionnalité sera disponible prochainement.');
+                              navigation.navigate('Favourites');
                               return;
                           case 'Mon Portefeuille':
                               Alert.alert('Mon Portefeuille', 'Cette fonctionnalité sera disponible prochainement.');

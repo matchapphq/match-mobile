@@ -79,6 +79,9 @@ interface AppState {
     // Reservations
     reservations: Reservation[];
 
+    // Favourites
+    favouriteVenueIds: Set<string>;
+
     // Notifications
     notifications: Notification[];
     unreadNotificationCount: number;
@@ -122,6 +125,12 @@ interface AppState {
     updateReservation: (id: string, updates: Partial<Reservation>) => void;
     cancelReservation: (id: string) => void;
     removeReservation: (id: string) => void;
+
+    // Favourites Actions
+    toggleFavourite: (venueId: string) => Promise<boolean>;
+    isFavourite: (venueId: string) => boolean;
+    fetchFavourites: () => Promise<void>;
+    checkAndCacheFavourite: (venueId: string) => Promise<boolean>;
 
     // Reservation API Actions
     fetchReservations: () => Promise<void>;
@@ -172,6 +181,7 @@ export const useStore = create<AppState>((set, get) => ({
         sortDirection: "asc",
     },
     reservations: [],
+    favouriteVenueIds: new Set<string>(),
     notifications: [],
     unreadNotificationCount: 0,
     filters: {
@@ -188,6 +198,72 @@ export const useStore = create<AppState>((set, get) => ({
     // Loading state actions
     setLoading: (loading) => set({ isLoading: loading }),
     setError: (error) => set({ error }),
+
+    // Favourites
+    toggleFavourite: async (venueId: string) => {
+        const { favouriteVenueIds } = get();
+        const isFav = favouriteVenueIds.has(venueId);
+        
+        // Optimistic update
+        const newSet = new Set(favouriteVenueIds);
+        if (isFav) {
+            newSet.delete(venueId);
+        } else {
+            newSet.add(venueId);
+        }
+        set({ favouriteVenueIds: newSet });
+
+        try {
+            const { apiService } = await import('../services/api');
+            if (isFav) {
+                await apiService.removeVenueFromFavorites(venueId);
+            } else {
+                await apiService.addVenueToFavorites(venueId);
+            }
+            return !isFav;
+        } catch (error) {
+            // Revert on failure
+            const revertSet = new Set(get().favouriteVenueIds);
+            if (isFav) {
+                revertSet.add(venueId);
+            } else {
+                revertSet.delete(venueId);
+            }
+            set({ favouriteVenueIds: revertSet });
+            console.warn('Failed to toggle favourite:', error);
+            return isFav;
+        }
+    },
+
+    isFavourite: (venueId: string) => {
+        return get().favouriteVenueIds.has(venueId);
+    },
+
+    fetchFavourites: async () => {
+        try {
+            const { apiService } = await import('../services/api');
+            const venues = await apiService.getFavoriteVenues();
+            const ids = new Set(venues.map((v: any) => v.id));
+            set({ favouriteVenueIds: ids });
+        } catch (error) {
+            console.warn('Failed to fetch favourites:', error);
+        }
+    },
+
+    checkAndCacheFavourite: async (venueId: string) => {
+        try {
+            const { apiService } = await import('../services/api');
+            const isFav = await apiService.checkVenueFavorite(venueId);
+            if (isFav) {
+                const newSet = new Set(get().favouriteVenueIds);
+                newSet.add(venueId);
+                set({ favouriteVenueIds: newSet });
+            }
+            return isFav;
+        } catch {
+            return false;
+        }
+    },
 
     // API Actions
     fetchVenues: async (filters) => {
@@ -692,6 +768,7 @@ export const useStore = create<AppState>((set, get) => ({
             matches: [],
             selectedMatch: null,
             reservations: [],
+            favouriteVenueIds: new Set<string>(),
             notifications: [],
             unreadNotificationCount: 0,
             filters: {
@@ -767,6 +844,7 @@ export const initializeStore = async () => {
         // Trigger background refresh if we have a token
         if (token) {
             useStore.getState().refreshUserProfile();
+            useStore.getState().fetchFavourites();
         }
     } catch (error) {
         console.error("Error initializing store:", error);

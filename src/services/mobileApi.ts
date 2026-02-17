@@ -417,6 +417,46 @@ export const mobileApi = {
         }
     },
 
+    // Favourites
+    async fetchFavoriteVenues(): Promise<SearchResult[]> {
+        try {
+            const apiVenues = await apiService.getFavoriteVenues();
+            return apiVenues.map(transformToSearchResult);
+        } catch (error) {
+            console.warn("API fetchFavoriteVenues failed", error);
+            return [];
+        }
+    },
+
+    async addFavorite(venueId: string): Promise<boolean> {
+        try {
+            await apiService.addVenueToFavorites(venueId);
+            return true;
+        } catch (error) {
+            console.warn("API addFavorite failed", error);
+            return false;
+        }
+    },
+
+    async removeFavorite(venueId: string): Promise<boolean> {
+        try {
+            await apiService.removeVenueFromFavorites(venueId);
+            return true;
+        } catch (error) {
+            console.warn("API removeFavorite failed", error);
+            return false;
+        }
+    },
+
+    async checkFavorite(venueId: string): Promise<boolean> {
+        try {
+            return await apiService.checkVenueFavorite(venueId);
+        } catch (error) {
+            console.warn("API checkFavorite failed", error);
+            return false;
+        }
+    },
+
     async fetchMatchVenues(
         matchId: string,
         userLat?: number,

@@ -14,13 +14,27 @@ import { usePostHog } from "posthog-react-native";
 const { width } = Dimensions.get('window');
 
 const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, themeMode } = useStore();
+    const { colors, themeMode, favouriteVenueIds, toggleFavourite, checkAndCacheFavourite } = useStore();
     const posthog = usePostHog();
     const insets = useSafeAreaInsets();
     const venueId: string | undefined = route?.params?.venueId;
     const [venue, setVenue] = useState<Venue | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const isFavourite = venueId ? favouriteVenueIds.has(venueId) : false;
+
+    // Check favourite status when venue loads
+    useEffect(() => {
+        if (venueId) {
+            checkAndCacheFavourite(venueId);
+        }
+    }, [venueId, checkAndCacheFavourite]);
+
+    const handleToggleFavourite = async () => {
+        if (venueId) {
+            await toggleFavourite(venueId);
+        }
+    };
 
     const loadVenue = useCallback(async () => {
         try {
@@ -125,6 +139,17 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             ) : (
                                 <View style={[styles.backButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
                                     <MaterialIcons name="arrow-back-ios" size={20} color={COLORS.white} style={{ marginLeft: 6 }} />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[styles.favouriteButton, { top: insets.top + 16 }]} onPress={handleToggleFavourite} activeOpacity={0.7}>
+                            {Platform.OS === 'ios' ? (
+                                <BlurView intensity={30} tint="dark" style={styles.backButtonBlur}>
+                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.primary : COLORS.white} />
+                                </BlurView>
+                            ) : (
+                                <View style={[styles.backButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.primary : COLORS.white} />
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -308,6 +333,11 @@ const styles = StyleSheet.create({
     backButton: {
         position: 'absolute',
         left: 16,
+        zIndex: 10,
+    },
+    favouriteButton: {
+        position: 'absolute',
+        right: 16,
         zIndex: 10,
     },
     backButtonBlur: {

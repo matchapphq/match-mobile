@@ -394,6 +394,17 @@ export const apiService = {
         }
     },
 
+    getFavoriteVenues: async (): Promise<any[]> => {
+        try {
+            const response = await api.get("/users/me/favorites");
+            return Array.isArray(response.data)
+                ? response.data
+                : response.data?.data || [];
+        } catch {
+            return [];
+        }
+    },
+
     // Matches
     getMatches: async (filters?: any): Promise<Match[]> => {
         const response = await api.get("/matches", { params: filters });
