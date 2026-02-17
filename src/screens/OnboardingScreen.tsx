@@ -776,10 +776,10 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
             const userData = newUser?.user ?? newUser;
             if (userData?.id) {
                 posthog.identify(userData.id, {
-                    email: userData.email,
-                    first_name: userData.first_name,
-                    last_name: userData.last_name,
-                    username: userData.username,
+                    email: userData.email as string,
+                    first_name: userData.first_name as string,
+                    last_name: userData.last_name as string,
+                    username: userData.username as string,
                     fav_sports: data.fav_sports,
                     budget: data.budget,
                 });
