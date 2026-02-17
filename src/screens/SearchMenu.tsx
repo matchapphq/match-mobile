@@ -17,12 +17,21 @@ import { COLORS } from "../constants/colors";
 import { mobileApi, SearchMatchResult, SearchResult, SearchTrend } from "../services/mobileApi";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 type TabFilter = "all" | "matches" | "venues";
 
 const SearchMenu = ({ navigation }: { navigation: any }) => {
-    const { colors, themeMode, favouriteVenueIds, toggleFavourite } = useStore();
+    const { colors, themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
     const posthog = usePostHog();
+
+    // Refresh favourites when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchFavourites();
+        }, [fetchFavourites])
+    );
+
     const [searchQuery, setSearchQuery] = useState("");
     const filterAnim = useRef(new Animated.Value(0)).current;
     const activeContentAnim = useRef(new Animated.Value(0)).current;

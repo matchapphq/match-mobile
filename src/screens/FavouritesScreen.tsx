@@ -31,8 +31,30 @@ const FavouritesScreen = () => {
 
     const loadFavourites = useCallback(async () => {
         try {
-            const data = await mobileApi.fetchFavoriteVenues();
-            setVenues(data);
+            const { apiService } = await import('../services/api');
+            const favorites = await apiService.getFavoriteVenues();
+            
+            // Sync the store's set immediately with the fetched data
+            const ids = new Set(favorites.map((f: any) => f.venue_id || f.venue?.id || f.id));
+            useStore.setState({ favouriteVenueIds: ids });
+
+            // Map favorite records to SearchResult objects for display
+            const transformedVenues = favorites.map((fav: any) => {
+                const venueData = fav.venue || fav;
+                // Reuse the transformation logic (inline since it's private in mobileApi)
+                return {
+                    id: venueData.id,
+                    name: venueData.name,
+                    tag: venueData.type || "Bar",
+                    distance: venueData.distance ? `${Number(venueData.distance).toFixed(1)} km` : "0.5 km",
+                    isLive: false,
+                    image: venueData.cover_image_url || venueData.photos?.[0]?.url || venueData.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
+                    rating: Number(venueData.average_rating ?? venueData.rating ?? 4.5),
+                    priceLevel: venueData.price_range || venueData.priceLevel || "€€",
+                };
+            });
+
+            setVenues(transformedVenues);
         } catch (error) {
             console.warn('Failed to load favourites', error);
         } finally {
@@ -45,9 +67,8 @@ const FavouritesScreen = () => {
     useFocusEffect(
         useCallback(() => {
             setIsLoading(true);
-            fetchFavourites();
             loadFavourites();
-        }, [loadFavourites, fetchFavourites])
+        }, [loadFavourites])
     );
 
     const handleRefresh = async () => {
@@ -206,7 +227,7 @@ const FavouritesScreen = () => {
                             activeOpacity={0.7}
                         >
                             <MaterialIcons
-                                name={isFav ? 'favorite' : 'favorite-border'}
+                                name={(favouriteVenueIds.has(venue.id) || (venue as any).venue_id && favouriteVenueIds.has((venue as any).venue_id)) ? 'favorite' : 'favorite-border'}
                                 size={22}
                                 color={colors.primary}
                             />

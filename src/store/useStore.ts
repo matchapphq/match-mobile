@@ -200,7 +200,8 @@ export const useStore = create<AppState>((set, get) => ({
     setError: (error) => set({ error }),
 
     // Favourites
-    toggleFavourite: async (venueId: string) => {
+    toggleFavourite: async (venueIdOrObj: string | { id: string, venue_id?: string }) => {
+        const venueId = typeof venueIdOrObj === 'string' ? venueIdOrObj : (venueIdOrObj.venue_id || venueIdOrObj.id);
         const { favouriteVenueIds } = get();
         const isFav = favouriteVenueIds.has(venueId);
         
@@ -242,8 +243,9 @@ export const useStore = create<AppState>((set, get) => ({
     fetchFavourites: async () => {
         try {
             const { apiService } = await import('../services/api');
-            const venues = await apiService.getFavoriteVenues();
-            const ids = new Set(venues.map((v: any) => v.id));
+            const favorites = await apiService.getFavoriteVenues();
+            // Extract venue_id from the favorite records
+            const ids = new Set(favorites.map((f: any) => f.venue_id || f.venue?.id || f.id));
             set({ favouriteVenueIds: ids });
         } catch (error) {
             console.warn('Failed to fetch favourites:', error);
