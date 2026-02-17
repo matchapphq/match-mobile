@@ -276,7 +276,7 @@ const ProfileScreen = () => {
                               Alert.alert('Mes Coupons', 'Cette fonctionnalité sera disponible prochainement.');
                               return;
                           case 'Mot de passe':
-                              Alert.alert('Mot de passe', 'Cette fonctionnalité sera disponible prochainement.');
+                              navigation.navigate('ChangePassword');
                               return;
                           case 'Données personnelles':
                               Alert.alert('Données personnelles', 'Cette fonctionnalité sera disponible prochainement.');

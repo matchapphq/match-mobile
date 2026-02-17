@@ -582,4 +582,11 @@ export const apiService = {
     deleteAccount: async (payload: { reason: string; details?: string; password?: string }): Promise<void> => {
         await api.delete("/users/me", { data: payload });
     },
+
+    /**
+     * Change user password
+     */
+    changePassword: async (payload: { currentPassword: string; newPassword: string }): Promise<void> => {
+        await api.put("/users/me/password", payload);
+    },
 };
