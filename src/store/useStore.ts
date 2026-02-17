@@ -254,11 +254,13 @@ export const useStore = create<AppState>((set, get) => ({
         try {
             const { apiService } = await import('../services/api');
             const isFav = await apiService.checkVenueFavorite(venueId);
+            const newSet = new Set(get().favouriteVenueIds);
             if (isFav) {
-                const newSet = new Set(get().favouriteVenueIds);
                 newSet.add(venueId);
-                set({ favouriteVenueIds: newSet });
+            } else {
+                newSet.delete(venueId);
             }
+            set({ favouriteVenueIds: newSet });
             return isFav;
         } catch {
             return false;

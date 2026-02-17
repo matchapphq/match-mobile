@@ -235,7 +235,7 @@ const FavouritesScreen = () => {
                         <View style={styles.ratingRow}>
                             <MaterialIcons name="star" size={14} color="#facc15" />
                             <Text style={[styles.ratingText, { color: colors.text }]}>
-                                {venue.rating.toFixed(1)}
+                                {typeof venue.rating === 'number' ? venue.rating.toFixed(1) : (Number(venue.rating) || 0).toFixed(1)}
                             </Text>
                         </View>
                         <TouchableOpacity

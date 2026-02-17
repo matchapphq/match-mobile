@@ -388,7 +388,7 @@ export const apiService = {
     checkVenueFavorite: async (venueId: string): Promise<boolean> => {
         try {
             const response = await api.get(`/venues/${venueId}/favorite`);
-            return response.data?.isFavorite ?? false;
+            return response.data?.isFavorited ?? false;
         } catch {
             return false;
         }

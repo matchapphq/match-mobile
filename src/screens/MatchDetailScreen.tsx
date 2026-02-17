@@ -266,7 +266,7 @@ const MatchDetailScreen = ({
                                                 color={colors.primary}
                                                 style={{ marginRight: 4 }}
                                             />
-                                            <Text style={[styles.ratingChipText, { color: colors.white }]}>{venue.rating.toFixed(1)}</Text>
+                                            <Text style={[styles.ratingChipText, { color: colors.white }]}>{typeof venue.rating === 'number' ? venue.rating.toFixed(1) : (Number(venue.rating) || 0).toFixed(1)}</Text>
                                         </View>
                                         <View style={styles.statusChip}>
                                             <Text style={styles.statusChipText}>

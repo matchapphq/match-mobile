@@ -167,7 +167,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                     </View>
                 </View>
                 <View style={[styles.ratingBadge, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
-                    <Text style={[styles.ratingBadgeText, { color: colors.text }]}>{review.rating.toFixed(1)}</Text>
+                    <Text style={[styles.ratingBadgeText, { color: colors.text }]}>{(typeof review.rating === 'number' ? review.rating : (Number(review.rating) || 0)).toFixed(1)}</Text>
                     <MaterialIcons name="star" size={10} color={colors.primary} />
                 </View>
             </View>
@@ -261,7 +261,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                     <View style={styles.ratingOverview}>
                         {/* Left: Big Rating */}
                         <View style={styles.ratingLeft}>
-                            <Text style={[styles.bigRating, { color: colors.text }]}>{venueRating.toFixed(1)}</Text>
+                            <Text style={[styles.bigRating, { color: colors.text }]}>{(typeof venueRating === 'number' ? venueRating : (Number(venueRating) || 0)).toFixed(1)}</Text>
                             <View style={styles.starsRow}>
                                 {renderStars(venueRating)}
                             </View>

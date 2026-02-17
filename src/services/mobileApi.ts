@@ -27,11 +27,11 @@ const transformApiVenue = (apiVenue: any): Venue => ({
     latitude: apiVenue.latitude ?? 48.8566,
     longitude: apiVenue.longitude ?? 2.3522,
     address: apiVenue.street_address || apiVenue.address || "",
-    distance: apiVenue.distance ? `${apiVenue.distance.toFixed(1)} km` : "0.5 km",
-    image: apiVenue.photos?.[0]?.url || apiVenue.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
-    rating: apiVenue.rating ?? 4.5,
+    distance: apiVenue.distance !== undefined && apiVenue.distance !== null ? `${Number(apiVenue.distance).toFixed(1)} km` : "0.5 km",
+    image: apiVenue.cover_image_url || apiVenue.photos?.[0]?.url || apiVenue.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
+    rating: Number(apiVenue.average_rating ?? apiVenue.rating ?? 4.5),
     tags: apiVenue.amenities || apiVenue.tags || ["Bar sportif"],
-    priceLevel: apiVenue.price_range || "€€",
+    priceLevel: apiVenue.price_range || apiVenue.priceLevel || "€€",
     isOpen: true,
     matches: [],
 });
@@ -94,11 +94,11 @@ const transformToSearchResult = (apiVenue: any): SearchResult => ({
     id: apiVenue.id,
     name: apiVenue.name,
     tag: apiVenue.type || "Bar",
-    distance: apiVenue.distance ? `${apiVenue.distance.toFixed(1)} km` : "0.5 km",
+    distance: apiVenue.distance !== undefined && apiVenue.distance !== null ? `${Number(apiVenue.distance).toFixed(1)} km` : "0.5 km",
     isLive: false,
-    image: apiVenue.photos?.[0]?.url || apiVenue.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
-    rating: apiVenue.rating ?? 4.5,
-    priceLevel: apiVenue.price_range || "€€",
+    image: apiVenue.cover_image_url || apiVenue.photos?.[0]?.url || apiVenue.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
+    rating: Number(apiVenue.average_rating ?? apiVenue.rating ?? 4.5),
+    priceLevel: apiVenue.price_range || apiVenue.priceLevel || "€€",
 });
 
 // Transform API reservation to Booking format
@@ -420,8 +420,13 @@ export const mobileApi = {
     // Favourites
     async fetchFavoriteVenues(): Promise<SearchResult[]> {
         try {
-            const apiVenues = await apiService.getFavoriteVenues();
-            return apiVenues.map(transformToSearchResult);
+            const favorites = await apiService.getFavoriteVenues();
+            // The API returns an array of favorite objects { id, venue: { ... } }
+            // We need to extract and transform the venue part
+            return favorites.map((fav: any) => {
+                const venueData = fav.venue || fav;
+                return transformToSearchResult(venueData);
+            });
         } catch (error) {
             console.warn("API fetchFavoriteVenues failed", error);
             return [];
@@ -483,7 +488,7 @@ export const mobileApi = {
                     ? `${mv.venue.distance} km`
                     : "N/A",
                 image: mv.venue?.image_url || mv.venue?.cover_image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
-                rating: mv.venue?.rating ?? 4.5,
+                rating: Number(mv.venue?.rating ?? 4.5),
                 tags: ["Bar sportif", "Diffuse ce match"],
                 priceLevel: "€€",
                 isOpen: true,
