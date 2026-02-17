@@ -388,9 +388,20 @@ export const apiService = {
     checkVenueFavorite: async (venueId: string): Promise<boolean> => {
         try {
             const response = await api.get(`/venues/${venueId}/favorite`);
-            return response.data?.isFavorite ?? false;
+            return response.data?.isFavorited ?? false;
         } catch {
             return false;
+        }
+    },
+
+    getFavoriteVenues: async (): Promise<any[]> => {
+        try {
+            const response = await api.get("/users/me/favorites");
+            return Array.isArray(response.data)
+                ? response.data
+                : response.data?.data || [];
+        } catch {
+            return [];
         }
     },
 
@@ -515,6 +526,11 @@ export const apiService = {
         return response.data;
     },
 
+    updateProfile: async (data: any): Promise<User> => {
+        const response = await api.put("/users/me", data);
+        return response.data?.data || response.data;
+    },
+
     // Discovery
     discoverNearby: async (
         lat: number,
@@ -570,102 +586,18 @@ export const apiService = {
         const response = await api.get("/discovery/search", { params });
         return response.data;
     },
-};
 
-// Mock data for development
-export const mockData = {
-    venues: [
-        {
-            id: "1",
-            name: "The Kop Bar",
-            address: "Bar - 123 Bd Ney, 75018 Paris",
-            latitude: 48.8584,
-            longitude: 2.3522,
-            type: VenueType.BAR,
-            rating: 4.5,
-            priceRange: "5-10€",
-            tags: ["Foot", "Conviviale", "Bière"],
-            distance: 0.9,
-            images: ["https://via.placeholder.com/400x300"],
-            description: "Bar sportif convivial avec grande terrasse",
-            hours: "11h / 01h",
-        },
-        {
-            id: "2",
-            name: "Le Corner Pub",
-            address: "45 Rue de la République, 75011 Paris",
-            latitude: 48.8566,
-            longitude: 2.3525,
-            type: VenueType.PUB,
-            rating: 4.2,
-            priceRange: "+20€",
-            tags: ["Rugby", "Posée", "Pizza"],
-            distance: 1.5,
-            images: ["https://via.placeholder.com/400x300"],
-            description: "Pub irlandais authentique",
-            hours: "16h / 02h",
-        },
-    ],
-    matches: [
-        {
-            id: "1",
-            homeTeam: "PSG",
-            awayTeam: "OM",
-            sport: SportType.FOOTBALL,
-            date: new Date("2025-11-28T21:00:00"),
-            time: "21h",
-            competition: "Ligue 1",
-            thumbnail: "https://via.placeholder.com/400x200",
-        },
-        {
-            id: "2",
-            homeTeam: "RMA",
-            awayTeam: "FCB",
-            sport: SportType.FOOTBALL,
-            date: new Date("2025-11-30T16:00:00"),
-            time: "16h",
-            competition: "La Liga",
-            thumbnail: "https://via.placeholder.com/400x200",
-        },
-        {
-            id: "3",
-            homeTeam: "Lakers",
-            awayTeam: "Warriors",
-            sport: SportType.BASKETBALL,
-            date: new Date("2025-12-01T19:30:00"),
-            time: "19h30",
-            competition: "NBA",
-            thumbnail: "https://via.placeholder.com/400x200",
-        },
-        {
-            id: "4",
-            homeTeam: "France",
-            awayTeam: "England",
-            sport: SportType.RUGBY,
-            date: new Date("2025-12-05T15:00:00"),
-            time: "15h",
-            competition: "Six Nations",
-            thumbnail: "https://via.placeholder.com/400x200",
-        },
-        {
-            id: "5",
-            homeTeam: "Medvedev",
-            awayTeam: "Djokovic",
-            sport: SportType.TENNIS,
-            date: new Date("2025-12-02T14:00:00"),
-            time: "14h",
-            competition: "ATP Finals",
-            thumbnail: "https://via.placeholder.com/400x200",
-        },
-        {
-            id: "6",
-            homeTeam: "Man City",
-            awayTeam: "Liverpool",
-            sport: SportType.FOOTBALL,
-            date: new Date("2025-11-29T18:30:00"),
-            time: "18h30",
-            competition: "Premier League",
-            thumbnail: "https://via.placeholder.com/400x200",
-        },
-    ],
+    /**
+     * Delete user account
+     */
+    deleteAccount: async (payload: { reason: string; details?: string; password?: string }): Promise<void> => {
+        await api.delete("/users/me", { data: payload });
+    },
+
+    /**
+     * Change user password
+     */
+    changePassword: async (payload: { currentPassword: string; newPassword: string }): Promise<void> => {
+        await api.put("/users/me/password", payload);
+    },
 };

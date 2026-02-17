@@ -20,6 +20,13 @@ import VenueMatchesScreen from "../screens/VenueMatchesScreen";
 import VenueReviewsScreen from "../screens/VenueReviewsScreen";
 import LanguageSelectionScreen from "../screens/LanguageSelectionScreen";
 import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
+import EditProfileScreen from "../screens/EditProfileScreen";
+import DeleteAccountWarningScreen from "../screens/DeleteAccountWarningScreen";
+import DeleteAccountConfirmScreen from "../screens/DeleteAccountConfirmScreen";
+import DeleteAccountFinalScreen from "../screens/DeleteAccountFinalScreen";
+import DeleteAccountSuccessScreen from "../screens/DeleteAccountSuccessScreen";
+import ChangePasswordScreen from "../screens/ChangePasswordScreen";
+import FavouritesScreen from "../screens/FavouritesScreen";
 import { PostHogProvider } from 'posthog-react-native';
 
 const Stack = createStackNavigator();
@@ -57,10 +64,15 @@ export const AppNavigator = () => {
                             <Stack.Screen name="AuthEntry" component={AuthEntryScreen} />
                             <Stack.Screen name="Onboarding" component={OnboardingScreen} />
                             <Stack.Screen name="Login" component={LoginScreen} />
+                            <Stack.Screen name="DeleteAccountSuccess" component={DeleteAccountSuccessScreen} />
                         </>
                     ) : (
                         <>
                             <Stack.Screen name="Tab" component={TabNavigator} />
+                            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+                            <Stack.Screen name="DeleteAccountWarning" component={DeleteAccountWarningScreen} />
+                            <Stack.Screen name="DeleteAccountConfirm" component={DeleteAccountConfirmScreen} />
+                            <Stack.Screen name="DeleteAccountFinal" component={DeleteAccountFinalScreen} />
                             <Stack.Screen name="VenueProfile" component={VenueProfileScreen} />
                             <Stack.Screen name="VenueMatches" component={VenueMatchesScreen} />
                             <Stack.Screen name="VenueReviews" component={VenueReviewsScreen} />
@@ -70,6 +82,8 @@ export const AppNavigator = () => {
                             <Stack.Screen name="FaqSupport" component={FaqSupport} />
                             <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
                             <Stack.Screen name="ThemeSelection" component={ThemeSelectionScreen} />
+                            <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+                            <Stack.Screen name="Favourites" component={FavouritesScreen} />
                         </>
                     )}
                 </Stack.Navigator>

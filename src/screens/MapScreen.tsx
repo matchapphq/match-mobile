@@ -743,7 +743,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                                 </View>
                                 <View style={styles.ratingRow}>
                                     <MaterialIcons name="star" size={16} color={colors.yellow400} />
-                                    <Text style={[styles.ratingText, { color: colors.text }]}>{selectedVenue.rating.toFixed(1)}</Text>
+                                    <Text style={[styles.ratingText, { color: colors.text }]}>{typeof selectedVenue.rating === 'number' ? selectedVenue.rating.toFixed(1) : (Number(selectedVenue.rating) || 0).toFixed(1)}</Text>
                                     <Text style={[styles.venueSubText, { color: colors.textMuted }]}>• {selectedVenue.tags[0]} • {selectedVenue.priceLevel} • {selectedVenue.distance}</Text>
                                 </View>
                             </View>
