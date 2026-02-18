@@ -24,6 +24,7 @@ import MapScreenFilter, {
 import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
 import { mobileApi, Venue, VenueMatch } from "../services/mobileApi";
+import { usePostHog } from "posthog-react-native";
 
 
 const { width, height } = Dimensions.get("window");
@@ -310,6 +311,7 @@ const LIGHT_MAP_STYLE = [
 
 const MapScreen = ({ navigation }: { navigation: any }) => {
     const { colors, themeMode } = useStore();
+    const posthog = usePostHog();
     const mapRef = useRef<MapView>(null);
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
     const [venues, setVenues] = useState<Venue[]>([]);
@@ -421,7 +423,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
 
     // Search venues in the current area
     const handleSearchArea = async () => {
-        posthog.capture("venue_searched", {
+        posthog?.capture("venue_searched", {
             search_type: "map_area",
             latitude: currentRegion.latitude,
             longitude: currentRegion.longitude,
@@ -520,7 +522,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     }, []);
 
     const handleMarkerPress = (venue: Venue) => {
-        posthog.capture("map_marker_selected", {
+        posthog?.capture("map_marker_selected", {
             venue_id: venue.id,
             venue_name: venue.name,
         });
@@ -542,7 +544,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     };
 
     const handleApplyFilters = (nextSelections: FilterSelections) => {
-        posthog.capture("filter_applied", {
+        posthog?.capture("filter_applied", {
             filter_type: "map_discovery",
             ...nextSelections,
         });
