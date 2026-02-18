@@ -96,10 +96,22 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
 const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { logout, user, themeMode, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading } = useStore();
+  const { logout, user, themeMode, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading, pushNotificationsEnabled, togglePushNotifications, setPushNotificationsEnabled } = useStore();
   const userData = user?.user ?? user ?? null;
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      const syncPermissions = async () => {
+        const { notificationService } = await import("../services/notificationService");
+        const hasPermission = await notificationService.checkPermissions();
+        if (hasPermission !== pushNotificationsEnabled) {
+          setPushNotificationsEnabled(hasPermission);
+        }
+      };
+      syncPermissions();
+    }, [pushNotificationsEnabled, setPushNotificationsEnabled])
+  );
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -243,13 +255,13 @@ const ProfileScreen = () => {
                         </View>
                         <TouchableOpacity
                           activeOpacity={0.8}
-                          onPress={() => setNotificationsEnabled((prev) => !prev)}
+                          onPress={togglePushNotifications}
                         >
-                          <View style={[styles.toggleTrack, notificationsEnabled && styles.toggleTrackActive]}>
+                          <View style={[styles.toggleTrack, pushNotificationsEnabled && styles.toggleTrackActive]}>
                             <View
                               style={[
                                 styles.toggleThumb,
-                                notificationsEnabled && styles.toggleThumbActive,
+                                pushNotificationsEnabled && styles.toggleThumbActive,
                               ]}
                             />
                           </View>

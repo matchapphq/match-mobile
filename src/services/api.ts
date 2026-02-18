@@ -600,4 +600,11 @@ export const apiService = {
     changePassword: async (payload: { currentPassword: string; newPassword: string }): Promise<void> => {
         await api.put("/users/me/password", payload);
     },
+
+    /**
+     * Update user push token
+     */
+    updatePushToken: async (token: string): Promise<void> => {
+        await api.put("/users/me/push-token", { push_token: token });
+    },
 };

@@ -85,6 +85,7 @@ interface AppState {
     // Notifications
     notifications: Notification[];
     unreadNotificationCount: number;
+    pushNotificationsEnabled: boolean;
 
     // Filters
     filters: {
@@ -105,6 +106,8 @@ interface AppState {
     refreshUserProfile: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
     updateComputedTheme: () => void;
+    setPushNotificationsEnabled: (enabled: boolean) => void;
+    togglePushNotifications: () => Promise<void>;
 
     setVenues: (venues: Venue[]) => void;
     setSelectedVenue: (venue: Venue | null) => void;
@@ -184,6 +187,7 @@ export const useStore = create<AppState>((set, get) => ({
     favouriteVenueIds: new Set<string>(),
     notifications: [],
     unreadNotificationCount: 0,
+    pushNotificationsEnabled: false,
     filters: {
         sports: [],
         ambiance: [],
@@ -436,6 +440,34 @@ export const useStore = create<AppState>((set, get) => ({
                 computedTheme: systemTheme,
                 colors: systemTheme === 'light' ? LIGHT_THEME : DARK_THEME
             });
+        }
+    },
+
+    setPushNotificationsEnabled: (enabled) => {
+        set({ pushNotificationsEnabled: enabled });
+        AsyncStorage.setItem("pushNotificationsEnabled", JSON.stringify(enabled));
+    },
+
+    togglePushNotifications: async () => {
+        const { pushNotificationsEnabled } = get();
+        const { notificationService } = await import("../services/notificationService");
+        
+        if (!pushNotificationsEnabled) {
+            const granted = await notificationService.requestPermissions();
+            if (granted) {
+                set({ pushNotificationsEnabled: true });
+                await AsyncStorage.setItem("pushNotificationsEnabled", "true");
+                
+                // Optionally get token and send to backend
+                const token = await notificationService.getExpoPushToken();
+                if (token) {
+                    console.log("Push token:", token);
+                    await apiService.updatePushToken(token);
+                }
+            }
+        } else {
+            set({ pushNotificationsEnabled: false });
+            await AsyncStorage.setItem("pushNotificationsEnabled", "false");
         }
     },
 
@@ -803,7 +835,8 @@ export const initializeStore = async () => {
             "user",
             "onboardingCompleted",
             "reservations",
-            "themeMode"
+            "themeMode",
+            "pushNotificationsEnabled"
         ]);
 
         const token = await tokenStorage.getAccessToken();
@@ -815,6 +848,7 @@ export const initializeStore = async () => {
             values.find(([key]) => key === "reservations")?.[1] || null;
         // const token = values.find(([key]) => key === "authToken")?.[1] || null; // Handled above
         const themeModeStr = values.find(([key]) => key === "themeMode")?.[1] || 'dark';
+        const pushEnabledStr = values.find(([key]) => key === "pushNotificationsEnabled")?.[1] || "false";
 
         // Resolve theme
         const themeMode = (themeModeStr === 'light' || themeModeStr === 'dark' || themeModeStr === 'system')
@@ -828,6 +862,7 @@ export const initializeStore = async () => {
         const user = userStr ? JSON.parse(userStr) : null;
         const onboarding = onboardingStr ? JSON.parse(onboardingStr) : false;
         const reservations = reservationsStr ? JSON.parse(reservationsStr) : [];
+        const pushEnabled = JSON.parse(pushEnabledStr);
 
         // Parse date strings back into Date objects for reservations if needed
         const parsedReservations = reservations.map((res: any) => ({
@@ -843,6 +878,7 @@ export const initializeStore = async () => {
             themeMode: themeMode as 'light' | 'dark' | 'system',
             computedTheme,
             colors,
+            pushNotificationsEnabled: pushEnabled,
         });
 
         // Trigger background refresh if we have a token
