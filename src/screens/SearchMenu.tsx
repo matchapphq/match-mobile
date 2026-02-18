@@ -16,11 +16,22 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
 import { mobileApi, SearchMatchResult, SearchResult, SearchTrend } from "../services/mobileApi";
 import { useStore } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 type TabFilter = "all" | "matches" | "venues";
 
 const SearchMenu = ({ navigation }: { navigation: any }) => {
-    const { colors, themeMode } = useStore();
+    const { colors, themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
+    const posthog = usePostHog();
+
+    // Refresh favourites when screen comes into focus
+    useFocusEffect(
+        useCallback(() => {
+            fetchFavourites();
+        }, [fetchFavourites])
+    );
+
     const [searchQuery, setSearchQuery] = useState("");
     const filterAnim = useRef(new Animated.Value(0)).current;
     const activeContentAnim = useRef(new Animated.Value(0)).current;
@@ -153,6 +164,14 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
             }
 
             const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate);
+
+            if (!append && debouncedQuery.trim().length > 0) {
+                posthog.capture("venue_searched", {
+                    query: debouncedQuery,
+                    tab: activeTab,
+                    selected_date: selectedFilterDate,
+                });
+            }
 
             if (append) {
                 if (activeTab === "matches" || activeTab === "all") {
@@ -511,11 +530,20 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                         <Text style={[styles.venueNameNew, { color: colors.text }]} numberOfLines={1}>
                                                                             {venue.name}
                                                                         </Text>
-                                                                        <View style={[styles.venueRatingBadgeNew, { backgroundColor: venue.rating >= 4.5 ? 'rgba(244,123,37,0.1)' : themeMode === 'light' ? '#f1f5f9' : 'rgba(255,255,255,0.1)' }]}>
-                                                                            <Text style={[styles.venueRatingTextNew, { color: venue.rating >= 4.5 ? colors.primary : colors.text }]}>
-                                                                                {venue.rating.toFixed(1)}
-                                                                            </Text>
-                                                                        </View>
+                                                                        <TouchableOpacity
+                                                                            onPress={(e) => {
+                                                                                e.stopPropagation?.();
+                                                                                toggleFavourite(venue.id);
+                                                                            }}
+                                                                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                                                            activeOpacity={0.7}
+                                                                        >
+                                                                            <MaterialIcons
+                                                                                name={favouriteVenueIds.has(venue.id) ? "favorite" : "favorite-border"}
+                                                                                size={20}
+                                                                                color={colors.primary}
+                                                                            />
+                                                                        </TouchableOpacity>
                                                                     </View>
                                                                     <Text style={[styles.venueTagLineNew, { color: colors.textMuted }]}>{venue.tag}</Text>
                                                                     <View style={styles.venueLocationRow}>

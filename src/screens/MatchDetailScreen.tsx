@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import * as Location from "expo-location";
 import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
 import { SearchMatchResult, Venue, mobileApi } from "../services/mobileApi";
 
 type MatchDetailRoute = {
@@ -32,6 +33,7 @@ const MatchDetailScreen = ({
     route: MatchDetailRoute;
 }) => {
     const { colors, themeMode } = useStore();
+    const posthog = usePostHog();
     const matchId = route.params?.matchId;
     const [match, setMatch] = useState<SearchMatchResult | null>(null);
     const [venues, setVenues] = useState<Venue[]>([]);
@@ -82,6 +84,13 @@ const MatchDetailScreen = ({
             
             setMatch(matchData);
 
+            posthog.capture("match_details_viewed", {
+                match_id: matchData.id,
+                home_team: matchData.home.name,
+                away_team: matchData.away.name,
+                league: matchData.league,
+            });
+
             // Fetch venues broadcasting this specific match, sorted by distance from user
             const venueData = await mobileApi.fetchMatchVenues(
                 matchId,
@@ -96,7 +105,7 @@ const MatchDetailScreen = ({
         } finally {
             setIsLoading(false);
         }
-    }, [matchId, userLocation]);
+    }, [matchId, userLocation, posthog]);
 
     useEffect(() => {
         loadData();
@@ -257,7 +266,7 @@ const MatchDetailScreen = ({
                                                 color={colors.primary}
                                                 style={{ marginRight: 4 }}
                                             />
-                                            <Text style={[styles.ratingChipText, { color: colors.white }]}>{venue.rating.toFixed(1)}</Text>
+                                            <Text style={[styles.ratingChipText, { color: colors.white }]}>{typeof venue.rating === 'number' ? venue.rating.toFixed(1) : (Number(venue.rating) || 0).toFixed(1)}</Text>
                                         </View>
                                         <View style={styles.statusChip}>
                                             <Text style={styles.statusChipText}>

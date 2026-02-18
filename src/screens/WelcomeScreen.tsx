@@ -12,6 +12,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { usePostHog } from "posthog-react-native";
 
 const HERO_IMAGE =
     "https://lh3.googleusercontent.com/aida-public/AB6AXuBEo8L905bV0tu0itMAcKX8KWGIrVmXYi5Y8dAnmnQulD6fC7SxwQotT9NEE3f2C8EX4ctlqzeM3xOM_MSjqSikfte-Wd68AaSOtq1_LRV4ClV4oRz1YE0tHAYhvWmxFqjgCyocp-bWHbGnsDf8PCPgc_I_FXlGsrgGDGKt7uNxNK91tKKgOfcibjSCB2_7NRRFeRQtoUJ0axV6FnKmAafdP7_QZlurwu3OQK3Aow9zr0OUsmuGugpKABgfWtak7I-U0n5gvyRsnS6n";
@@ -22,8 +23,10 @@ const WelcomeScreen = () => {
     const contentOpacity = useRef(new Animated.Value(0)).current;
     const contentTranslate = useRef(new Animated.Value(40)).current;
     const navigation = useNavigation<any>();
+    const posthog = usePostHog();
 
     useEffect(() => {
+        posthog.capture("onboarding_started");
         Animated.parallel([
             Animated.timing(contentOpacity, {
                 toValue: 1,

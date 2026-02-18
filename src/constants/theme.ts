@@ -79,7 +79,7 @@ export const theme = {
 };
 
 export const images = {
-  logo: require('../../assets/logo.png'),
-  logoWithBg: require('../../assets/logo-with-bg.png'),
-  background: require('../../assets/fond.png'),
+  logo: require('../../assets/logo_v4.png'),
+  logoWithBg: require('../../assets/logo_app.png'),
+  background: require('../../assets/logo_app.png'), // Using logo_app as fallback since fond.png is missing
 };

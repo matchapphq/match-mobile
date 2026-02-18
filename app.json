@@ -3,9 +3,9 @@
     "name": "Match",
     "slug": "match",
     "scheme": "match",
-    "version": "0.8.3",
+    "version": "0.8.4",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo_app.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -31,7 +31,11 @@
       "privacy": "https://matchapphq.github.io/match-privacy/",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.matchapps.match"
+      "package": "com.matchapps.match",
+      "notification": {
+        "icon": "./assets/logo_app.png",
+        "color": "#f47b25"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -41,6 +45,9 @@
       "eas": {
         "projectId": "b0afe468-de21-49eb-b749-5e26c466e72f"
       }
-    }
+    },
+    "plugins": [
+      "expo-localization"
+    ]
   }
 }

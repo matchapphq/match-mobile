@@ -10,7 +10,7 @@ import {
     Reservation,
     Notification,
 } from "../types";
-import { apiService, mockData, ApiReservation } from "../services/api";
+import { apiService, ApiReservation } from "../services/api";
 import { tokenStorage } from "../utils/tokenStorage";
 
 // Transform API reservation to mobile Reservation type
@@ -79,9 +79,13 @@ interface AppState {
     // Reservations
     reservations: Reservation[];
 
+    // Favourites
+    favouriteVenueIds: Set<string>;
+
     // Notifications
     notifications: Notification[];
     unreadNotificationCount: number;
+    pushNotificationsEnabled: boolean;
 
     // Filters
     filters: {
@@ -97,9 +101,13 @@ interface AppState {
     setUser: (user: User | null) => void;
     setOnboardingCompleted: (completed: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
-    updateUser: (updates: Partial<User>) => void;
+    updateUser: (updates: Partial<User>) => Promise<void>;
+    fetchUserProfile: () => Promise<void>;
+    refreshUserProfile: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
     updateComputedTheme: () => void;
+    setPushNotificationsEnabled: (enabled: boolean) => void;
+    togglePushNotifications: () => Promise<void>;
 
     setVenues: (venues: Venue[]) => void;
     setSelectedVenue: (venue: Venue | null) => void;
@@ -120,6 +128,12 @@ interface AppState {
     updateReservation: (id: string, updates: Partial<Reservation>) => void;
     cancelReservation: (id: string) => void;
     removeReservation: (id: string) => void;
+
+    // Favourites Actions
+    toggleFavourite: (venueId: string) => Promise<boolean>;
+    isFavourite: (venueId: string) => boolean;
+    fetchFavourites: () => Promise<void>;
+    checkAndCacheFavourite: (venueId: string) => Promise<boolean>;
 
     // Reservation API Actions
     fetchReservations: () => Promise<void>;
@@ -170,8 +184,10 @@ export const useStore = create<AppState>((set, get) => ({
         sortDirection: "asc",
     },
     reservations: [],
+    favouriteVenueIds: new Set<string>(),
     notifications: [],
     unreadNotificationCount: 0,
+    pushNotificationsEnabled: false,
     filters: {
         sports: [],
         ambiance: [],
@@ -186,6 +202,76 @@ export const useStore = create<AppState>((set, get) => ({
     // Loading state actions
     setLoading: (loading) => set({ isLoading: loading }),
     setError: (error) => set({ error }),
+
+    // Favourites
+    toggleFavourite: async (venueIdOrObj: string | { id: string, venue_id?: string }) => {
+        const venueId = typeof venueIdOrObj === 'string' ? venueIdOrObj : (venueIdOrObj.venue_id || venueIdOrObj.id);
+        const { favouriteVenueIds } = get();
+        const isFav = favouriteVenueIds.has(venueId);
+        
+        // Optimistic update
+        const newSet = new Set(favouriteVenueIds);
+        if (isFav) {
+            newSet.delete(venueId);
+        } else {
+            newSet.add(venueId);
+        }
+        set({ favouriteVenueIds: newSet });
+
+        try {
+            const { apiService } = await import('../services/api');
+            if (isFav) {
+                await apiService.removeVenueFromFavorites(venueId);
+            } else {
+                await apiService.addVenueToFavorites(venueId);
+            }
+            return !isFav;
+        } catch (error) {
+            // Revert on failure
+            const revertSet = new Set(get().favouriteVenueIds);
+            if (isFav) {
+                revertSet.add(venueId);
+            } else {
+                revertSet.delete(venueId);
+            }
+            set({ favouriteVenueIds: revertSet });
+            console.warn('Failed to toggle favourite:', error);
+            return isFav;
+        }
+    },
+
+    isFavourite: (venueId: string) => {
+        return get().favouriteVenueIds.has(venueId);
+    },
+
+    fetchFavourites: async () => {
+        try {
+            const { apiService } = await import('../services/api');
+            const favorites = await apiService.getFavoriteVenues();
+            // Extract venue_id from the favorite records
+            const ids = new Set(favorites.map((f: any) => f.venue_id || f.venue?.id || f.id));
+            set({ favouriteVenueIds: ids });
+        } catch (error) {
+            console.warn('Failed to fetch favourites:', error);
+        }
+    },
+
+    checkAndCacheFavourite: async (venueId: string) => {
+        try {
+            const { apiService } = await import('../services/api');
+            const isFav = await apiService.checkVenueFavorite(venueId);
+            const newSet = new Set(get().favouriteVenueIds);
+            if (isFav) {
+                newSet.add(venueId);
+            } else {
+                newSet.delete(venueId);
+            }
+            set({ favouriteVenueIds: newSet });
+            return isFav;
+        } catch {
+            return false;
+        }
+    },
 
     // API Actions
     fetchVenues: async (filters) => {
@@ -254,6 +340,10 @@ export const useStore = create<AppState>((set, get) => ({
                 isAuthenticated: true,
                 isLoading: false,
             });
+
+            // Trigger background refresh to get full profile (bio, created_at, etc)
+            get().refreshUserProfile();
+
             return true;
         } catch (error: any) {
             set({ error: error.message || "Login failed", isLoading: false });
@@ -353,6 +443,34 @@ export const useStore = create<AppState>((set, get) => ({
         }
     },
 
+    setPushNotificationsEnabled: (enabled) => {
+        set({ pushNotificationsEnabled: enabled });
+        AsyncStorage.setItem("pushNotificationsEnabled", JSON.stringify(enabled));
+    },
+
+    togglePushNotifications: async () => {
+        const { pushNotificationsEnabled } = get();
+        const { notificationService } = await import("../services/notificationService");
+        
+        if (!pushNotificationsEnabled) {
+            const granted = await notificationService.requestPermissions();
+            if (granted) {
+                set({ pushNotificationsEnabled: true });
+                await AsyncStorage.setItem("pushNotificationsEnabled", "true");
+                
+                // Optionally get token and send to backend
+                const token = await notificationService.getExpoPushToken();
+                if (token) {
+                    console.log("Push token:", token);
+                    await apiService.updatePushToken(token);
+                }
+            }
+        } else {
+            set({ pushNotificationsEnabled: false });
+            await AsyncStorage.setItem("pushNotificationsEnabled", "false");
+        }
+    },
+
     updateUserPreferences: (preferences) => {
         const { user } = get();
         if (user) {
@@ -362,31 +480,65 @@ export const useStore = create<AppState>((set, get) => ({
         }
     },
 
-    updateUser: (updates) => {
+    updateUser: async (updates) => {
         const { user } = get();
         if (user) {
-            // The User interface has a weird redundant structure where 'user' is both nested and top-level.
-            // We'll update both to stay consistent.
-            const updatedUser = { 
-                ...user, 
-                ...updates,
-            };
+            set({ isLoading: true, error: null });
+            try {
+                const updatedUser = await apiService.updateProfile(updates);
+                // Merge with existing user data to ensure all fields are preserved
+                const finalUser = { ...user, ...updatedUser };
+                
+                // Keep nested user object in sync if it exists
+                if (finalUser.user) {
+                    finalUser.user = { ...finalUser.user, ...updatedUser };
+                }
 
-            // Only sync to nested user object if it exists to avoid creating a partial object
-            // that shadows top-level properties in views using user?.user ?? user
-            if (user.user) {
-                updatedUser.user = {
-                    ...user.user,
-                    ...(updates.user || {}),
-                    // If top level fields are updated, sync them to nested user object if they exist there
-                    ...(updates.avatar ? { avatar: updates.avatar } : {}),
-                    ...(updates.first_name ? { first_name: updates.first_name } : {}),
-                    ...(updates.last_name ? { last_name: updates.last_name } : {}),
-                };
+                set({ user: finalUser, isLoading: false });
+                await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+
+                // Optional: Trigger a background refresh to be absolutely sure we're in sync
+                get().refreshUserProfile();
+            } catch (error: any) {
+                set({ 
+                    error: error?.response?.data?.error || error.message || "Failed to update user", 
+                    isLoading: false 
+                });
+                throw error;
             }
+        }
+    },
 
-            set({ user: updatedUser });
-            AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+    fetchUserProfile: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const user = await apiService.getMe();
+            set({ user, isAuthenticated: !!user, isLoading: false });
+            if (user) {
+                await AsyncStorage.setItem("user", JSON.stringify(user));
+            }
+        } catch (error: any) {
+            console.error("Error fetching user profile:", error);
+            set({ isLoading: false });
+        }
+    },
+
+    refreshUserProfile: async () => {
+        try {
+            const user = await apiService.getMe();
+            if (user) {
+                const currentUser = get().user;
+                // Preserve local nested structure if it exists
+                const finalUser = { ...currentUser, ...user };
+                if (currentUser?.user) {
+                    finalUser.user = { ...currentUser.user, ...user };
+                }
+                
+                set({ user: finalUser });
+                await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+            }
+        } catch (error) {
+            console.warn("Background profile refresh failed:", error);
         }
     },
 
@@ -652,6 +804,7 @@ export const useStore = create<AppState>((set, get) => ({
             matches: [],
             selectedMatch: null,
             reservations: [],
+            favouriteVenueIds: new Set<string>(),
             notifications: [],
             unreadNotificationCount: 0,
             filters: {
@@ -682,7 +835,8 @@ export const initializeStore = async () => {
             "user",
             "onboardingCompleted",
             "reservations",
-            "themeMode"
+            "themeMode",
+            "pushNotificationsEnabled"
         ]);
 
         const token = await tokenStorage.getAccessToken();
@@ -694,6 +848,7 @@ export const initializeStore = async () => {
             values.find(([key]) => key === "reservations")?.[1] || null;
         // const token = values.find(([key]) => key === "authToken")?.[1] || null; // Handled above
         const themeModeStr = values.find(([key]) => key === "themeMode")?.[1] || 'dark';
+        const pushEnabledStr = values.find(([key]) => key === "pushNotificationsEnabled")?.[1] || "false";
 
         // Resolve theme
         const themeMode = (themeModeStr === 'light' || themeModeStr === 'dark' || themeModeStr === 'system')
@@ -707,6 +862,7 @@ export const initializeStore = async () => {
         const user = userStr ? JSON.parse(userStr) : null;
         const onboarding = onboardingStr ? JSON.parse(onboardingStr) : false;
         const reservations = reservationsStr ? JSON.parse(reservationsStr) : [];
+        const pushEnabled = JSON.parse(pushEnabledStr);
 
         // Parse date strings back into Date objects for reservations if needed
         const parsedReservations = reservations.map((res: any) => ({
@@ -722,7 +878,14 @@ export const initializeStore = async () => {
             themeMode: themeMode as 'light' | 'dark' | 'system',
             computedTheme,
             colors,
+            pushNotificationsEnabled: pushEnabled,
         });
+
+        // Trigger background refresh if we have a token
+        if (token) {
+            useStore.getState().refreshUserProfile();
+            useStore.getState().fetchFavourites();
+        }
     } catch (error) {
         console.error("Error initializing store:", error);
     }

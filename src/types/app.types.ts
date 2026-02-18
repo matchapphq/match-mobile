@@ -9,6 +9,8 @@ export interface UserProfile {
     tier: string;
     first_name?: string;
     last_name?: string;
+    bio?: string;
+    phone?: string;
 }
 
 export interface Venue {

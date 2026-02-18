@@ -421,6 +421,12 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
 
     // Search venues in the current area
     const handleSearchArea = async () => {
+        posthog.capture("venue_searched", {
+            search_type: "map_area",
+            latitude: currentRegion.latitude,
+            longitude: currentRegion.longitude,
+            lat_delta: currentRegion.latitudeDelta,
+        });
         setIsSearchingArea(true);
         setNoVenuesFound(false);
         setShowSearchButton(false);
@@ -514,6 +520,10 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     }, []);
 
     const handleMarkerPress = (venue: Venue) => {
+        posthog.capture("map_marker_selected", {
+            venue_id: venue.id,
+            venue_name: venue.name,
+        });
         setSelectedVenue(venue);
         setIsSheetOpen(true);
     };
@@ -532,6 +542,10 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     };
 
     const handleApplyFilters = (nextSelections: FilterSelections) => {
+        posthog.capture("filter_applied", {
+            filter_type: "map_discovery",
+            ...nextSelections,
+        });
         setFilterSelections(nextSelections);
         setFilterSheetVisible(false);
     };
@@ -729,7 +743,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                                 </View>
                                 <View style={styles.ratingRow}>
                                     <MaterialIcons name="star" size={16} color={colors.yellow400} />
-                                    <Text style={[styles.ratingText, { color: colors.text }]}>{selectedVenue.rating.toFixed(1)}</Text>
+                                    <Text style={[styles.ratingText, { color: colors.text }]}>{typeof selectedVenue.rating === 'number' ? selectedVenue.rating.toFixed(1) : (Number(selectedVenue.rating) || 0).toFixed(1)}</Text>
                                     <Text style={[styles.venueSubText, { color: colors.textMuted }]}>• {selectedVenue.tags[0]} • {selectedVenue.priceLevel} • {selectedVenue.distance}</Text>
                                 </View>
                             </View>

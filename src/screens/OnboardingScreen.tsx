@@ -23,6 +23,7 @@ import {
 } from "./onboarding/options";
 import { useOnboardingForm } from "../store/useOnboardingForm";
 import { useStore } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
 
 type OnboardingStackParamList = {
     OnboardingName: undefined;
@@ -124,6 +125,7 @@ const NameStepScreen: React.FC<StepScreenProps<"OnboardingName">> = ({
     navigation,
 }) => {
     const { data, updateField } = useOnboardingForm();
+    const posthog = usePostHog();
     const canContinue =
         data.firstName.trim().length > 0 && data.lastName.trim().length > 0;
 
@@ -137,7 +139,10 @@ const NameStepScreen: React.FC<StepScreenProps<"OnboardingName">> = ({
             }
             subtitle="Dis-nous comment tu t'appelles pour personnaliser ton expérience sur Match."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("OnboardingContact")}
+            onNext={() => {
+                posthog.capture("onboarding_step_completed", { step_name: "name" });
+                navigation.navigate("OnboardingContact");
+            }}
             onBack={() => navigation.goBack()}
             footerNote="En continuant, tu acceptes nos CGU et notre Politique de confidentialité."
         >
@@ -188,6 +193,7 @@ const ContactStepScreen: React.FC<StepScreenProps<"OnboardingContact">> = ({
     navigation,
 }) => {
     const { data, updateField } = useOnboardingForm();
+    const posthog = usePostHog();
     const [selectedCountry, setSelectedCountry] = useState(COUNTRY_OPTIONS[0]);
     const [modalVisible, setModalVisible] = useState(false);
 
@@ -211,7 +217,10 @@ const ContactStepScreen: React.FC<StepScreenProps<"OnboardingContact">> = ({
             title="Coordonnées"
             subtitle="Comment peut-on te joindre pour confirmer tes réservations ?"
             canContinue={canContinue}
-            onNext={() => navigation.navigate("OnboardingSecurity")}
+            onNext={() => {
+                posthog.capture("onboarding_step_completed", { step_name: "contact" });
+                navigation.navigate("OnboardingSecurity");
+            }}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.formGroup}>
@@ -326,6 +335,7 @@ const SecurityStepScreen: React.FC<
     StepScreenProps<"OnboardingSecurity">
 > = ({ navigation }) => {
     const { data, updateField } = useOnboardingForm();
+    const posthog = usePostHog();
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const passwordsMatch =
@@ -339,7 +349,10 @@ const SecurityStepScreen: React.FC<
             title="Sécurité"
             subtitle="Protège ton compte en définissant un mot de passe sécurisé."
             canContinue={passwordsMatch}
-            onNext={() => navigation.navigate("OnboardingUsername")}
+            onNext={() => {
+                posthog.capture("onboarding_step_completed", { step_name: "security" });
+                navigation.navigate("OnboardingUsername");
+            }}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.formGroup}>
@@ -427,6 +440,7 @@ const UsernameStepScreen: React.FC<
     StepScreenProps<"OnboardingUsername">
 > = ({ navigation }) => {
     const { data, updateField } = useOnboardingForm();
+    const posthog = usePostHog();
     const canContinue = data.username.trim().length >= 3;
 
     return (
@@ -435,7 +449,10 @@ const UsernameStepScreen: React.FC<
             title="Ton identité unique"
             subtitle="Choisis un nom d'utilisateur pour que tes amis te trouvent facilement."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("OnboardingSports")}
+            onNext={() => {
+                posthog.capture("onboarding_step_completed", { step_name: "username" });
+                navigation.navigate("OnboardingSports");
+            }}
             onBack={() => navigation.goBack()}
             footerNote="Tu pourras le modifier plus tard dans ton profil."
         >
@@ -487,6 +504,7 @@ const SportsStepScreen: React.FC<StepScreenProps<"OnboardingSports">> = ({
     navigation,
 }) => {
     const { data, toggleArrayValue } = useOnboardingForm();
+    const posthog = usePostHog();
     const canContinue = data.fav_sports.length > 0;
 
     return (
@@ -500,7 +518,10 @@ const SportsStepScreen: React.FC<StepScreenProps<"OnboardingSports">> = ({
             }
             subtitle="Sélectionne tes favoris pour personnaliser ton flux et trouver les meilleurs bars."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("OnboardingMood")}
+            onNext={() => {
+                posthog.capture("onboarding_step_completed", { step_name: "sports" });
+                navigation.navigate("OnboardingMood");
+            }}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.optionsList}>
@@ -573,6 +594,7 @@ const MoodStepScreen: React.FC<StepScreenProps<"OnboardingMood">> = ({
     navigation,
 }) => {
     const { data, updateField } = useOnboardingForm();
+    const posthog = usePostHog();
     const canContinue = Boolean(data.ambiances[0]);
 
     const handleSelectMood = (id: string) => {
@@ -585,7 +607,10 @@ const MoodStepScreen: React.FC<StepScreenProps<"OnboardingMood">> = ({
             title="Quelle ambiance ?"
             subtitle="Choisis ton style pour que nous puissions te proposer les meilleurs spots."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("OnboardingVenue")}
+            onNext={() => {
+                posthog.capture("onboarding_step_completed", { step_name: "mood" });
+                navigation.navigate("OnboardingVenue");
+            }}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.moodGrid}>
@@ -634,6 +659,7 @@ const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
     navigation,
 }) => {
     const { data, updateField } = useOnboardingForm();
+    const posthog = usePostHog();
     const canContinue = data.venue_types.length > 0;
 
     const handleSelectVenue = (id: string) => {
@@ -651,7 +677,10 @@ const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
             }
             subtitle="Choisis l'ambiance qui correspond à ton envie du moment."
             canContinue={canContinue}
-            onNext={() => navigation.navigate("OnboardingBudget")}
+            onNext={() => {
+                posthog.capture("onboarding_step_completed", { step_name: "venue_style" });
+                navigation.navigate("OnboardingBudget");
+            }}
             onBack={() => navigation.goBack()}
         >
             <View style={sharedStyles.optionsList}>
@@ -729,10 +758,12 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
     const { data, updateField, buildRequestPayload, reset } =
         useOnboardingForm();
     const signup = useStore((state) => state.signup);
+    const user = useStore((state) => state.user);
     const isLoading = useStore((state) => state.isLoading);
     const storeError = useStore((state) => state.error);
     const [submissionError, setSubmissionError] = useState<string | null>(null);
     const rootNavigation = useNavigation<any>();
+    const posthog = usePostHog();
 
     const handleNext = async () => {
         if (!data.budget || isLoading) return;
@@ -740,12 +771,25 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
         const payload = buildRequestPayload();
         const success = await signup(payload);
         if (success) {
+            // Identify user in PostHog after successful signup
+            const newUser = useStore.getState().user;
+            const userData = newUser?.user ?? newUser;
+            if (userData?.id) {
+                posthog.identify(userData.id, {
+                    email: userData.email as string,
+                    first_name: userData.first_name as string,
+                    last_name: userData.last_name as string,
+                    username: userData.username as string,
+                    fav_sports: data.fav_sports,
+                    budget: data.budget,
+                });
+                posthog.capture("signup_success");
+            }
+            
             reset();
-            rootNavigation.reset({
-                index: 0,
-                routes: [{ name: "Tab" }],
-            });
+            // Navigation is handled automatically by AppNavigator's conditional rendering
         } else {
+            posthog.capture("signup_failed", { email: data.email });
             setSubmissionError(
                 "Impossible de finaliser ton compte pour le moment. Réessaie dans un instant.",
             );
