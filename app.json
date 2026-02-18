@@ -31,7 +31,11 @@
       "privacy": "https://matchapphq.github.io/match-privacy/",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.matchapps.match"
+      "package": "com.matchapps.match",
+      "notification": {
+        "icon": "./assets/logo_app.png",
+        "color": "#f47b25"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
