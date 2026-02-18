@@ -3,6 +3,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 // import { theme } from "../constants/theme"; // Removed static theme import to avoid confusion
 import { useStore } from "../store/useStore";
+import { useNotifications } from "../hooks/useNotifications";
 
 // Import screens
 import SplashScreen from "../screens/SplashScreen";
@@ -31,6 +32,11 @@ import { PostHogProvider } from 'posthog-react-native';
 
 const Stack = createStackNavigator();
 
+const NotificationHandler = () => {
+    useNotifications();
+    return null;
+};
+
 export const AppNavigator = () => {
     const { isAuthenticated, colors } = useStore();
     const [isLoading, setIsLoading] = React.useState(true);
@@ -46,6 +52,7 @@ export const AppNavigator = () => {
 
     return (
         <NavigationContainer>
+            <NotificationHandler />
             <PostHogProvider 
                 apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY} 
                 options={{

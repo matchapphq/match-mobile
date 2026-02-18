@@ -462,7 +462,7 @@ export const useStore = create<AppState>((set, get) => ({
                 const token = await notificationService.getExpoPushToken();
                 if (token) {
                     console.log("Push token:", token);
-                    // TODO: apiService.registerPushToken(token);
+                    await apiService.updatePushToken(token);
                 }
             }
         } else {
