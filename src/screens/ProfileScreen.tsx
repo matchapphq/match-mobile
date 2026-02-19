@@ -108,6 +108,7 @@ const ProfileScreen = () => {
   const [bugModalVisible, setBugModalVisible] = useState(false);
   const [bugName, setBugName] = useState('');
   const [bugContent, setBugContent] = useState('');
+  const [isSubmittingBug, setIsSubmittingBug] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -186,22 +187,44 @@ const ProfileScreen = () => {
     ]);
   };
 
-  const handleSendBugReport = () => {
+  const handleSendBugReport = async () => {
     if (!bugContent.trim()) {
       Alert.alert('Erreur', 'Veuillez décrire le bug rencontré.');
       return;
     }
 
-    const email = process.env.EXPO_PUBLIC_BUG_REPORT_EMAIL || 'support@matchapp.fr';
-    const subject = `[BUG REPORT] ${bugName}`;
-    const body = `Nom: ${bugName}\n\nDescription du bug:\n${bugContent}\n\n---\nEnvoyé depuis l'application Match Mobile`;
-    
-    const url = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    Linking.openURL(url).catch(() => {
-      Alert.alert('Erreur', "Impossible d'ouvrir l'application d'email. Veuillez envoyer votre rapport à " + email);
-    });
-    setBugModalVisible(false);
+    setIsSubmittingBug(true);
+    try {
+      const { mobileApi } = await import("../services/mobileApi");
+      
+      const metadata = {
+        platform: Platform.OS,
+        os_version: Platform.Version,
+        device_model: Platform.select({ ios: 'iPhone', android: 'Android' }),
+        app_version: '2.4.0',
+        user_id: userData?.id,
+        timestamp: new Date().toISOString(),
+      };
+
+      const success = await mobileApi.reportBug({
+        userName: bugName,
+        userEmail: profile.email || 'unknown@matchapp.fr',
+        description: bugContent,
+        metadata
+      });
+
+      if (success) {
+        Alert.alert('Merci !', 'Votre rapport de bug a été envoyé avec succès.');
+        setBugModalVisible(false);
+        setBugContent('');
+      } else {
+        throw new Error("API_ERROR");
+      }
+    } catch (error) {
+      Alert.alert('Erreur', "Impossible d'envoyer le rapport. Veuillez réessayer plus tard.");
+    } finally {
+      setIsSubmittingBug(false);
+    }
   };
 
   return (
@@ -439,11 +462,18 @@ const ProfileScreen = () => {
                 />
 
                 <TouchableOpacity
-                  style={[styles.sendButton, { backgroundColor: colors.primary }]}
+                  style={[styles.sendButton, { backgroundColor: colors.primary }, isSubmittingBug && { opacity: 0.7 }]}
                   onPress={handleSendBugReport}
+                  disabled={isSubmittingBug}
                 >
-                  <Text style={styles.sendButtonText}>Envoyer le rapport</Text>
-                  <MaterialIcons name="send" size={18} color="#fff" />
+                  {isSubmittingBug ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <>
+                      <Text style={styles.sendButtonText}>Envoyer le rapport</Text>
+                      <MaterialIcons name="send" size={18} color="#fff" />
+                    </>
+                  )}
                 </TouchableOpacity>
               </View>
             </View>
