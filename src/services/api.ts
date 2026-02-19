@@ -607,4 +607,12 @@ export const apiService = {
     updatePushToken: async (token: string): Promise<void> => {
         await api.put("/users/me/push-token", { push_token: token });
     },
+
+    /**
+     * Generic POST request
+     */
+    post: async (url: string, data?: any) => {
+        const response = await api.post(url, data);
+        return response.data;
+    },
 };

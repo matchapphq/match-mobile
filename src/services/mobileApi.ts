@@ -462,6 +462,26 @@ export const mobileApi = {
         }
     },
 
+    async reportBug(data: {
+        userName: string;
+        userEmail: string;
+        description: string;
+        metadata?: any;
+    }): Promise<boolean> {
+        try {
+            await apiService.post("/support/bug-report", {
+                user_name: data.userName,
+                user_email: data.userEmail,
+                description: data.description,
+                metadata: data.metadata,
+            });
+            return true;
+        } catch (error) {
+            console.error("API reportBug failed", error);
+            return false;
+        }
+    },
+
     async fetchMatchVenues(
         matchId: string,
         userLat?: number,
