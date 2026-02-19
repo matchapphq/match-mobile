@@ -10,6 +10,11 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Linking,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -83,6 +88,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
     rows: [
       { icon: 'help', color: '#fbbf24', label: 'Questions fréquentes' },
       { icon: 'chat', color: '#34d399', label: 'Parler à un conseiller' },
+      { icon: 'bug-report', color: '#f87171', label: 'Signaler un bug' },
     ],
   },
   {
@@ -99,6 +105,9 @@ const ProfileScreen = () => {
   const { logout, user, themeMode, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading, pushNotificationsEnabled, togglePushNotifications, setPushNotificationsEnabled } = useStore();
   const userData = user?.user ?? user ?? null;
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [bugModalVisible, setBugModalVisible] = useState(false);
+  const [bugName, setBugName] = useState('');
+  const [bugContent, setBugContent] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -175,6 +184,24 @@ const ProfileScreen = () => {
         },
       },
     ]);
+  };
+
+  const handleSendBugReport = () => {
+    if (!bugContent.trim()) {
+      Alert.alert('Erreur', 'Veuillez décrire le bug rencontré.');
+      return;
+    }
+
+    const email = process.env.EXPO_PUBLIC_BUG_REPORT_EMAIL || 'support@matchapp.fr';
+    const subject = `[BUG REPORT] ${bugName}`;
+    const body = `Nom: ${bugName}\n\nDescription du bug:\n${bugContent}\n\n---\nEnvoyé depuis l'application Match Mobile`;
+    
+    const url = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Erreur', "Impossible d'ouvrir l'application d'email. Veuillez envoyer votre rapport à " + email);
+    });
+    setBugModalVisible(false);
   };
 
   return (
@@ -299,6 +326,11 @@ const ProfileScreen = () => {
                           case 'Parler à un conseiller':
                               Alert.alert('Support', 'Nous connectons cette option prochainement.');
                               return;
+                          case 'Signaler un bug':
+                              setBugName(profile.name);
+                              setBugContent('');
+                              setBugModalVisible(true);
+                              return;
                           case 'Déconnexion':
                               handleLogout();
                               return;
@@ -363,6 +395,61 @@ const ProfileScreen = () => {
 
         <Text style={[styles.versionText, { color: colors.subtext }]}>Version 2.4.0 • Build 192</Text>
       </ScrollView>
+
+      {/* Bug Report Modal */}
+      <Modal
+        visible={bugModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setBugModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.modalContainer}
+          >
+            <View style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.border }]}>
+              <View style={styles.modalHeader}>
+                <Text style={[styles.modalTitle, { color: colors.text }]}>Signaler un bug</Text>
+                <TouchableOpacity onPress={() => setBugModalVisible(false)}>
+                  <MaterialIcons name="close" size={24} color={colors.text} />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.modalForm}>
+                <Text style={[styles.inputLabel, { color: colors.subtext }]}>VOTRE NOM</Text>
+                <TextInput
+                  style={[styles.modalInput, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
+                  value={bugName}
+                  onChangeText={setBugName}
+                  placeholder="Nom"
+                  placeholderTextColor={colors.textMuted}
+                />
+
+                <Text style={[styles.inputLabel, { color: colors.subtext, marginTop: 14 }]}>DESCRIPTION DU BUG</Text>
+                <TextInput
+                  style={[styles.modalInput, styles.modalTextArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border, height: 140 }]}
+                  value={bugContent}
+                  onChangeText={setBugContent}
+                  placeholder="Décrivez le problème ici..."
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  numberOfLines={5}
+                  textAlignVertical="top"
+                />
+
+                <TouchableOpacity
+                  style={[styles.sendButton, { backgroundColor: colors.primary }]}
+                  onPress={handleSendBugReport}
+                >
+                  <Text style={styles.sendButtonText}>Envoyer le rapport</Text>
+                  <MaterialIcons name="send" size={18} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -561,6 +648,66 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    width: '100%',
+  },
+  modalContent: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+    borderWidth: 1,
+    borderBottomWidth: 0,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  modalForm: {
+    marginBottom: 0,
+  },
+  modalInput: {
+    borderRadius: 16,
+    padding: 16,
+    fontSize: 16,
+    borderWidth: 1,
+  },
+  modalTextArea: {
+    height: 150,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 8,
+    marginLeft: 4,
+    letterSpacing: 1,
+  },
+  sendButton: {
+    marginTop: 20,
+    height: 56,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
 });
 
