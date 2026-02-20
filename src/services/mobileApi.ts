@@ -107,8 +107,8 @@ const transformApiReservation = (apiRes: any): Booking => {
     const match = venueMatch?.match;
     const venue = venueMatch?.venue;
     const scheduledAt = match?.scheduled_at ? new Date(match.scheduled_at) : new Date();
-    const homeTeam = match?.homeTeam?.name || "Home";
-    const awayTeam = match?.awayTeam?.name || "Away";
+    const homeTeam = match?.homeTeam?.name || match?.home_team?.name || "Home";
+    const awayTeam = match?.awayTeam?.name || match?.away_team?.name || "Away";
     
     return {
         id: apiRes.id,

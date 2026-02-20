@@ -44,7 +44,7 @@ export const transformApiReservation = (
         numberOfPeople: apiRes.party_size,
         matchId: match?.id,
         matchTitle: match
-            ? `${match.homeTeam?.name || "TBD"} vs ${match.awayTeam?.name || "TBD"}`
+            ? `${match.homeTeam?.name || match.home_team?.name || "TBD"} vs ${match.awayTeam?.name || match.away_team?.name || "TBD"}`
             : undefined,
         status,
         conditions: apiRes.special_requests || undefined,
