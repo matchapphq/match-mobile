@@ -154,6 +154,11 @@ interface AppState {
     fetchMatches: (filters?: any) => Promise<void>;
     fetchUpcomingMatches: () => Promise<void>;
     login: (email: string, password: string) => Promise<boolean>;
+    /**
+     * Note: Unlike `login`, this returns a structured result so that callers can
+     * inspect detailed failure information (e.g. status/reason from Google).
+     * The `login` method keeps a boolean return type for backward compatibility.
+     */
     loginWithGoogle: (
         idToken: string
     ) => Promise<{ success: boolean; reason?: string; status?: number }>;
