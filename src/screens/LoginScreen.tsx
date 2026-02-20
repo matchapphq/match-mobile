@@ -16,10 +16,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { theme } from "../constants/theme";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
+import { useGoogleAuth } from "../hooks/useGoogleAuth";
 
 const LoginScreen = () => {
     const navigation = useNavigation<any>();
     const { login, isLoading, user } = useStore();
+    const { signInWithGoogle, isGoogleLoading, isGoogleConfigured } = useGoogleAuth();
     const posthog = usePostHog();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -60,13 +62,15 @@ const LoginScreen = () => {
         );
     };
 
-    const handleSocialLogin = (provider: "google" | "apple") => {
-        Alert.alert(
-            "À venir",
-            `Connexion ${
-                provider === "google" ? "Google" : "Apple"
-            } en cours d'intégration`,
-        );
+    const handleGoogleLogin = async () => {
+        const result = await signInWithGoogle();
+        if (!result.success && result.error) {
+            Alert.alert("Google", result.error);
+        }
+    };
+
+    const handleAppleLogin = () => {
+        Alert.alert("À venir", "Connexion Apple en cours d'intégration");
     };
 
     return (
@@ -173,20 +177,28 @@ const LoginScreen = () => {
 
                         <View style={styles.socialRow}>
                             <TouchableOpacity
-                                style={[styles.socialButton, styles.googleButton]}
-                                onPress={() => handleSocialLogin("google")}
+                                style={[
+                                    styles.socialButton,
+                                    styles.googleButton,
+                                    (!isGoogleConfigured || isGoogleLoading || isLoading) &&
+                                        styles.loginButtonDisabled,
+                                ]}
+                                onPress={handleGoogleLogin}
+                                disabled={!isGoogleConfigured || isGoogleLoading || isLoading}
                             >
                                 <Ionicons
                                     name="logo-google"
                                     size={18}
                                     color={theme.colors.textInverse}
                                 />
-                                <Text style={styles.socialText}>Google</Text>
+                                <Text style={styles.socialText}>
+                                    {isGoogleLoading ? "Google..." : "Google"}
+                                </Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
                                 style={[styles.socialButton, styles.appleButton]}
-                                onPress={() => handleSocialLogin("apple")}
+                                onPress={handleAppleLogin}
                             >
                                 <Ionicons
                                     name="logo-apple"
