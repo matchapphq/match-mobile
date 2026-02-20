@@ -140,14 +140,17 @@ export function useGoogleAuth() {
             // Exchange it explicitly to obtain the id_token required by our backend.
             if (!idToken && response.params?.code && request && platformClientId) {
                 try {
+                    const extraParams: Record<string, string> = {};
+                    if (request.codeVerifier) {
+                        extraParams.code_verifier = request.codeVerifier;
+                    }
+
                     const tokenResponse = await exchangeCodeAsync(
                         {
                             clientId: platformClientId,
                             code: response.params.code,
                             redirectUri: request.redirectUri,
-                            extraParams: {
-                                code_verifier: request.codeVerifier || "",
-                            },
+                            extraParams,
                         },
                         Google.discovery
                     );
