@@ -85,7 +85,11 @@ const AuthEntryScreen = () => {
 
                         <View style={styles.socialRow}>
                             <TouchableOpacity
-                                style={[styles.socialButton, styles.socialPrimary]}
+                                style={[
+                                    styles.socialButton,
+                                    styles.socialPrimary,
+                                    (!isGoogleConfigured || isGoogleLoading) && { opacity: 0.5 },
+                                ]}
                                 onPress={() => handleSocial("Google")}
                                 disabled={!isGoogleConfigured || isGoogleLoading}
                                 activeOpacity={0.9}
