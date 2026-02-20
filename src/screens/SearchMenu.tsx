@@ -301,7 +301,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 <View style={[styles.tabContainer, { backgroundColor: colors.surface }]}>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === "all" && [styles.tabActive, { backgroundColor: colors.background }]]}
-                        onPress={() => setActiveTab("all")}
+                        onPress={() => {
+                            posthog?.capture('search_tab_switched', { tab: 'all' });
+                            setActiveTab("all");
+                        }}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.tabText, { color: activeTab === "all" ? colors.text : colors.textMuted }, activeTab === "all" && styles.tabTextActive]}>
@@ -310,7 +313,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === "matches" && [styles.tabActive, { backgroundColor: colors.background }]]}
-                        onPress={() => setActiveTab("matches")}
+                        onPress={() => {
+                            posthog?.capture('search_tab_switched', { tab: 'matches' });
+                            setActiveTab("matches");
+                        }}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.tabText, { color: activeTab === "matches" ? colors.text : colors.textMuted }, activeTab === "matches" && styles.tabTextActive]}>
@@ -319,7 +325,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === "venues" && [styles.tabActive, { backgroundColor: colors.background }]]}
-                        onPress={() => setActiveTab("venues")}
+                        onPress={() => {
+                            posthog?.capture('search_tab_switched', { tab: 'venues' });
+                            setActiveTab("venues");
+                        }}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.tabText, { color: activeTab === "venues" ? colors.text : colors.textMuted }, activeTab === "venues" && styles.tabTextActive]}>
@@ -346,7 +355,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                         borderColor: selectedDateIndex === index ? colors.primary : colors.divider,
                                     }
                                 ]}
-                                onPress={() => setSelectedDateIndex(index)}
+                                onPress={() => {
+                                    posthog?.capture('search_date_filtered', { date: pill.fullDate });
+                                    setSelectedDateIndex(index);
+                                }}
                                 activeOpacity={0.8}
                             >
                                 <Text style={[

@@ -423,8 +423,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
 
     // Search venues in the current area
     const handleSearchArea = async () => {
-        posthog?.capture("venue_searched", {
-            search_type: "map_area",
+        posthog?.capture("venue_area_searched", {
             latitude: currentRegion.latitude,
             longitude: currentRegion.longitude,
             lat_delta: currentRegion.latitudeDelta,
