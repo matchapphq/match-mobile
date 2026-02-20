@@ -296,6 +296,12 @@ export const apiService = {
         return response.data;
     },
 
+    googleLogin: async (idToken: string) => {
+        const response = await api.post("/auth/google", { id_token: idToken });
+        if (!response) throw new Error("Google login failed");
+        return response.data;
+    },
+
     logout: async () => {
         try {
             await api.post("/auth/logout");
@@ -311,7 +317,7 @@ export const apiService = {
 
     getMe: async (): Promise<User> => {
         const response = await api.get("/users/me");
-        return response.data?.data || response.data;
+        return response.data?.user || response.data?.data || response.data;
     },
 
     // Venues
