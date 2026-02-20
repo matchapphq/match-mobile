@@ -23,6 +23,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../constants/colors';
 import { useStore } from '../store/useStore';
 import { apiService } from '../services/api';
+import { usePostHog } from 'posthog-react-native';
 import CancelReservationModal, { CancelReservationData } from '../components/CancelReservationModal';
 
 const { width } = Dimensions.get('window');
@@ -73,6 +74,7 @@ const UserBookedScreen = () => {
   } = useStore();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const posthog = usePostHog();
   
   // UI State
   const [searchQuery, setSearchQuery] = useState('');
@@ -167,6 +169,14 @@ const UserBookedScreen = () => {
     
     const success = await cancelReservationApi(bookingId);
     
+    if (success) {
+      posthog?.capture('reservation_cancelled', {
+        reservation_id: bookingId,
+        venue_name: cancelModalBooking.venue,
+        match_title: cancelModalBooking.match,
+      });
+    }
+    
     setCancelingIds((prev) => {
       const next = new Set(prev);
       next.delete(bookingId);
@@ -182,6 +192,12 @@ const UserBookedScreen = () => {
     setActiveQrBooking(booking);
     setQrCode(null);
     setQrError(null);
+
+    posthog?.capture('qr_code_viewed', {
+      reservation_id: booking.id,
+      venue_name: booking.venue,
+      match_title: booking.match,
+    });
 
     if (!booking.id) {
       setQrError("Identifiant de réservation introuvable");

@@ -22,6 +22,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import * as ImagePicker from 'expo-image-picker';
 import { useStore } from '../store/useStore';
+import { usePostHog } from 'posthog-react-native';
 import type { UserProfile } from '../services/mobileApi';
 
 type SectionRow = {
@@ -102,6 +103,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
 const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const posthog = usePostHog();
   const { logout, user, themeMode, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading, pushNotificationsEnabled, togglePushNotifications, setPushNotificationsEnabled } = useStore();
   const userData = user?.user ?? user ?? null;
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -180,6 +182,7 @@ const ProfileScreen = () => {
         text: 'Confirmer',
         style: 'destructive',
         onPress: () => {
+          posthog?.capture('logout_performed');
           logout();
           // Navigation is handled automatically by AppNavigator's conditional rendering
         },
@@ -214,6 +217,10 @@ const ProfileScreen = () => {
       });
 
       if (success) {
+        posthog?.capture('bug_report_sent', {
+          description_length: bugContent.length,
+          platform: metadata.platform,
+        });
         Alert.alert('Merci !', 'Votre rapport de bug a été envoyé avec succès.');
         setBugModalVisible(false);
         setBugContent('');
@@ -305,7 +312,11 @@ const ProfileScreen = () => {
                         </View>
                         <TouchableOpacity
                           activeOpacity={0.8}
-                          onPress={togglePushNotifications}
+                          onPress={() => {
+                            const newState = !pushNotificationsEnabled;
+                            posthog?.capture('notification_toggle', { enabled: newState });
+                            togglePushNotifications();
+                          }}
                         >
                           <View style={[styles.toggleTrack, pushNotificationsEnabled && styles.toggleTrackActive]}>
                             <View

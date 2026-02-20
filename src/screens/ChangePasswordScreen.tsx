@@ -17,11 +17,13 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 import { apiService } from "../services/api";
+import { usePostHog } from "posthog-react-native";
 
 const ChangePasswordScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const { colors, themeMode } = useStore();
+    const posthog = usePostHog();
 
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -74,6 +76,7 @@ const ChangePasswordScreen = () => {
                 currentPassword,
                 newPassword,
             });
+            posthog?.capture('password_change_success');
             Alert.alert("Succès", "Votre mot de passe a été mis à jour.", [
                 { text: "OK", onPress: () => navigation.goBack() },
             ]);
@@ -83,6 +86,7 @@ const ChangePasswordScreen = () => {
                 error?.response?.data?.error ||
                 error?.response?.data?.message ||
                 "Impossible de mettre à jour le mot de passe.";
+            posthog?.capture('password_change_failed', { error: errorMessage });
             Alert.alert("Erreur", errorMessage);
         } finally {
             setIsLoading(false);
