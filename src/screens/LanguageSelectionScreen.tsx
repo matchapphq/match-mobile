@@ -12,6 +12,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { useStore } from '../store/useStore';
+import { usePostHog } from 'posthog-react-native';
 
 type LanguageOption = {
     code: string;
@@ -35,6 +36,7 @@ const OTHER_LANGUAGES: LanguageOption[] = [
 const LanguageSelectionScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
+    const posthog = usePostHog();
     const { colors, themeMode } = useStore();
     const [selectedLang, setSelectedLang] = useState('fr'); // Default to French as per design
 
@@ -55,7 +57,10 @@ const LanguageSelectionScreen = () => {
         return (
             <TouchableOpacity
                 style={[styles.languageItem, !isLast && styles.languageItemBorder]}
-                onPress={() => setSelectedLang(item.code)}
+                onPress={() => {
+                    posthog?.capture('language_changed', { language: item.code });
+                    setSelectedLang(item.code);
+                }}
                 activeOpacity={0.7}
             >
                 <Text

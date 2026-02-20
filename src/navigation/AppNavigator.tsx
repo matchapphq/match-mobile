@@ -40,6 +40,8 @@ const NotificationHandler = () => {
 export const AppNavigator = () => {
     const { isAuthenticated, colors } = useStore();
     const [isLoading, setIsLoading] = React.useState(true);
+    const navigationRef = React.useRef<any>(null);
+    const routeNameRef = React.useRef<string>();
 
     useEffect(() => {
         // Simulate loading
@@ -51,7 +53,22 @@ export const AppNavigator = () => {
     }
 
     return (
-        <NavigationContainer>
+        <NavigationContainer
+            ref={navigationRef}
+            onReady={() => {
+                routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+            }}
+            onStateChange={() => {
+                const previousRouteName = routeNameRef.current;
+                const currentRouteName = navigationRef.current?.getCurrentRoute()?.name;
+
+                if (previousRouteName !== currentRouteName && currentRouteName) {
+                    // Using posthog directly here if analytics service failed to create
+                    // but I'll assume we want to keep the hook-like style or direct provider access
+                }
+                routeNameRef.current = currentRouteName;
+            }}
+        >
             <NotificationHandler />
             <PostHogProvider 
                 apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY} 

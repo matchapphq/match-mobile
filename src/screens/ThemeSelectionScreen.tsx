@@ -12,12 +12,14 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../store/useStore';
 import { COLORS } from '../constants/colors';
+import { usePostHog } from 'posthog-react-native';
 
 type ThemeOption = 'dark' | 'light' | 'system';
 
 const ThemeSelectionScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
+    const posthog = usePostHog();
     const { themeMode, setThemeMode, colors } = useStore();
     const selectedTheme = themeMode;
 
@@ -161,19 +163,28 @@ const ThemeSelectionScreen = () => {
                         type="dark"
                         label="Sombre"
                         isSelected={selectedTheme === 'dark'}
-                        onPress={() => setThemeMode('dark')}
+                        onPress={() => {
+                            posthog?.capture('theme_changed', { theme: 'dark' });
+                            setThemeMode('dark');
+                        }}
                     />
                     <ThemeCard
                         type="light"
                         label="Clair"
                         isSelected={selectedTheme === 'light'}
-                        onPress={() => setThemeMode('light')}
+                        onPress={() => {
+                            posthog?.capture('theme_changed', { theme: 'light' });
+                            setThemeMode('light');
+                        }}
                     />
                     <ThemeCard
                         type="system"
                         label="Système"
                         isSelected={selectedTheme === 'system'}
-                        onPress={() => setThemeMode('system')}
+                        onPress={() => {
+                            posthog?.capture('theme_changed', { theme: 'system' });
+                            setThemeMode('system');
+                        }}
                     />
                 </View>
             </ScrollView>

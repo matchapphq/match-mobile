@@ -32,7 +32,12 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
 
     const handleToggleFavourite = async () => {
         if (venueId) {
+            const newState = !isFavourite;
             await toggleFavourite(venueId);
+            posthog?.capture(newState ? 'favourite_added' : 'favourite_removed', {
+                venue_id: venueId,
+                venue_name: venue?.name,
+            });
         }
     };
 

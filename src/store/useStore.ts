@@ -829,11 +829,14 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     logout: async () => {
+        const { posthog } = await import("../services/analytics");
         try {
             await apiService.logout();
         } catch (error) {
             console.error("Logout API error:", error);
         }
+
+        posthog?.reset();
 
         set({
             user: null,

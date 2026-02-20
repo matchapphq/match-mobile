@@ -17,10 +17,11 @@ import { theme } from "../constants/theme";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import { hashId } from "../utils/analytics";
 
 const LoginScreen = () => {
     const navigation = useNavigation<any>();
-    const { login, isLoading, user } = useStore();
+    const { login, isLoading, user: storeUser } = useStore();
     const { signInWithGoogle, isGoogleLoading, isGoogleConfigured } = useGoogleAuth();
     const posthog = usePostHog();
     const [email, setEmail] = useState("");
@@ -35,24 +36,25 @@ const LoginScreen = () => {
 
         const success = await login(email, password);
         if (!success) {
-            posthog.capture("login_failed", { email });
+            posthog?.capture("login_failed", { method: 'email' });
             Alert.alert("Erreur", "Identifiants incorrects");
             return;
         }
 
-        // Identify user in PostHog
-        const userData = user?.user ?? user;
-        if (userData?.id) {
-            posthog.identify(userData.id, {
-                email: userData.email,
-                first_name: userData.first_name,
-                last_name: userData.last_name,
+        // Identify user in PostHog with HASHED ID for GDPR
+        const userData = useStore.getState().user;
+        const actualUser = userData?.user ?? userData;
+        
+        if (actualUser?.id) {
+            const anonymousId = await hashId(actualUser.id);
+            posthog?.identify(anonymousId, {
+                user_tier: actualUser.tier || 'standard',
+                is_authenticated: true,
             });
-            posthog.capture("login_success");
+            posthog?.capture("login_success", { method: 'email' });
         }
         
         // Navigation is handled automatically by AppNavigator's conditional rendering
-        // when isAuthenticated changes to true — no manual reset needed.
     };
 
     const handleForgotPassword = () => {

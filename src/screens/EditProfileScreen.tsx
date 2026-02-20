@@ -15,6 +15,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useNavigation } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
+import { usePostHog } from "posthog-react-native";
 
 const MAX_BIO = 150;
 const AVATAR_PLACEHOLDER = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400";
@@ -22,6 +23,7 @@ const AVATAR_PLACEHOLDER = "https://images.unsplash.com/photo-1472099645785-5658
 const EditProfileScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
+    const posthog = usePostHog();
     const { user, colors, themeMode, updateUser } = useStore();
     const userData = useMemo(() => user?.user ?? user ?? null, [user]);
     const isLightTheme = themeMode === "light";
@@ -73,6 +75,10 @@ const EditProfileScreen = () => {
                 bio,
                 phone,
             } as any);
+            posthog?.capture('profile_edit_saved', {
+                has_avatar: !!avatar,
+                has_bio: !!bio,
+            });
             Alert.alert("Profil mis à jour", "Tes informations ont bien été enregistrées.");
             navigation.goBack();
         } catch (error) {
