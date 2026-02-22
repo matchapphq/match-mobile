@@ -13,7 +13,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
 import { theme } from "../constants/theme";
+import { PRIVACY_URL, TERMS_URL } from "../constants/legalUrls";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
@@ -78,6 +80,14 @@ const LoginScreen = () => {
         const result = await signInWithApple();
         if (!result.success && result.error) {
             Alert.alert("Apple", result.error);
+        }
+    };
+
+    const openLegalUrl = async (url: string) => {
+        try {
+            await WebBrowser.openBrowserAsync(url);
+        } catch {
+            Alert.alert("Erreur", "Impossible d'ouvrir ce lien.");
         }
     };
 
@@ -230,9 +240,19 @@ const LoginScreen = () => {
                 <View style={styles.legalContainer}>
                     <Text style={styles.legalText}>
                         En continuant, tu acceptes nos
-                        <Text style={styles.link}> Conditions d'utilisation </Text>
+                        <Text
+                            style={styles.link}
+                            onPress={() => void openLegalUrl(TERMS_URL)}
+                        >
+                            {" "}Conditions d'utilisation{" "}
+                        </Text>
                         et notre
-                        <Text style={styles.link}> Politique de confidentialité</Text>.
+                        <Text
+                            style={styles.link}
+                            onPress={() => void openLegalUrl(PRIVACY_URL)}
+                        >
+                            {" "}Politique de confidentialité
+                        </Text>.
                     </Text>
                 </View>
             </KeyboardAvoidingView>
