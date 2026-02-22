@@ -680,7 +680,6 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                         {(showSearchButton || !hasSearchedArea) && !isSearchingArea && (
                             <Animated.View
                                 style={{
-                                    opacity: hasSearchedArea ? searchButtonAnim : 1,
                                     transform: [{
                                         translateY: hasSearchedArea 
                                                 ? searchButtonAnim.interpolate({
@@ -688,6 +687,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                                     outputRange: [-5, 0],
                                                 })
                                                 : 0,                                    }],
+                                    alignSelf: "center",
                                 }}
                             >
                                 <TouchableOpacity
@@ -1489,11 +1489,11 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: 'rgba(255,255,255,0.1)',
         gap: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.6,
-        shadowRadius: 16,
-        elevation: 8,
+        shadowColor: 'transparent',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        elevation: 0,
     },
     searchAreaButtonText: {
         fontSize: 14,
