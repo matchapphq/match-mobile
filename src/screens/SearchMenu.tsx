@@ -26,21 +26,27 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
     const { colors, themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
     const posthog = usePostHog();
 
-    // User location state
-    const [userLat, setUserLat] = useState<number | undefined>(undefined);
-    const [userLng, setUserLng] = useState<number | undefined>(undefined);
+    // User location refs (not state — avoids re-triggering fetches)
+    const userLatRef = useRef<number | undefined>(undefined);
+    const userLngRef = useRef<number | undefined>(undefined);
+    const [locationReady, setLocationReady] = useState(false);
 
     // Fetch user location on mount
     useEffect(() => {
         (async () => {
             try {
                 const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== "granted") return;
+                if (status !== "granted") {
+                    setLocationReady(true);
+                    return;
+                }
                 const loc = await Location.getCurrentPositionAsync({});
-                setUserLat(loc.coords.latitude);
-                setUserLng(loc.coords.longitude);
+                userLatRef.current = loc.coords.latitude;
+                userLngRef.current = loc.coords.longitude;
             } catch (e) {
                 console.warn("Could not get user location", e);
+            } finally {
+                setLocationReady(true);
             }
         })();
     }, []);
@@ -183,36 +189,41 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 setIsLoadingMore(true);
             }
 
-            const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate, userLat, userLng);
-
-            if (!append && debouncedQuery.trim().length > 0) {
-                posthog.capture("venue_searched", {
-                    query: debouncedQuery,
-                    tab: activeTab,
-                    selected_date: selectedFilterDate ?? "",
-                });
-            }
-
-            if (append) {
-                if (activeTab === "matches" || activeTab === "all") {
-                    setMatchResults(prev => [...prev, ...data.matches]);
-                }
-                if (activeTab === "venues" || activeTab === "all") {
-                    setVenueResults(prev => [...prev, ...data.venues]);
-                }
-            } else {
-                setMatchResults(data.matches);
-                setVenueResults(data.venues);
-            }
-
-            setHasMoreMatches(data.hasMoreMatches);
-            setHasMoreVenues(data.hasMoreVenues);
-
-            // Load trends for initial load
-            if (page === 1 && !append) {
+            // When query is empty, use fetchSearchData to get all venues/matches
+            // The backend search endpoint may return nothing for empty queries
+            if (!debouncedQuery.trim()) {
                 const initialData = await mobileApi.fetchSearchData();
                 setTrends(initialData.trends);
                 setRecentSearches(initialData.recentSearches);
+                setMatchResults(initialData.matchResults);
+                setVenueResults(initialData.results);
+                setHasMoreMatches(false);
+                setHasMoreVenues(false);
+            } else {
+                const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate, userLatRef.current, userLngRef.current);
+
+                if (!append) {
+                    posthog.capture("venue_searched", {
+                        query: debouncedQuery,
+                        tab: activeTab,
+                        selected_date: selectedFilterDate ?? "",
+                    });
+                }
+
+                if (append) {
+                    if (activeTab === "matches" || activeTab === "all") {
+                        setMatchResults(prev => [...prev, ...data.matches]);
+                    }
+                    if (activeTab === "venues" || activeTab === "all") {
+                        setVenueResults(prev => [...prev, ...data.venues]);
+                    }
+                } else {
+                    setMatchResults(data.matches);
+                    setVenueResults(data.venues);
+                }
+
+                setHasMoreMatches(data.hasMoreMatches);
+                setHasMoreVenues(data.hasMoreVenues);
             }
         } catch (err) {
             console.warn("Failed to load search data", err);
@@ -221,7 +232,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [debouncedQuery, activeTab, selectedFilterDate, userLat, userLng]);
+    }, [debouncedQuery, activeTab, selectedFilterDate]);
 
     // Initial load and when debounced query or tab changes
     useEffect(() => {
@@ -268,13 +279,13 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
 
     // Compute display distance for a venue
     const getVenueDistance = useCallback((venue: SearchResult): string => {
-        if (userLat != null && userLng != null && venue.latitude != null && venue.longitude != null) {
-            const km = haversineKm(userLat, userLng, venue.latitude, venue.longitude);
+        if (userLatRef.current != null && userLngRef.current != null && venue.latitude != null && venue.longitude != null) {
+            const km = haversineKm(userLatRef.current, userLngRef.current, venue.latitude, venue.longitude);
             if (km < 1) return `${Math.round(km * 1000)} m`;
             return `${km.toFixed(1)} km`;
         }
         return venue.distance || "";
-    }, [userLat, userLng, haversineKm]);
+    }, [haversineKm, locationReady]);
 
     const recentItems = React.useMemo(
         () =>

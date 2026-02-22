@@ -252,15 +252,14 @@ export const mobileApi = {
     }> {
         try {
             // Call backend paginated search endpoint
+            const geoParams = (lat != null && lng != null) ? { lat, lng, radius_km: 50 } : {};
             const response = await apiService.searchPaginated({
                 q: query,
                 type,
                 page,
                 limit,
                 date: filterDate,
-                lat,
-                lng,
-                radius_km: 50, // Default 50km radius
+                ...geoParams,
             });
 
             // Transform backend response to frontend format

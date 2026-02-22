@@ -10,6 +10,8 @@ import {
     Animated,
     StatusBar,
     ActivityIndicator,
+    Linking,
+    Platform,
 } from "react-native";
 import MapView, { Marker, PROVIDER_DEFAULT, Region } from "react-native-maps";
 import * as Location from "expo-location";
@@ -309,8 +311,12 @@ const LIGHT_MAP_STYLE = [
     }
 ];
 
-const MapScreen = ({ navigation }: { navigation: any }) => {
+const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const { colors, themeMode } = useStore();
+    const focusVenueId: string | undefined = route?.params?.focusVenueId;
+    const focusLat: number | undefined = route?.params?.focusLat;
+    const focusLng: number | undefined = route?.params?.focusLng;
+    const focusVenueName: string | undefined = route?.params?.focusVenueName;
     const posthog = usePostHog();
     const mapRef = useRef<MapView>(null);
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
@@ -342,9 +348,36 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         };
     }, []);
 
-    // Location Logic
+    // Location Logic - focus on venue if params provided, otherwise user location
     useEffect(() => {
         (async () => {
+            if (focusLat != null && focusLng != null) {
+                // Focus on the specific venue
+                if (mapRef.current) {
+                    mapRef.current.animateToRegion({
+                        latitude: focusLat,
+                        longitude: focusLng,
+                        latitudeDelta: 0.02,
+                        longitudeDelta: 0.02,
+                    }, 1000);
+                }
+                // Load the venue as a pin
+                if (focusVenueId) {
+                    try {
+                        const venueData = await mobileApi.fetchVenueById(focusVenueId);
+                        if (venueData) {
+                            setVenues([venueData]);
+                            setSelectedVenue(venueData);
+                            setHasSearchedArea(true);
+                            setIsSheetOpen(true);
+                        }
+                    } catch (e) {
+                        console.warn('Failed to load focused venue', e);
+                    }
+                }
+                return;
+            }
+
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 console.log('Permission to access location was denied');
@@ -361,7 +394,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                 }, 1000);
             }
         })();
-    }, []);
+    }, [focusVenueId, focusLat, focusLng]);
 
     const handleCenterOnUser = async () => {
         let { status } = await Location.getForegroundPermissionsAsync();
@@ -745,7 +778,21 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                         </View>
                     </View>
                     <View style={[styles.venueActions, { backgroundColor: colors.card }]}>
-                        <TouchableOpacity style={styles.venueBtnSecondary}>
+                        <TouchableOpacity
+                            style={styles.venueBtnSecondary}
+                            onPress={() => {
+                                if (selectedVenue) {
+                                    const lat = selectedVenue.latitude;
+                                    const lng = selectedVenue.longitude;
+                                    const label = encodeURIComponent(selectedVenue.name);
+                                    const url = Platform.select({
+                                        ios: `maps:0,0?q=${label}@${lat},${lng}`,
+                                        android: `geo:${lat},${lng}?q=${lat},${lng}(${label})`,
+                                    });
+                                    if (url) Linking.openURL(url);
+                                }
+                            }}
+                        >
                             <MaterialIcons name="directions" size={18} color={colors.slate400} />
                             <Text style={[styles.venueBtnTextSecondary, { color: colors.slate400 }]}>Itinéraire</Text>
                         </TouchableOpacity>
