@@ -10,7 +10,7 @@ class AnalyticsService {
     capture(event: string, properties: Record<string, any> = {}) {
         posthog.capture(event, {
             platform: Platform.OS,
-            app_version: Constants.expoConfig?.version,
+            app_version: Constants.expoConfig?.version ?? null,
             ...properties,
         });
     }

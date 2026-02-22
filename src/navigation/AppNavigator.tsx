@@ -42,7 +42,7 @@ export const AppNavigator = () => {
     const { isAuthenticated, colors, updateComputedTheme } = useStore();
     const [isLoading, setIsLoading] = React.useState(true);
     const navigationRef = React.useRef<any>(null);
-    const routeNameRef = React.useRef<string>();
+    const routeNameRef = React.useRef<string | undefined>(undefined);
 
     useEffect(() => {
         // Simulate loading
