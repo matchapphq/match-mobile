@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Appearance, ColorSchemeName } from 'react-native';
+import { Appearance, ColorSchemeName, Platform } from 'react-native';
 import { DARK_THEME, LIGHT_THEME, ThemeColors } from "../constants/colors";
 import {
     User,
@@ -529,19 +529,39 @@ export const useStore = create<AppState>((set, get) => ({
         if (user) {
             set({ isLoading: true, error: null });
             try {
-                const updatedUser = await apiService.updateProfile(updates);
-                // Merge with existing user data to ensure all fields are preserved
+                let updatedUser;
+                
+                // If the update contains an avatar URI, handle it via specialized upload endpoint
+                const isLocalFile = (uri?: string) => 
+                    uri && (uri.startsWith('file://') || uri.startsWith('/') || uri.startsWith('content://'));
+
+                if (updates.avatar && isLocalFile(updates.avatar)) {
+                    const uploadResult = await apiService.updateAvatar(updates.avatar);
+                    if (uploadResult.success) {
+                        // Profile was already updated on backend, just update local state with new URL
+                        updatedUser = { ...user, avatar: uploadResult.url };
+                        // Remove avatar from updates so we don't try to update it again via JSON PUT
+                        const { avatar: _, ...otherUpdates } = updates;
+                        if (Object.keys(otherUpdates).length > 0) {
+                            const profileResponse = await apiService.updateProfile(otherUpdates);
+                            updatedUser = { ...updatedUser, ...profileResponse };
+                        }
+                    } else {
+                        throw new Error("Failed to upload avatar");
+                    }
+                } else {
+                    updatedUser = await apiService.updateProfile(updates);
+                }
+
+                // Merge with existing user data
                 const finalUser = { ...user, ...updatedUser };
                 
-                // Keep nested user object in sync if it exists
                 if (finalUser.user) {
                     finalUser.user = { ...finalUser.user, ...updatedUser };
                 }
 
                 set({ user: finalUser, isLoading: false });
                 await AsyncStorage.setItem("user", JSON.stringify(finalUser));
-
-                // Optional: Trigger a background refresh to be absolutely sure we're in sync
                 get().refreshUserProfile();
             } catch (error: any) {
                 set({ 

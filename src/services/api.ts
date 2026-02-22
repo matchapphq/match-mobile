@@ -1,5 +1,6 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import {
     Venue,
     Match,
@@ -535,6 +536,35 @@ export const apiService = {
     updateProfile: async (data: any): Promise<User> => {
         const response = await api.put("/users/me", data);
         return response.data?.data || response.data;
+    },
+
+    /**
+     * Update user avatar via multipart upload to S3
+     */
+    updateAvatar: async (uri: string): Promise<{ success: boolean; url: string }> => {
+        const formData = new FormData();
+        
+        // Extract filename and type from URI
+        const filename = uri.split('/').pop() || 'avatar.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+        // @ts-ignore
+        formData.append('file', {
+            uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+            name: filename,
+            type,
+        });
+
+        const response = await api.post("/media/avatar", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            // Needed for Axios to correctly calculate progress and handle FormData in some environments
+            transformRequest: (data) => data,
+        });
+
+        return response.data;
     },
 
     // Discovery
