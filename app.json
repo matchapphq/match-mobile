@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.matchapps.match",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSLocationWhenInUseUsageDescription": "Match utilise votre position pour trouver les bars diffusant des matchs près de vous.",
@@ -47,7 +48,8 @@
       }
     },
     "plugins": [
-      "expo-localization"
+      "expo-localization",
+      "expo-apple-authentication"
     ]
   }
 }

@@ -13,6 +13,7 @@ import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import { useAppleAuth } from "../hooks/useAppleAuth";
 
 const HERO_IMAGE =
     "https://images.unsplash.com/photo-1572116469696-958721b7d6ca?q=80&w=2574&auto=format&fit=crop";
@@ -22,6 +23,7 @@ const { width } = Dimensions.get("window");
 const AuthEntryScreen = () => {
     const navigation = useNavigation<any>();
     const { signInWithGoogle, isGoogleLoading, isGoogleConfigured } = useGoogleAuth();
+    const { signInWithApple, isAppleLoading, isAppleAvailable } = useAppleAuth();
 
     const handleRegister = () => {
         navigation.navigate("Onboarding");
@@ -40,7 +42,15 @@ const AuthEntryScreen = () => {
             return;
         }
 
-        Alert.alert("Info", `Connexion ${provider} à venir.`);
+        if (provider === "Apple") {
+            const result = await signInWithApple();
+            if (!result.success && result.error) {
+                Alert.alert("Apple", result.error);
+            }
+            return;
+        }
+
+        Alert.alert("Info", `Connexion ${provider} indisponible.`);
     };
 
     return (
@@ -100,12 +110,19 @@ const AuthEntryScreen = () => {
                                 </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.socialButton, styles.socialSecondary]}
+                                style={[
+                                    styles.socialButton,
+                                    styles.socialSecondary,
+                                    (!isAppleAvailable || isAppleLoading) && { opacity: 0.5 },
+                                ]}
                                 onPress={() => handleSocial("Apple")}
+                                disabled={!isAppleAvailable || isAppleLoading}
                                 activeOpacity={0.9}
                             >
                                 <FontAwesome5 name="apple" size={18} color="#ffffff" />
-                                <Text style={[styles.socialLabel, styles.socialLabelLight]}>Apple</Text>
+                                <Text style={[styles.socialLabel, styles.socialLabelLight]}>
+                                    {isAppleLoading ? "Apple..." : "Apple"}
+                                </Text>
                             </TouchableOpacity>
                         </View>
 
