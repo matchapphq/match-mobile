@@ -58,7 +58,8 @@ const AuthEntryScreen = () => {
     const openLegalUrl = async (url: string) => {
         try {
             await WebBrowser.openBrowserAsync(url);
-        } catch {
+        } catch (error) {
+            console.error("Failed to open legal URL:", url, error);
             Alert.alert("Erreur", "Impossible d'ouvrir ce lien.");
         }
     };
