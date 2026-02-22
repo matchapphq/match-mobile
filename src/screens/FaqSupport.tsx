@@ -65,10 +65,10 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.headerButton} onPress={() => navigation.goBack()}>
+        <TouchableOpacity style={[styles.headerButton, { backgroundColor: colors.surfaceGlass }]} onPress={() => navigation.goBack()}>
           <MaterialIcons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Aide & Support</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Aide & Support</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -161,7 +161,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   headerTitle: {
     flex: 1,
@@ -257,7 +256,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   helpCardSubtitle: {
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.7)', // default for liveChatCard (orange bg)
     fontSize: 12,
     marginTop: 2,
   },

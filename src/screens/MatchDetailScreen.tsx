@@ -32,7 +32,7 @@ const MatchDetailScreen = ({
     navigation: any;
     route: MatchDetailRoute;
 }) => {
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const posthog = usePostHog();
     const matchId = route.params?.matchId;
     const [match, setMatch] = useState<SearchMatchResult | null>(null);
@@ -118,10 +118,10 @@ const MatchDetailScreen = ({
         <View style={styles.stateWrapper}>
             {showRetry ? (
                 <>
-                    <Text style={styles.stateText}>{message}</Text>
+                    <Text style={[styles.stateText, { color: colors.textMuted }]}>{message}</Text>
                     <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadData} activeOpacity={0.85}>
                         <MaterialIcons name="refresh" size={18} color={colors.white} />
-                        <Text style={[styles.retryButtonText, { color: colors.background }]}>Réessayer</Text>
+                        <Text style={[styles.retryButtonText, { color: '#fff' }]}>Réessayer</Text>
                     </TouchableOpacity>
                 </>
             ) : (
@@ -212,7 +212,7 @@ const MatchDetailScreen = ({
                                 <MaterialIcons name="stadium" size={20} color={colors.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.infoLabel}>Lieu du match</Text>
+                                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Lieu du match</Text>
                                 <Text style={[styles.infoValue, { color: colors.text }]}>
                                     {match.stadium}, {match.city}
                                 </Text>
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
         borderColor: "rgba(244,123,37,0.3)",
     },
     infoLabel: {
-        color: "rgba(255,255,255,0.5)",
+        color: COLORS.textMuted,
         fontSize: 11,
         fontWeight: "700",
         letterSpacing: 1,
@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 10 },
     },
     primaryActionText: {
-        color: COLORS.background,
+        color: '#fff',
         fontWeight: "800",
         letterSpacing: 0.6,
     },
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     sectionSubtitle: {
-        color: "rgba(255,255,255,0.5)",
+        color: COLORS.textMuted,
         marginTop: 4,
         fontSize: 12,
     },
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
         borderRadius: 12,
     },
     venueMeta: {
-        color: "rgba(255,255,255,0.6)",
+        color: COLORS.textSecondary,
         fontSize: 12,
     },
     venueButton: {
@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     retryButtonText: {
-        color: COLORS.background,
+        color: '#fff',
         fontWeight: "700",
     },
     emptyVenuesContainer: {

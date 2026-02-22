@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { COLORS } from '../constants/colors';
+import { useStore } from '../store/useStore';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const MODAL_HEIGHT = 500;
@@ -39,6 +40,7 @@ const CancelReservationModal: React.FC<CancelReservationModalProps> = ({
   onConfirmCancel,
   primaryColor = COLORS.primary,
 }) => {
+  const { colors } = useStore();
   const [modalVisible, setModalVisible] = useState(false);
   const slideAnim = useRef(new Animated.Value(MODAL_HEIGHT)).current;
   const backdropAnim = useRef(new Animated.Value(0)).current;
@@ -115,17 +117,17 @@ const CancelReservationModal: React.FC<CancelReservationModalProps> = ({
           },
         ]}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { backgroundColor: colors.background, borderColor: colors.border }]}>
           {/* Handle bar */}
-          <View style={styles.handle} />
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.warningIcon}>
               <MaterialIcons name="warning" size={32} color="#ef4444" />
             </View>
-            <Text style={styles.title}>Annuler la réservation ?</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: colors.text }]}>Annuler la réservation ?</Text>
+            <Text style={[styles.subtitle, { color: colors.textMuted }]}>
               Cette action est irréversible. Êtes-vous sûr de ne plus vouloir venir ?
             </Text>
           </View>
@@ -135,13 +137,13 @@ const CancelReservationModal: React.FC<CancelReservationModalProps> = ({
             <View style={styles.content}>
               {/* Match Reminder Card */}
               <View>
-                <Text style={styles.reminderLabel}>Rappel du match</Text>
-                <View style={styles.reminderCard}>
+                <Text style={[styles.reminderLabel, { color: colors.text }]}>Rappel du match</Text>
+                <View style={[styles.reminderCard, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
                   <View style={styles.reminderInfo}>
-                    <Text style={styles.reminderMatch}>{reservation.match}</Text>
+                    <Text style={[styles.reminderMatch, { color: colors.text }]}>{reservation.match}</Text>
                     <View style={styles.reminderLocation}>
                       <MaterialIcons name="location-on" size={14} color="#baa89c" />
-                      <Text style={styles.reminderLocationText}>
+                      <Text style={[styles.reminderLocationText, { color: colors.textMuted }]}>
                         {reservation.venue} • {reservation.time}
                       </Text>
                     </View>
@@ -199,11 +201,9 @@ const styles = StyleSheet.create({
     right: 0,
   },
   sheet: {
-    backgroundColor: '#18181b',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.3,
@@ -214,7 +214,6 @@ const styles = StyleSheet.create({
     width: 48,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.2)',
     marginTop: 12,
     marginBottom: 8,
   },
@@ -236,13 +235,11 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#fff',
     textAlign: 'center',
     letterSpacing: -0.5,
   },
   subtitle: {
     fontSize: 14,
-    color: '#a1a1aa',
     textAlign: 'center',
     marginTop: 8,
     lineHeight: 20,
@@ -254,7 +251,6 @@ const styles = StyleSheet.create({
   reminderLabel: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#fff',
     marginBottom: 12,
   },
   reminderCard: {
@@ -262,11 +258,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
   },
   reminderInfo: {
     flex: 1,
@@ -275,7 +269,6 @@ const styles = StyleSheet.create({
   reminderMatch: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#fff',
   },
   reminderLocation: {
     flexDirection: 'row',
@@ -284,7 +277,6 @@ const styles = StyleSheet.create({
   },
   reminderLocationText: {
     fontSize: 12,
-    color: '#baa89c',
   },
   reminderImage: {
     width: 80,

@@ -27,7 +27,7 @@ const LOSS_ITEMS = [
 const DeleteAccountWarningScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const posthog = usePostHog();
 
     React.useEffect(() => {
@@ -56,7 +56,7 @@ const DeleteAccountWarningScreen = () => {
             {/* Header */}
             <View style={[styles.header, { paddingTop: insets.top + 16 }]}>
                 <TouchableOpacity
-                    style={styles.closeButton}
+                    style={[styles.closeButton, { backgroundColor: colors.surfaceGlass }]}
                     onPress={handleClose}
                     activeOpacity={0.85}
                 >
@@ -86,14 +86,14 @@ const DeleteAccountWarningScreen = () => {
                     {LOSS_ITEMS.map((item) => (
                         <View
                             key={item.title}
-                            style={[styles.lossCard, { backgroundColor: colors.surface, borderColor: "rgba(255,255,255,0.05)" }]}
+                            style={[styles.lossCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
                         >
                             <View style={styles.lossIconCircle}>
                                 <MaterialIcons name={item.icon as any} size={22} color="#ef4444" />
                             </View>
                             <View style={styles.lossTextContainer}>
                                 <Text style={[styles.lossTitle, { color: colors.text }]}>{item.title}</Text>
-                                <Text style={[styles.lossSubtitle, { color: "rgba(255,255,255,0.4)" }]}>{item.subtitle}</Text>
+                                <Text style={[styles.lossSubtitle, { color: colors.textMuted }]}>{item.subtitle}</Text>
                             </View>
                         </View>
                     ))}
@@ -128,7 +128,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: "rgba(255,255,255,0.05)",
         alignItems: "center",
         justifyContent: "center",
     },
@@ -159,7 +158,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.05)",
+        borderColor: "rgba(0,0,0,0.05)",
     },
     title: {
         fontSize: 30,

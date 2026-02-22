@@ -312,7 +312,7 @@ const LIGHT_MAP_STYLE = [
 ];
 
 const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const focusVenueId: string | undefined = route?.params?.focusVenueId;
     const focusLat: number | undefined = route?.params?.focusLat;
     const focusLng: number | undefined = route?.params?.focusLng;

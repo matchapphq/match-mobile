@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { Appearance } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 // import { theme } from "../constants/theme"; // Removed static theme import to avoid confusion
@@ -38,7 +39,7 @@ const NotificationHandler = () => {
 };
 
 export const AppNavigator = () => {
-    const { isAuthenticated, colors } = useStore();
+    const { isAuthenticated, colors, updateComputedTheme } = useStore();
     const [isLoading, setIsLoading] = React.useState(true);
     const navigationRef = React.useRef<any>(null);
     const routeNameRef = React.useRef<string>();
@@ -47,6 +48,14 @@ export const AppNavigator = () => {
         // Simulate loading
         setTimeout(() => setIsLoading(false), 2000);
     }, []);
+
+    // Listen for OS appearance changes so "system" theme updates reactively
+    useEffect(() => {
+        const listener = Appearance.addChangeListener(() => {
+            updateComputedTheme();
+        });
+        return () => listener.remove();
+    }, [updateComputedTheme]);
 
     if (isLoading) {
         return <SplashScreen />;

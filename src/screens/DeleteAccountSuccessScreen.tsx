@@ -52,7 +52,7 @@ const DeleteAccountSuccessScreen = () => {
                     >
                         <MaterialIcons name="sports-bar" size={40} color="#fff" />
                     </LinearGradient>
-                    <Text style={styles.logoText}>MATCH</Text>
+                    <Text style={[styles.logoText, { color: colors.text }]}>MATCH</Text>
                 </View>
 
                 {/* Message */}
@@ -60,7 +60,7 @@ const DeleteAccountSuccessScreen = () => {
                     <Text style={[styles.title, { color: colors.text }]}>
                         Votre compte a été{"\n"}supprimé
                     </Text>
-                    <Text style={styles.subtitle}>
+                    <Text style={[styles.subtitle, { color: colors.textMuted }]}>
                         Merci d'avoir fait partie de l'aventure Match.
                     </Text>
                 </View>
@@ -131,7 +131,6 @@ const styles = StyleSheet.create({
     logoText: {
         fontSize: 28,
         fontWeight: "800",
-        color: "rgba(255,255,255,0.9)",
         letterSpacing: 8,
     },
     messageSection: {
@@ -147,7 +146,6 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         fontSize: 16,
-        color: "rgba(255,255,255,0.5)",
         textAlign: "center",
         lineHeight: 24,
     },
@@ -162,7 +160,7 @@ const styles = StyleSheet.create({
         width: 4,
         height: 4,
         borderRadius: 2,
-        backgroundColor: "rgba(255,255,255,0.2)",
+        backgroundColor: "rgba(120,120,128,0.2)",
     },
     footer: {
         paddingHorizontal: 24,

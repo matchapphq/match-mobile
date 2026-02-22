@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { theme } from '../constants/theme';
+import { useStore } from '../store/useStore';
 
 interface FloatingNavBarProps {
   onListPress: () => void;
@@ -16,6 +16,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
   onFilterPress,
   activeTab,
 }) => {
+  const { colors } = useStore();
   return (
     <View style={styles.container}>
       <View style={styles.pill}>
@@ -26,7 +27,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
           <MaterialCommunityIcons
             name="format-list-bulleted"
             size={28}
-            color={activeTab === 'list' ? theme.colors.secondary : theme.colors.primary}
+            color={activeTab === 'list' ? colors.sky400 : colors.primary}
           />
         </TouchableOpacity>
 
@@ -37,7 +38,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
           <Ionicons
             name="search"
             size={28}
-            color={activeTab === 'search' ? theme.colors.secondary : theme.colors.primary}
+            color={activeTab === 'search' ? colors.sky400 : colors.primary}
           />
         </TouchableOpacity>
 
@@ -48,7 +49,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
           <MaterialCommunityIcons
             name="tune-variant"
             size={28}
-            color={activeTab === 'filter' ? theme.colors.secondary : theme.colors.primary}
+            color={activeTab === 'filter' ? colors.sky400 : colors.primary}
           />
         </TouchableOpacity>
       </View>

@@ -104,7 +104,7 @@ const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const posthog = usePostHog();
-  const { logout, user, themeMode, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading, pushNotificationsEnabled, togglePushNotifications, setPushNotificationsEnabled } = useStore();
+  const { logout, user, computedTheme: themeMode, themeMode: themePreference, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading, pushNotificationsEnabled, togglePushNotifications, setPushNotificationsEnabled } = useStore();
   const userData = user?.user ?? user ?? null;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [bugModalVisible, setBugModalVisible] = useState(false);
@@ -331,7 +331,7 @@ const ProfileScreen = () => {
                   }
 
                   const showMeta = row.meta || row.accent || row.badge || (row.label === 'Thème');
-                  const displayMeta = row.label === 'Thème' ? getThemeLabel(themeMode) : row.meta;
+                  const displayMeta = row.label === 'Thème' ? getThemeLabel(themePreference) : row.meta;
 
                   const handlePress = () => {
                       switch (row.label) {
@@ -511,7 +511,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   headerTitle: {
     color: COLORS.text,
@@ -649,7 +648,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(120,120,128,0.2)',
     padding: 2,
     justifyContent: 'center',
   },
