@@ -18,12 +18,32 @@ import { mobileApi, SearchMatchResult, SearchResult, SearchTrend } from "../serv
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import * as Location from "expo-location";
 
 type TabFilter = "all" | "matches" | "venues";
 
 const SearchMenu = ({ navigation }: { navigation: any }) => {
     const { colors, themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
     const posthog = usePostHog();
+
+    // User location state
+    const [userLat, setUserLat] = useState<number | undefined>(undefined);
+    const [userLng, setUserLng] = useState<number | undefined>(undefined);
+
+    // Fetch user location on mount
+    useEffect(() => {
+        (async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== "granted") return;
+                const loc = await Location.getCurrentPositionAsync({});
+                setUserLat(loc.coords.latitude);
+                setUserLng(loc.coords.longitude);
+            } catch (e) {
+                console.warn("Could not get user location", e);
+            }
+        })();
+    }, []);
 
     // Refresh favourites when screen comes into focus
     useFocusEffect(
@@ -163,13 +183,13 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 setIsLoadingMore(true);
             }
 
-            const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate);
+            const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate, userLat, userLng);
 
             if (!append && debouncedQuery.trim().length > 0) {
                 posthog.capture("venue_searched", {
                     query: debouncedQuery,
                     tab: activeTab,
-                    selected_date: selectedFilterDate,
+                    selected_date: selectedFilterDate ?? "",
                 });
             }
 
@@ -201,7 +221,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
             setIsLoading(false);
             setIsLoadingMore(false);
         }
-    }, [debouncedQuery, activeTab, selectedFilterDate]);
+    }, [debouncedQuery, activeTab, selectedFilterDate, userLat, userLng]);
 
     // Initial load and when debounced query or tab changes
     useEffect(() => {
@@ -233,6 +253,28 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
             handleLoadMore();
         }
     }, [handleLoadMore]);
+
+    // Haversine formula: compute distance in km between two lat/lng points
+    const haversineKm = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const toRad = (v: number) => (v * Math.PI) / 180;
+        const R = 6371; // Earth radius in km
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }, []);
+
+    // Compute display distance for a venue
+    const getVenueDistance = useCallback((venue: SearchResult): string => {
+        if (userLat != null && userLng != null && venue.latitude != null && venue.longitude != null) {
+            const km = haversineKm(userLat, userLng, venue.latitude, venue.longitude);
+            if (km < 1) return `${Math.round(km * 1000)} m`;
+            return `${km.toFixed(1)} km`;
+        }
+        return venue.distance || "";
+    }, [userLat, userLng, haversineKm]);
 
     const recentItems = React.useMemo(
         () =>
@@ -560,7 +602,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                     <Text style={[styles.venueTagLineNew, { color: colors.textMuted }]}>{venue.tag}</Text>
                                                                     <View style={styles.venueLocationRow}>
                                                                         <MaterialIcons name="location-on" size={12} color={colors.textMuted} />
-                                                                        <Text style={[styles.venueLocationText, { color: colors.textMuted }]}>{venue.distance}</Text>
+                                                                        <Text style={[styles.venueLocationText, { color: colors.textMuted }]}>{getVenueDistance(venue)}</Text>
                                                                     </View>
                                                                     <View style={styles.venueAmenitiesNew}>
                                                                         <View style={[styles.amenityChipNew, { backgroundColor: themeMode === 'light' ? '#fff' : 'rgba(255,255,255,0.05)', borderColor: colors.divider }]}>

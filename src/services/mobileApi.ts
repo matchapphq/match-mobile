@@ -94,11 +94,13 @@ const transformToSearchResult = (apiVenue: any): SearchResult => ({
     id: apiVenue.id,
     name: apiVenue.name,
     tag: apiVenue.type || "Bar",
-    distance: apiVenue.distance !== undefined && apiVenue.distance !== null ? `${Number(apiVenue.distance).toFixed(1)} km` : "0.5 km",
+    distance: apiVenue.distance !== undefined && apiVenue.distance !== null ? `${Number(apiVenue.distance).toFixed(1)} km` : "",
     isLive: false,
     image: apiVenue.cover_image_url || apiVenue.photos?.[0]?.url || apiVenue.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
     rating: Number(apiVenue.average_rating ?? apiVenue.rating ?? 4.5),
     priceLevel: apiVenue.price_range || apiVenue.priceLevel || "€€",
+    latitude: apiVenue.latitude != null ? Number(apiVenue.latitude) : undefined,
+    longitude: apiVenue.longitude != null ? Number(apiVenue.longitude) : undefined,
 });
 
 // Transform API reservation to Booking format
