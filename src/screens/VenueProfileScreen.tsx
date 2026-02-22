@@ -14,7 +14,7 @@ import { usePostHog } from "posthog-react-native";
 const { width } = Dimensions.get('window');
 
 const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, themeMode, favouriteVenueIds, toggleFavourite, checkAndCacheFavourite } = useStore();
+    const { colors, computedTheme: themeMode, favouriteVenueIds, toggleFavourite, checkAndCacheFavourite } = useStore();
     const posthog = usePostHog();
     const insets = useSafeAreaInsets();
     const venueId: string | undefined = route?.params?.venueId;
@@ -126,6 +126,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar barStyle="light-content" />
+            {/* Note: StatusBar stays light-content because the header image area is always dark */}
             <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 180 }}>
                 {/* Header Image Section */}
                 <View style={styles.imageContainer}>
@@ -234,7 +235,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                         <Text style={[styles.actionButtonText, { color: colors.primary }]}>Itinéraire</Text>
                     </TouchableOpacity>
 
-                    <View style={styles.divider} />
+                    <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
                     {/* Matchs Recommandés */}
                     <View style={styles.sectionHeader}>
@@ -473,7 +474,6 @@ const styles = StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: 'rgba(255,255,255,0.1)',
         marginBottom: 32,
     },
     sectionHeader: {

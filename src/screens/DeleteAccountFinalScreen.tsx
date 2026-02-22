@@ -28,7 +28,7 @@ const DeleteAccountFinalScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const route = useRoute<RouteProp<RouteParams, "DeleteAccountFinal">>();
-    const { colors, themeMode, logout } = useStore();
+    const { colors, computedTheme: themeMode, logout } = useStore();
     const posthog = usePostHog();
 
     const [password, setPassword] = useState("");
@@ -100,7 +100,7 @@ const DeleteAccountFinalScreen = () => {
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <View style={styles.headerRow}>
                     <TouchableOpacity
-                        style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.05)" }]}
+                        style={[styles.backButton, { backgroundColor: colors.surfaceGlass }]}
                         onPress={handleBack}
                         activeOpacity={0.85}
                     >
@@ -121,7 +121,7 @@ const DeleteAccountFinalScreen = () => {
                 {/* Lock Icon with Glow */}
                 <View style={styles.iconContainer}>
                     <View style={styles.iconGlow} />
-                    <View style={styles.iconCircle}>
+                    <View style={[styles.iconCircle, { backgroundColor: colors.surface }]}>
                         <MaterialIcons name="lock-open" size={40} color="#ef4444" />
                     </View>
                 </View>
@@ -132,14 +132,14 @@ const DeleteAccountFinalScreen = () => {
                 </Text>
 
                 {/* Password Input */}
-                <View style={styles.inputContainer}>
+                <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={styles.inputIconLeft}>
-                        <MaterialIcons name="lock" size={22} color="rgba(255,255,255,0.4)" />
+                        <MaterialIcons name="lock" size={22} color={colors.textMuted} />
                     </View>
                     <TextInput
                         style={[styles.input, { color: colors.text }]}
                         placeholder="Mot de passe"
-                        placeholderTextColor="rgba(255,255,255,0.3)"
+                        placeholderTextColor={colors.textMuted}
                         value={password}
                         onChangeText={setPassword}
                         secureTextEntry={!showPassword}
@@ -154,13 +154,13 @@ const DeleteAccountFinalScreen = () => {
                         <MaterialIcons
                             name={showPassword ? "visibility-off" : "visibility"}
                             size={20}
-                            color="rgba(255,255,255,0.4)"
+                            color={colors.textMuted}
                         />
                     </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.7}>
-                    <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
+                    <Text style={[styles.forgotPasswordText, { color: colors.textMuted }]}>Mot de passe oublié ?</Text>
                 </TouchableOpacity>
             </View>
 
@@ -183,7 +183,7 @@ const DeleteAccountFinalScreen = () => {
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.cancelButton} activeOpacity={0.7} onPress={handleCancel}>
-                    <Text style={styles.cancelButtonText}>Annuler</Text>
+                    <Text style={[styles.cancelButtonText, { color: colors.textMuted }]}>Annuler</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -248,7 +248,6 @@ const styles = StyleSheet.create({
         width: 96,
         height: 96,
         borderRadius: 48,
-        backgroundColor: "#1c1c21",
         borderWidth: 1,
         borderColor: "rgba(239,68,68,0.2)",
         alignItems: "center",
@@ -278,9 +277,7 @@ const styles = StyleSheet.create({
         width: "100%",
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "#1c1c21",
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.1)",
         borderRadius: 16,
         paddingHorizontal: 16,
     },
@@ -303,7 +300,6 @@ const styles = StyleSheet.create({
     },
     forgotPasswordText: {
         fontSize: 12,
-        color: "rgba(255,255,255,0.4)",
     },
     footer: {
         paddingHorizontal: 24,
@@ -334,7 +330,6 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
     },
     cancelButtonText: {
-        color: "rgba(255,255,255,0.4)",
         fontSize: 14,
         fontWeight: "500",
     },

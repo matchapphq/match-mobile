@@ -29,7 +29,7 @@ interface GroupedMatches {
 }
 
 const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const insets = useSafeAreaInsets();
     const venueId: string | undefined = route?.params?.venueId;
     const venueName: string | undefined = route?.params?.venueName;
@@ -148,7 +148,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                     styles.matchCard,
                     { 
                         backgroundColor: themeMode === 'light' ? '#fff' : '#1c1c21',
-                        borderColor: live ? 'rgba(255,107,0,0.3)' : 'rgba(255,255,255,0.05)',
+                        borderColor: live ? 'rgba(255,107,0,0.3)' : colors.border,
                     }
                 ]}
                 activeOpacity={0.9}
@@ -167,7 +167,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                                 <Text style={styles.liveBadgeText}>En direct</Text>
                             </View>
                         ) : soon ? (
-                            <View style={[styles.soonBadge, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+                            <View style={[styles.soonBadge, { backgroundColor: colors.surfaceAlt }]}>
                                 <Text style={[styles.soonBadgeText, { color: colors.textMuted }]}>Bientôt</Text>
                             </View>
                         ) : null}
@@ -189,11 +189,11 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                         
                         <View style={styles.teamsRow}>
                             <View style={styles.teamBadges}>
-                                <View style={[styles.teamBadge, { backgroundColor: '#2a2a30', borderColor: '#1c1c21' }]}>
-                                    <Text style={styles.teamBadgeText}>{match.team1.charAt(0)}</Text>
+                                <View style={[styles.teamBadge, { backgroundColor: colors.surfaceAlt, borderColor: colors.surface }]}>
+                                    <Text style={[styles.teamBadgeText, { color: colors.text }]}>{match.team1.charAt(0)}</Text>
                                 </View>
-                                <View style={[styles.teamBadge, styles.teamBadgeOverlap, { backgroundColor: '#2a2a30', borderColor: '#1c1c21' }]}>
-                                    <Text style={styles.teamBadgeText}>{match.team2.charAt(0)}</Text>
+                                <View style={[styles.teamBadge, styles.teamBadgeOverlap, { backgroundColor: colors.surfaceAlt, borderColor: colors.surface }]}>
+                                    <Text style={[styles.teamBadgeText, { color: colors.text }]}>{match.team2.charAt(0)}</Text>
                                 </View>
                             </View>
                             <Text style={[styles.teamsText, { color: colors.text }]}>
@@ -335,7 +335,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                                     styles.filterPill,
                                     activeFilter === filter.key 
                                         ? { backgroundColor: colors.primary }
-                                        : { backgroundColor: themeMode === 'light' ? '#f1f5f9' : '#1c1c21', borderColor: 'rgba(255,255,255,0.05)' }
+                                        : { backgroundColor: themeMode === 'light' ? '#f1f5f9' : '#1c1c21', borderColor: colors.border }
                                 ]}
                                 onPress={() => setActiveFilter(filter.key)}
                                 activeOpacity={0.8}

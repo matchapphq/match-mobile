@@ -33,7 +33,7 @@ interface RatingDistribution {
 }
 
 const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const insets = useSafeAreaInsets();
     const venueName: string = route?.params?.venueName || 'Bar';
     const venueRating: number = route?.params?.venueRating || 4.8;
@@ -147,14 +147,14 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                 styles.reviewCard, 
                 { 
                     backgroundColor: themeMode === 'light' ? '#fff' : '#1c1c21',
-                    borderColor: 'rgba(255,255,255,0.05)',
+                    borderColor: colors.border,
                 }
             ]}
         >
             {/* Header */}
             <View style={styles.reviewHeader}>
                 <View style={styles.reviewUser}>
-                    <View style={[styles.avatar, { backgroundColor: '#27272a', borderColor: 'rgba(255,255,255,0.1)' }]}>
+                    <View style={[styles.avatar, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
                         {review.userAvatar ? (
                             <Image source={{ uri: review.userAvatar }} style={styles.avatarImage} />
                         ) : (
@@ -166,7 +166,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                         <Text style={[styles.reviewDate, { color: colors.textMuted }]}>{review.date}</Text>
                     </View>
                 </View>
-                <View style={[styles.ratingBadge, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+                <View style={[styles.ratingBadge, { backgroundColor: colors.surfaceAlt }]}>
                     <Text style={[styles.ratingBadgeText, { color: colors.text }]}>{(typeof review.rating === 'number' ? review.rating : (Number(review.rating) || 0)).toFixed(1)}</Text>
                     <MaterialIcons name="star" size={10} color={colors.primary} />
                 </View>
@@ -232,7 +232,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                 { 
                     paddingTop: insets.top,
                     backgroundColor: themeMode === 'light' ? 'rgba(255,255,255,0.8)' : 'rgba(11,11,15,0.8)',
-                    borderBottomColor: 'rgba(255,255,255,0.05)',
+                    borderBottomColor: colors.border,
                 }
             ]}>
                 <View style={styles.headerContent}>

@@ -37,7 +37,7 @@ const LanguageSelectionScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const posthog = usePostHog();
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const [selectedLang, setSelectedLang] = useState('fr'); // Default to French as per design
 
     const RadioButton = ({ selected }: { selected: boolean }) => (
@@ -84,11 +84,12 @@ const LanguageSelectionScreen = () => {
             {/* Header */}
             <View style={[styles.header, {
                 paddingTop: insets.top + 8,
-                backgroundColor: colors.background === '#ffffff' ? 'rgba(255,255,255,0.9)' : 'rgba(11, 11, 15, 0.9)',
+                backgroundColor: themeMode === 'light' ? 'rgba(248,247,245,0.95)' : 'rgba(11, 11, 15, 0.9)',
                 borderBottomColor: colors.border
             }]}>
                 <TouchableOpacity
                     style={[styles.backButton, { backgroundColor: colors.surfaceGlass }]}
+                    activeOpacity={0.7}
                     onPress={() => navigation.goBack()}
                 >
                     <MaterialIcons name="arrow-back" size={24} color={colors.text} />
@@ -159,7 +160,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(255,255,255,0.08)', // Matches Profile header button
     },
     headerTitle: {
         fontSize: 18,
@@ -187,9 +187,9 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     card: {
-        backgroundColor: '#1c1c21', // Matches bg-white dark:bg-[#1c1c21]
         borderRadius: 24,
         overflow: 'hidden',
+        borderWidth: 1,
     },
     languageItem: {
         flexDirection: 'row',
@@ -200,11 +200,9 @@ const styles = StyleSheet.create({
     },
     languageItemBorder: {
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.05)',
     },
     languageLabel: {
         fontSize: 16,
-        color: 'rgba(255,255,255,0.9)',
         fontWeight: '400',
     },
     languageLabelSelected: {

@@ -23,7 +23,7 @@ import * as Location from "expo-location";
 type TabFilter = "all" | "matches" | "venues";
 
 const SearchMenu = ({ navigation }: { navigation: any }) => {
-    const { colors, themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
+    const { colors, computedTheme: themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
     const posthog = usePostHog();
 
     // User location refs (not state — avoids re-triggering fetches)

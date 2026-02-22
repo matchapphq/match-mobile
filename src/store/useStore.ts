@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Appearance, ColorSchemeName, Platform } from 'react-native';
+import { Appearance, ColorSchemeName } from 'react-native';
 import { DARK_THEME, LIGHT_THEME, ThemeColors } from "../constants/colors";
 import {
     User,
@@ -102,6 +102,13 @@ interface AppState {
     setOnboardingCompleted: (completed: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
     updateUser: (updates: Partial<User>) => Promise<void>;
+    completeOAuthProfile: (payload: {
+        phone: string;
+        fav_sports: string[];
+        ambiances: string[];
+        venue_types: string[];
+        budget: string;
+    }) => Promise<boolean>;
     fetchUserProfile: () => Promise<void>;
     refreshUserProfile: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
@@ -293,8 +300,8 @@ export const useStore = create<AppState>((set, get) => ({
         } catch (error) {
             console.log("API error, using mock data:", error);
             set({
-                venues: mockData.venues,
-                filteredVenues: mockData.venues,
+                venues: [],
+                filteredVenues: [],
                 isLoading: false,
             });
         }
@@ -308,8 +315,8 @@ export const useStore = create<AppState>((set, get) => ({
         } catch (error) {
             console.log("API error, using mock data:", error);
             set({
-                venues: mockData.venues,
-                filteredVenues: mockData.venues,
+                venues: [],
+                filteredVenues: [],
                 isLoading: false,
             });
         }
@@ -322,7 +329,7 @@ export const useStore = create<AppState>((set, get) => ({
             set({ matches, isLoading: false });
         } catch (error) {
             console.log("API error, using mock data:", error);
-            set({ matches: mockData.matches, isLoading: false });
+            set({ matches: [], isLoading: false });
         }
     },
 
@@ -333,7 +340,7 @@ export const useStore = create<AppState>((set, get) => ({
             set({ matches, isLoading: false });
         } catch (error) {
             console.log("API error, using mock data:", error);
-            set({ matches: mockData.matches, isLoading: false });
+            set({ matches: [], isLoading: false });
         }
     },
 
@@ -509,6 +516,8 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     setThemeMode: (mode) => {
+        // Keep native color scheme in sync so iOS/Android chrome follows preference too.
+        Appearance.setColorScheme(mode === 'system' ? null : mode);
         const systemTheme = Appearance.getColorScheme() || 'dark';
         const newComputed = mode === 'system' ? systemTheme : mode;
 
@@ -523,6 +532,7 @@ export const useStore = create<AppState>((set, get) => ({
     updateComputedTheme: () => {
         const { themeMode } = get();
         if (themeMode === 'system') {
+            Appearance.setColorScheme(null);
             const systemTheme = Appearance.getColorScheme() || 'dark';
             set({
                 computedTheme: systemTheme,
@@ -614,6 +624,29 @@ export const useStore = create<AppState>((set, get) => ({
                 });
                 throw error;
             }
+        }
+    },
+
+    completeOAuthProfile: async (payload) => {
+        set({ isLoading: true, error: null });
+        try {
+            await apiService.updateProfile(payload);
+            const refreshedUser = await apiService.getMe();
+            set({
+                user: refreshedUser,
+                isAuthenticated: !!refreshedUser,
+                isLoading: false,
+            });
+            await AsyncStorage.setItem("user", JSON.stringify(refreshedUser));
+            return true;
+        } catch (error: any) {
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                error?.message ||
+                "Failed to complete profile";
+            set({ error: message, isLoading: false });
+            return false;
         }
     },
 
@@ -986,6 +1019,9 @@ export const initializeStore = async () => {
         const themeMode = (themeModeStr === 'light' || themeModeStr === 'dark' || themeModeStr === 'system')
             ? themeModeStr
             : 'dark';
+
+        // Re-apply persisted preference at native level on cold start.
+        Appearance.setColorScheme(themeMode === 'system' ? null : themeMode);
 
         const systemTheme = Appearance.getColorScheme() || 'dark';
         const computedTheme = themeMode === 'system' ? systemTheme : themeMode;

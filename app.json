@@ -3,10 +3,10 @@
     "name": "Match",
     "slug": "match",
     "scheme": "com.matchapps.match",
-    "version": "0.8.7",
+    "version": "0.9.0",
     "orientation": "portrait",
     "icon": "./assets/logo_app.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
