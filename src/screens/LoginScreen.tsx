@@ -17,12 +17,14 @@ import { theme } from "../constants/theme";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import { useAppleAuth } from "../hooks/useAppleAuth";
 import { hashId } from "../utils/analytics";
 
 const LoginScreen = () => {
     const navigation = useNavigation<any>();
-    const { login, isLoading, user: storeUser } = useStore();
+    const { login, isLoading } = useStore();
     const { signInWithGoogle, isGoogleLoading, isGoogleConfigured } = useGoogleAuth();
+    const { signInWithApple, isAppleLoading, isAppleAvailable } = useAppleAuth();
     const posthog = usePostHog();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -49,7 +51,7 @@ const LoginScreen = () => {
         if (actualUser?.id) {
             const anonymousId = await hashId(actualUser.id);
             posthog?.identify(anonymousId, {
-                user_tier: actualUser.tier || 'standard',
+                user_tier: (actualUser as { tier?: string }).tier || "standard",
                 is_authenticated: true,
             });
             posthog?.capture("login_success", { method: 'email' });
@@ -72,8 +74,11 @@ const LoginScreen = () => {
         }
     };
 
-    const handleAppleLogin = () => {
-        Alert.alert("À venir", "Connexion Apple en cours d'intégration");
+    const handleAppleLogin = async () => {
+        const result = await signInWithApple();
+        if (!result.success && result.error) {
+            Alert.alert("Apple", result.error);
+        }
     };
 
     return (
@@ -200,8 +205,14 @@ const LoginScreen = () => {
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={[styles.socialButton, styles.appleButton]}
+                                style={[
+                                    styles.socialButton,
+                                    styles.appleButton,
+                                    (!isAppleAvailable || isAppleLoading || isLoading) &&
+                                        styles.loginButtonDisabled,
+                                ]}
                                 onPress={handleAppleLogin}
+                                disabled={!isAppleAvailable || isAppleLoading || isLoading}
                             >
                                 <Ionicons
                                     name="logo-apple"
@@ -209,7 +220,7 @@ const LoginScreen = () => {
                                     color={theme.colors.text}
                                 />
                                 <Text style={[styles.socialText, styles.socialTextLight]}>
-                                    Apple
+                                    {isAppleLoading ? "Apple..." : "Apple"}
                                 </Text>
                             </TouchableOpacity>
                         </View>

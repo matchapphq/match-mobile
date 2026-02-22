@@ -322,6 +322,20 @@ export const apiService = {
         return response.data;
     },
 
+    appleLogin: async (payload: {
+        idToken: string;
+        firstName?: string;
+        lastName?: string;
+    }) => {
+        const response = await api.post("/auth/apple", {
+            id_token: payload.idToken,
+            first_name: payload.firstName,
+            last_name: payload.lastName,
+        });
+        if (!response) throw new Error("Apple login failed");
+        return response.data;
+    },
+
     logout: async () => {
         try {
             await api.post("/auth/logout");

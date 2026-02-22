@@ -162,6 +162,9 @@ interface AppState {
     loginWithGoogle: (
         idToken: string
     ) => Promise<{ success: boolean; reason?: string; status?: number }>;
+    loginWithApple: (
+        payload: { idToken: string; firstName?: string; lastName?: string }
+    ) => Promise<{ success: boolean; reason?: string; status?: number }>;
     signup: (data: any) => Promise<boolean>;
     refreshReservations: () => Promise<void>;
 
@@ -391,6 +394,42 @@ export const useStore = create<AppState>((set, get) => ({
                 error?.response?.data?.error ||
                 error?.message ||
                 "Google login failed";
+            const status = error?.response?.status;
+            set({
+                error: reason,
+                isLoading: false,
+            });
+            return { success: false, reason, status };
+        }
+    },
+
+    loginWithApple: async (payload) => {
+        set({ isLoading: true, error: null });
+        try {
+            const response = await apiService.appleLogin(payload);
+            const { token, refresh_token, user } = response;
+
+            if (!token || !user) {
+                throw new Error("Apple login response missing data");
+            }
+
+            await tokenStorage.setTokens(token, refresh_token);
+            await AsyncStorage.setItem("user", JSON.stringify(user));
+
+            set({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+            });
+
+            get().refreshUserProfile();
+
+            return { success: true };
+        } catch (error: any) {
+            const reason =
+                error?.response?.data?.error ||
+                error?.message ||
+                "Apple login failed";
             const status = error?.response?.status;
             set({
                 error: reason,
