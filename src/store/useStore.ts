@@ -293,8 +293,8 @@ export const useStore = create<AppState>((set, get) => ({
         } catch (error) {
             console.log("API error, using mock data:", error);
             set({
-                venues: mockData.venues,
-                filteredVenues: mockData.venues,
+                venues: [],
+                filteredVenues: [],
                 isLoading: false,
             });
         }
@@ -308,8 +308,8 @@ export const useStore = create<AppState>((set, get) => ({
         } catch (error) {
             console.log("API error, using mock data:", error);
             set({
-                venues: mockData.venues,
-                filteredVenues: mockData.venues,
+                venues: [],
+                filteredVenues: [],
                 isLoading: false,
             });
         }
@@ -322,7 +322,7 @@ export const useStore = create<AppState>((set, get) => ({
             set({ matches, isLoading: false });
         } catch (error) {
             console.log("API error, using mock data:", error);
-            set({ matches: mockData.matches, isLoading: false });
+            set({ matches: [], isLoading: false });
         }
     },
 
@@ -333,7 +333,7 @@ export const useStore = create<AppState>((set, get) => ({
             set({ matches, isLoading: false });
         } catch (error) {
             console.log("API error, using mock data:", error);
-            set({ matches: mockData.matches, isLoading: false });
+            set({ matches: [], isLoading: false });
         }
     },
 

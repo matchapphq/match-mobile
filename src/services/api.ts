@@ -254,16 +254,7 @@ export interface CreateReservationPayload {
 
 export interface CreateReservationResponse {
     message?: string;
-    reservation?: {
-        id: string;
-        status: string;
-        partySize: number;
-        venueMatchId: string;
-        venue?: string;
-        match?: {
-            scheduledAt?: string;
-        };
-    };
+    reservation?: ApiReservation;
     qr_code?: string;
     qrCode?: string;
 }
@@ -293,6 +284,8 @@ export interface ApiReservation {
             scheduled_at: string;
             homeTeam?: { name: string };
             awayTeam?: { name: string };
+            home_team?: { name: string };
+            away_team?: { name: string };
             league?: { name: string };
         };
     };
