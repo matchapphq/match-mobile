@@ -2,7 +2,7 @@
   "expo": {
     "name": "Match",
     "slug": "match",
-    "scheme": "match",
+    "scheme": "com.matchapps.match",
     "version": "0.8.7",
     "orientation": "portrait",
     "icon": "./assets/logo_app.png",
