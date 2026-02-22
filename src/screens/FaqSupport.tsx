@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useStore } from '../store/useStore';
+import { openLiveChatFallback, openSupportEmail } from '../utils/supportEmail';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -47,10 +48,12 @@ const FAQ_ITEMS = [
 ];
 
 const FaqSupport = ({ navigation }: { navigation: any }) => {
-  const { colors, computedTheme: themeMode } = useStore();
+  const { colors, computedTheme: themeMode, user } = useStore();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState<string | null>(FAQ_ITEMS[0]?.id ?? null);
+  const userData = user?.user ?? user ?? null;
+  const supportEmail = userData?.email;
 
   const filteredFaq = FAQ_ITEMS.filter((item) =>
     item.question.toLowerCase().includes(search.toLowerCase())
@@ -114,7 +117,11 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
 
         <View style={styles.sectionBlock}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Besoin d'aide supplémentaire ?</Text>
-          <TouchableOpacity style={[styles.helpCard, styles.liveChatCard, { borderColor: colors.primary }]} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.helpCard, styles.liveChatCard, { borderColor: colors.primary }]}
+            activeOpacity={0.85}
+            onPress={() => openLiveChatFallback(supportEmail)}
+          >
             <View style={styles.helpCardLeft}>
               <View style={[styles.helpIcon, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
                 <MaterialIcons name="chat" size={22} color={colors.white} />
@@ -127,13 +134,19 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
             <MaterialIcons name="chevron-right" size={24} color={colors.white} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.helpCard, { backgroundColor: colors.surface, borderColor: colors.divider }]} activeOpacity={0.85}>
+          <TouchableOpacity
+            style={[styles.helpCard, { backgroundColor: colors.surface, borderColor: colors.divider }]}
+            activeOpacity={0.85}
+            onPress={() => {
+              void openSupportEmail({ userEmail: supportEmail });
+            }}
+          >
             <View style={styles.helpCardLeft}>
               <View style={[styles.helpIcon, { backgroundColor: colors.surfaceAlt }]}>
                 <MaterialIcons name="mail" size={22} color={colors.primary} />
               </View>
               <View>
-                <Text style={[styles.helpCardTitle, { color: colors.text }]}>Envoyer un email</Text>
+                <Text style={[styles.helpCardTitle, { color: colors.text }]}>Envoyer un mail</Text>
                 <Text style={[styles.helpCardSubtitle, { color: colors.textMuted }]}>Réponse sous 24h</Text>
               </View>
             </View>

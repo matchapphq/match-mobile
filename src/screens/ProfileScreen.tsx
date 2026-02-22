@@ -10,7 +10,6 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  Linking,
   Modal,
   TextInput,
   KeyboardAvoidingView,
@@ -24,6 +23,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useStore } from '../store/useStore';
 import { usePostHog } from 'posthog-react-native';
 import type { UserProfile } from '../services/mobileApi';
+import { openLiveChatFallback, openSupportEmail } from '../utils/supportEmail';
 
 type SectionRow = {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -233,6 +233,26 @@ const ProfileScreen = () => {
     }
   };
 
+  const supportEmail = profile.email || userData?.email;
+
+  const openAdvisorMenu = () => {
+    Alert.alert('Parler à un conseiller', 'Merci de choisir un canal de contact.', [
+      {
+        text: 'Chat en direct',
+        onPress: () => {
+          openLiveChatFallback(supportEmail);
+        },
+      },
+      {
+        text: 'Envoyer un mail',
+        onPress: () => {
+          void openSupportEmail({ userEmail: supportEmail });
+        },
+      },
+      { text: 'Annuler', style: 'cancel' },
+    ]);
+  };
+
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
@@ -357,7 +377,7 @@ const ProfileScreen = () => {
                               navigation.navigate('FaqSupport');
                               return;
                           case 'Parler à un conseiller':
-                              Alert.alert('Support', 'Nous connectons cette option prochainement.');
+                              openAdvisorMenu();
                               return;
                           case 'Signaler un bug':
                               setBugName(profile.name);
