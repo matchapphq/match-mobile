@@ -14,6 +14,12 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useStore } from "../store/useStore";
+import {
+    BUDGET_OPTIONS,
+    MOOD_OPTIONS,
+    SPORTS_OPTIONS,
+    VENUE_OPTIONS,
+} from "../screens/onboarding/options";
 
 const { height } = Dimensions.get("window");
 
@@ -21,23 +27,15 @@ export type FilterSelections = {
     sports: string[];
     venues: string[];
     ambiances: string[];
-    food: string[];
-    price: string;
+    budget: string;
 };
 
 export const DEFAULT_FILTER_SELECTIONS: FilterSelections = {
-    sports: ["Football"],
-    venues: ["Sports Bar"],
-    ambiances: ["Chill"],
-    food: ["Bières Artisanales"],
-    price: "€€",
+    sports: ["football"],
+    venues: ["bar"],
+    ambiances: ["ultra"],
+    budget: "standard",
 };
-
-const SPORTS_OPTIONS = ["Football", "Rugby", "Tennis", "Basket", "MMA"];
-const VENUE_OPTIONS = ["Sports Bar", "Pub Irlandais", "Restaurant", "Rooftop"];
-const AMBIANCE_OPTIONS = ["Festif", "Stade", "Chill", "Cosy"];
-const FOOD_OPTIONS = ["Happy Hour", "Bières Artisanales", "Burgers", "Pizza", "Tapas"];
-const PRICE_OPTIONS = ["€", "€€", "€€€"];
 
 type Props = {
     visible: boolean;
@@ -81,8 +79,8 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
 
     const toggleSelection = (key: keyof FilterSelections, value: string) => {
         setSelections((prev) => {
-            if (key === "price") {
-                return { ...prev, price: value };
+            if (key === "budget") {
+                return { ...prev, budget: value };
             }
             const current = prev[key] as string[];
             const exists = current.includes(value);
@@ -96,34 +94,34 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
     };
 
     const handleReset = () => {
-        setSelections(DEFAULT_FILTER_SELECTIONS);
+        setSelections(initialSelections ?? DEFAULT_FILTER_SELECTIONS);
     };
 
     const filterOptions = useMemo(
         () => [
             {
                 title: "Sports",
-                options: SPORTS_OPTIONS,
+                options: SPORTS_OPTIONS.map((option) => ({
+                    id: option.id,
+                    label: option.label,
+                })),
                 key: "sports" as const,
-                highlight: "Football",
             },
             {
                 title: "Lieux",
-                options: VENUE_OPTIONS,
+                options: VENUE_OPTIONS.map((option) => ({
+                    id: option.id,
+                    label: option.label,
+                })),
                 key: "venues" as const,
-                highlight: "Sports Bar",
             },
             {
                 title: "Ambiance",
-                options: AMBIANCE_OPTIONS,
+                options: MOOD_OPTIONS.map((option) => ({
+                    id: option.id,
+                    label: option.label,
+                })),
                 key: "ambiances" as const,
-                highlight: "Chill",
-            },
-            {
-                title: "Food & Drinks",
-                options: FOOD_OPTIONS,
-                key: "food" as const,
-                highlight: "Bières Artisanales",
             },
         ],
         [],
@@ -183,20 +181,15 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{section.title}</Text>
                             <View style={styles.chipWrap}>
                                 {section.options.map((option) => {
-                                    const active = (selections[section.key] as string[]).includes(option);
-                                    const highlighted = section.highlight === option;
+                                    const active = (selections[section.key] as string[]).includes(option.id);
                                     return (
                                         <TouchableOpacity
-                                            key={option}
+                                            key={option.id}
                                             style={[
                                                 styles.chip,
                                                 {
                                                     backgroundColor: active ? colors.primary : colors.surfaceAlt,
                                                     borderColor: active ? colors.primary : colors.border
-                                                },
-                                                highlighted && !active && {
-                                                    backgroundColor: themeMode === 'light' ? 'rgba(244,123,37,0.1)' : 'rgba(244,123,37,0.15)',
-                                                    borderColor: 'rgba(244,123,37,0.4)'
                                                 },
                                                 active && {
                                                     shadowColor: colors.primary,
@@ -206,17 +199,16 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
                                                     elevation: 6
                                                 }
                                             ]}
-                                            onPress={() => toggleSelection(section.key, option)}
+                                            onPress={() => toggleSelection(section.key, option.id)}
                                             activeOpacity={0.85}
                                         >
                                             <Text
                                                 style={[
                                                     styles.chipLabel,
                                                     { color: active ? colors.white : colors.textMuted },
-                                                    highlighted && !active && { color: colors.primary },
                                                 ]}
                                             >
-                                                {option}
+                                                {option.label}
                                             </Text>
                                         </TouchableOpacity>
                                     );
@@ -227,14 +219,14 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
 
                     <View style={styles.section}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Prix</Text>
-                        <View style={styles.priceRow}>
-                            {PRICE_OPTIONS.map((price) => {
-                                const active = selections.price === price;
+                        <View style={styles.budgetRow}>
+                            {BUDGET_OPTIONS.map((option) => {
+                                const active = selections.budget === option.id;
                                 return (
                                     <TouchableOpacity
-                                        key={price}
+                                        key={option.id}
                                         style={[
-                                            styles.priceButton,
+                                            styles.budgetButton,
                                             {
                                                 backgroundColor: active ? colors.primary : colors.surfaceAlt,
                                                 borderColor: active ? colors.primary : colors.border
@@ -247,16 +239,16 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
                                                 elevation: 6
                                             }
                                         ]}
-                                        onPress={() => toggleSelection("price", price)}
+                                        onPress={() => toggleSelection("budget", option.id)}
                                         activeOpacity={0.85}
                                     >
                                         <Text
                                             style={[
-                                                styles.priceLabel,
+                                                styles.budgetLabel,
                                                 { color: active ? colors.white : colors.textMuted }
                                             ]}
                                         >
-                                            {price}
+                                            {option.label}
                                         </Text>
                                     </TouchableOpacity>
                                 );
@@ -363,19 +355,20 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         // color handled dynamically
     },
-    priceRow: {
+    budgetRow: {
         flexDirection: "row",
+        flexWrap: "wrap",
         gap: 12,
     },
-    priceButton: {
-        flex: 1,
+    budgetButton: {
         borderRadius: 16,
         borderWidth: 1,
+        paddingHorizontal: 14,
         paddingVertical: 14,
         alignItems: "center",
         // colors handled dynamically
     },
-    priceLabel: {
+    budgetLabel: {
         fontWeight: "700",
         fontSize: 14,
         // color handled dynamically

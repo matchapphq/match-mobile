@@ -27,9 +27,81 @@ import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
 import { mobileApi, Venue, VenueMatch } from "../services/mobileApi";
 import { usePostHog } from "posthog-react-native";
+import {
+    BUDGET_OPTIONS,
+    MOOD_OPTIONS,
+    SPORTS_OPTIONS,
+    VENUE_OPTIONS,
+} from "./onboarding/options";
+import type { UserPreferences } from "../types";
 
 
 const { width, height } = Dimensions.get("window");
+
+const LEGACY_SPORTS_MAP: Record<string, string> = {
+    Football: "football",
+    Rugby: "rugby",
+    Tennis: "tennis",
+    Basket: "basketball",
+    MMA: "mma",
+};
+
+const LEGACY_AMBIANCE_MAP: Record<string, string> = {
+    Festif: "conviviale",
+    Stade: "ultra",
+    Chill: "posee",
+    Cosy: "posee",
+};
+
+const LEGACY_VENUE_MAP: Record<string, string> = {
+    "Sports Bar": "bar",
+    "Pub Irlandais": "bar",
+    Restaurant: "restaurant",
+    Rooftop: "bar",
+};
+
+const LEGACY_BUDGET_MAP: Record<string, string> = {
+    "€": "eco",
+    "€€": "standard",
+    "€€€": "premium",
+};
+
+const SPORTS_IDS = new Set(SPORTS_OPTIONS.map((option) => option.id));
+const AMBIANCE_IDS = new Set(MOOD_OPTIONS.map((option) => option.id));
+const VENUE_IDS = new Set(VENUE_OPTIONS.map((option) => option.id));
+const BUDGET_IDS = new Set(BUDGET_OPTIONS.map((option) => option.id));
+
+const normalizePreferenceList = (
+    value: unknown,
+    validIds: Set<string>,
+    legacyMap?: Record<string, string>,
+): string[] => {
+    if (!Array.isArray(value)) return [];
+    const mapped = value
+        .filter((item): item is string => typeof item === "string")
+        .map((item) => (legacyMap && legacyMap[item] ? legacyMap[item] : item))
+        .filter((item) => validIds.has(item));
+    return Array.from(new Set(mapped));
+};
+
+const resolveBudget = (value: unknown): string => {
+    if (typeof value !== "string" || !value.trim()) return DEFAULT_FILTER_SELECTIONS.budget;
+    const mapped = LEGACY_BUDGET_MAP[value] ?? value;
+    return BUDGET_IDS.has(mapped) ? mapped : DEFAULT_FILTER_SELECTIONS.budget;
+};
+
+const mapUserPreferencesToFilters = (preferences?: UserPreferences): FilterSelections => {
+    const sports = normalizePreferenceList(preferences?.sports, SPORTS_IDS, LEGACY_SPORTS_MAP);
+    const ambiances = normalizePreferenceList(preferences?.ambiance, AMBIANCE_IDS, LEGACY_AMBIANCE_MAP);
+    const venues = normalizePreferenceList(preferences?.foodTypes, VENUE_IDS, LEGACY_VENUE_MAP);
+
+    return {
+        sports: sports.length > 0 ? sports : DEFAULT_FILTER_SELECTIONS.sports,
+        ambiances: ambiances.length > 0 ? ambiances : DEFAULT_FILTER_SELECTIONS.ambiances,
+        venues: venues.length > 0 ? venues : DEFAULT_FILTER_SELECTIONS.venues,
+        budget: resolveBudget(preferences?.budget),
+    };
+};
 
 const DARK_MAP_STYLE = [
     {
@@ -312,7 +384,8 @@ const LIGHT_MAP_STYLE = [
 ];
 
 const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, computedTheme: themeMode } = useStore();
+    const { colors, computedTheme: themeMode, user } = useStore();
+    const userData = user?.user ?? user ?? null;
     const focusVenueId: string | undefined = route?.params?.focusVenueId;
     const focusLat: number | undefined = route?.params?.focusLat;
     const focusLng: number | undefined = route?.params?.focusLng;
@@ -525,8 +598,18 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
         }).start();
     }, [isSheetOpen]);
 
-    const [filterSelections, setFilterSelections] = useState<FilterSelections>(DEFAULT_FILTER_SELECTIONS);
+    const preferenceSelections = mapUserPreferencesToFilters(userData?.preferences);
+    const [filterSelections, setFilterSelections] = useState<FilterSelections>(preferenceSelections);
     const [filterSheetVisible, setFilterSheetVisible] = useState(false);
+
+    useEffect(() => {
+        setFilterSelections(preferenceSelections);
+    }, [
+        preferenceSelections.budget,
+        JSON.stringify(preferenceSelections.sports),
+        JSON.stringify(preferenceSelections.ambiances),
+        JSON.stringify(preferenceSelections.venues),
+    ]);
 
     const toggleSheet = () => {
         setIsSheetOpen(!isSheetOpen);
