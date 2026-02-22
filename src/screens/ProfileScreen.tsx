@@ -352,6 +352,7 @@ const ProfileScreen = () => {
 
                   const showMeta = row.meta || row.accent || row.badge || (row.label === 'Thème');
                   const displayMeta = row.label === 'Thème' ? getThemeLabel(themePreference) : row.meta;
+                  const isLanguageRow = row.label === 'Langue';
 
                   const handlePress = () => {
                       switch (row.label) {
@@ -391,7 +392,7 @@ const ProfileScreen = () => {
                               navigation.navigate('DeleteAccountWarning');
                               return;
                           case 'Langue':
-                              navigation.navigate('LanguageSelection');
+                              // French-only for now: language picker is temporarily disabled.
                               return;
                           case 'Thème':
                               navigation.navigate('ThemeSelection');
@@ -406,8 +407,9 @@ const ProfileScreen = () => {
                     <TouchableOpacity
                       key={row.label}
                       style={[styles.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider }]}
-                      activeOpacity={0.85}
-                      onPress={handlePress}
+                      activeOpacity={isLanguageRow ? 1 : 0.85}
+                      disabled={isLanguageRow}
+                      onPress={isLanguageRow ? undefined : handlePress}
                     >
                       <View style={styles.rowLeft}>
                         <View style={[styles.rowIcon, { backgroundColor: `${row.color}1A` }]}>
@@ -426,7 +428,9 @@ const ProfileScreen = () => {
                       {displayMeta ? (
                         <View style={styles.metaContainer}>
                           <Text style={[styles.metaText, { color: colors.subtext }]}>{displayMeta}</Text>
-                          <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
+                          {!isLanguageRow && (
+                            <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
+                          )}
                         </View>
                       ) : row.badge ? (
                         <View style={styles.metaContainer}>

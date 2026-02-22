@@ -20,7 +20,6 @@ import ReservationSuccessScreen from "../screens/ReservationSuccessScreen";
 import MatchDetailScreen from "../screens/MatchDetailScreen";
 import VenueMatchesScreen from "../screens/VenueMatchesScreen";
 import VenueReviewsScreen from "../screens/VenueReviewsScreen";
-import LanguageSelectionScreen from "../screens/LanguageSelectionScreen";
 import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
 import DeleteAccountWarningScreen from "../screens/DeleteAccountWarningScreen";
@@ -125,7 +124,7 @@ export const AppNavigator = () => {
                             <Stack.Screen name="ReservationSuccess" component={ReservationSuccessScreen} />
                             <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
                             <Stack.Screen name="FaqSupport" component={FaqSupport} />
-                            <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
+                            {/* LanguageSelection temporarily disabled: app is French-only for now. */}
                             <Stack.Screen name="ThemeSelection" component={ThemeSelectionScreen} />
                             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
                             <Stack.Screen name="Favourites" component={FavouritesScreen} />
