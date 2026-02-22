@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import * as Google from "expo-auth-session/providers/google";
 import * as WebBrowser from "expo-web-browser";
-import { exchangeCodeAsync } from "expo-auth-session";
+import * as AuthSession from "expo-auth-session";
+import { exchangeCodeAsync, ResponseType } from "expo-auth-session";
 import { Platform } from "react-native";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { useStore } from "../store/useStore";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -55,49 +57,122 @@ const makeGoogleSupportCode = (
 const withSupportCode = (message: string, supportCode: string) =>
     `${message}\nCode support: ${supportCode}`;
 
+const buildExpoProxyStartUrl = (
+    projectNameForProxy: string,
+    authUrl: string,
+    returnUrl: string
+) => {
+    const queryString = new URLSearchParams({
+        authUrl,
+        returnUrl,
+    }).toString();
+    return `https://auth.expo.io/${projectNameForProxy}/start?${queryString}`;
+};
+
 export function useGoogleAuth() {
     const loginWithGoogle = useStore((state) => state.loginWithGoogle);
     const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+    const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
 
     const googleWebClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    const googleExpoClientId = process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID;
     const googleIosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
     const googleAndroidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
+    const explicitExpoProjectFullName = process.env.EXPO_PUBLIC_EXPO_PROJECT_FULL_NAME;
+
+    const expoProjectFullName = useMemo(() => {
+        if (!isExpoGo) return undefined;
+
+        const fromEnv = explicitExpoProjectFullName?.trim();
+        if (fromEnv) return fromEnv;
+
+        const fromExpoConfig = Constants.expoConfig?.originalFullName?.trim();
+        if (fromExpoConfig) return fromExpoConfig;
+
+        const slug = Constants.expoConfig?.slug?.trim();
+        if (slug) return `@anonymous/${slug}`;
+
+        return undefined;
+    }, [explicitExpoProjectFullName, isExpoGo]);
+
+    const expoProxyRedirectUri = useMemo(() => {
+        if (!isExpoGo || !expoProjectFullName) return undefined;
+        return `https://auth.expo.io/${expoProjectFullName}`;
+    }, [expoProjectFullName, isExpoGo]);
+
+    const expoReturnUrl = useMemo(() => {
+        if (!isExpoGo) return undefined;
+        try {
+            return AuthSession.getDefaultReturnUrl();
+        } catch {
+            return AuthSession.makeRedirectUri();
+        }
+    }, [isExpoGo]);
 
     const effectiveClientIds = useMemo(
         () => ({
             web: googleWebClientId || undefined,
+            expo: googleExpoClientId || undefined,
             ios: googleIosClientId || undefined,
             android: googleAndroidClientId || undefined,
         }),
-        [googleWebClientId, googleIosClientId, googleAndroidClientId]
+        [googleWebClientId, googleExpoClientId, googleIosClientId, googleAndroidClientId]
     );
 
     const platformClientId = useMemo(
-        () =>
-            Platform.select({
+        () => {
+            if (isExpoGo) {
+                return effectiveClientIds.expo;
+            }
+
+            return Platform.select({
                 ios: effectiveClientIds.ios,
                 android: effectiveClientIds.android,
                 default: effectiveClientIds.web,
-            }),
-        [effectiveClientIds]
+            });
+        },
+        [effectiveClientIds, isExpoGo]
     );
 
-    const [request, , promptAsync] = Google.useAuthRequest({
-        webClientId: effectiveClientIds.web,
-        iosClientId: effectiveClientIds.ios,
-        androidClientId: effectiveClientIds.android,
-        scopes: ["openid", "profile", "email"],
-    });
+    const authRequestConfig = useMemo(
+        () =>
+            isExpoGo
+                ? {
+                      clientId: effectiveClientIds.expo,
+                      redirectUri: expoProxyRedirectUri,
+                      responseType: ResponseType.IdToken,
+                      shouldAutoExchangeCode: false,
+                      scopes: ["openid", "profile", "email"],
+                  }
+                : {
+                      webClientId: effectiveClientIds.web,
+                      iosClientId: effectiveClientIds.ios,
+                      androidClientId: effectiveClientIds.android,
+                      scopes: ["openid", "profile", "email"],
+                  },
+        [effectiveClientIds, expoProxyRedirectUri, isExpoGo]
+    );
 
-    const isGoogleConfigured = Boolean(platformClientId);
+    const [request, , promptAsync] = Google.useAuthRequest(authRequestConfig);
+
+    const isGoogleConfigured = Boolean(
+        platformClientId &&
+            (!isExpoGo || (expoProjectFullName && expoProxyRedirectUri && expoReturnUrl))
+    );
 
     const signInWithGoogle = async (): Promise<GoogleAuthResult> => {
         if (!isGoogleConfigured) {
-            const missingVarByPlatform = Platform.select({
-                ios: "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID",
-                android: "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID",
-                default: "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID",
-            });
+            const missingVarByPlatform = isExpoGo
+                ? !effectiveClientIds.expo
+                    ? "EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID"
+                    : !expoProjectFullName
+                      ? "EXPO_PUBLIC_EXPO_PROJECT_FULL_NAME (@owner/slug)"
+                      : "Expo return URL"
+                : Platform.select({
+                      ios: "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID",
+                      android: "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID",
+                      default: "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID",
+                  });
             const supportCode = makeGoogleSupportCode(
                 "CFG",
                 missingVarByPlatform
@@ -123,7 +198,18 @@ export function useGoogleAuth() {
 
         setIsGoogleLoading(true);
         try {
-            const result = await promptAsync();
+            const promptOptions =
+                isExpoGo && request.url && expoReturnUrl && expoProjectFullName
+                    ? {
+                          url: buildExpoProxyStartUrl(
+                              expoProjectFullName,
+                              request.url,
+                              expoReturnUrl
+                          ),
+                      }
+                    : undefined;
+
+            const result = await promptAsync(promptOptions);
 
             if (result.type !== "success") {
                 return { success: false, error: "Connexion Google annulée." };
@@ -138,7 +224,7 @@ export function useGoogleAuth() {
 
             // Native Google flow frequently returns an auth code first.
             // Exchange it explicitly to obtain the id_token required by our backend.
-            if (!idToken && response.params?.code && request && platformClientId) {
+            if (!isExpoGo && !idToken && response.params?.code && request && platformClientId) {
                 try {
                     const extraParams: Record<string, string> = {};
                     if (request.codeVerifier) {
