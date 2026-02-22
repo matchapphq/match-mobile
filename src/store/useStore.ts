@@ -44,7 +44,7 @@ export const transformApiReservation = (
         numberOfPeople: apiRes.party_size,
         matchId: match?.id,
         matchTitle: match
-            ? `${match.homeTeam?.name || "TBD"} vs ${match.awayTeam?.name || "TBD"}`
+            ? `${match.homeTeam?.name || match.home_team?.name || "TBD"} vs ${match.awayTeam?.name || match.away_team?.name || "TBD"}`
             : undefined,
         status,
         conditions: apiRes.special_requests || undefined,
@@ -102,6 +102,13 @@ interface AppState {
     setOnboardingCompleted: (completed: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
     updateUser: (updates: Partial<User>) => Promise<void>;
+    completeOAuthProfile: (payload: {
+        phone: string;
+        fav_sports: string[];
+        ambiances: string[];
+        venue_types: string[];
+        budget: string;
+    }) => Promise<boolean>;
     fetchUserProfile: () => Promise<void>;
     refreshUserProfile: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
@@ -154,6 +161,17 @@ interface AppState {
     fetchMatches: (filters?: any) => Promise<void>;
     fetchUpcomingMatches: () => Promise<void>;
     login: (email: string, password: string) => Promise<boolean>;
+    /**
+     * Note: Unlike `login`, this returns a structured result so that callers can
+     * inspect detailed failure information (e.g. status/reason from Google).
+     * The `login` method keeps a boolean return type for backward compatibility.
+     */
+    loginWithGoogle: (
+        idToken: string
+    ) => Promise<{ success: boolean; reason?: string; status?: number }>;
+    loginWithApple: (
+        payload: { idToken: string; firstName?: string; lastName?: string }
+    ) => Promise<{ success: boolean; reason?: string; status?: number }>;
     signup: (data: any) => Promise<boolean>;
     refreshReservations: () => Promise<void>;
 
@@ -282,8 +300,8 @@ export const useStore = create<AppState>((set, get) => ({
         } catch (error) {
             console.log("API error, using mock data:", error);
             set({
-                venues: mockData.venues,
-                filteredVenues: mockData.venues,
+                venues: [],
+                filteredVenues: [],
                 isLoading: false,
             });
         }
@@ -297,8 +315,8 @@ export const useStore = create<AppState>((set, get) => ({
         } catch (error) {
             console.log("API error, using mock data:", error);
             set({
-                venues: mockData.venues,
-                filteredVenues: mockData.venues,
+                venues: [],
+                filteredVenues: [],
                 isLoading: false,
             });
         }
@@ -311,7 +329,7 @@ export const useStore = create<AppState>((set, get) => ({
             set({ matches, isLoading: false });
         } catch (error) {
             console.log("API error, using mock data:", error);
-            set({ matches: mockData.matches, isLoading: false });
+            set({ matches: [], isLoading: false });
         }
     },
 
@@ -322,7 +340,7 @@ export const useStore = create<AppState>((set, get) => ({
             set({ matches, isLoading: false });
         } catch (error) {
             console.log("API error, using mock data:", error);
-            set({ matches: mockData.matches, isLoading: false });
+            set({ matches: [], isLoading: false });
         }
     },
 
@@ -346,8 +364,85 @@ export const useStore = create<AppState>((set, get) => ({
 
             return true;
         } catch (error: any) {
-            set({ error: error.message || "Login failed", isLoading: false });
+            const errorMessage =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                error.message ||
+                "Login failed";
+            set({ error: errorMessage, isLoading: false });
             return false;
+        }
+    },
+
+    loginWithGoogle: async (idToken) => {
+        set({ isLoading: true, error: null });
+        try {
+            const response = await apiService.googleLogin(idToken);
+            const { token, refresh_token, user } = response;
+
+            if (!token || !user) {
+                throw new Error("Google login response missing data");
+            }
+
+            await tokenStorage.setTokens(token, refresh_token);
+            await AsyncStorage.setItem("user", JSON.stringify(user));
+
+            set({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+            });
+
+            get().refreshUserProfile();
+
+            return { success: true };
+        } catch (error: any) {
+            const reason =
+                error?.response?.data?.error ||
+                error?.message ||
+                "Google login failed";
+            const status = error?.response?.status;
+            set({
+                error: reason,
+                isLoading: false,
+            });
+            return { success: false, reason, status };
+        }
+    },
+
+    loginWithApple: async (payload) => {
+        set({ isLoading: true, error: null });
+        try {
+            const response = await apiService.appleLogin(payload);
+            const { token, refresh_token, user } = response;
+
+            if (!token || !user) {
+                throw new Error("Apple login response missing data");
+            }
+
+            await tokenStorage.setTokens(token, refresh_token);
+            await AsyncStorage.setItem("user", JSON.stringify(user));
+
+            set({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+            });
+
+            get().refreshUserProfile();
+
+            return { success: true };
+        } catch (error: any) {
+            const reason =
+                error?.response?.data?.error ||
+                error?.message ||
+                "Apple login failed";
+            const status = error?.response?.status;
+            set({
+                error: reason,
+                isLoading: false,
+            });
+            return { success: false, reason, status };
         }
     },
 
@@ -421,6 +516,8 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     setThemeMode: (mode) => {
+        // Keep native color scheme in sync so iOS/Android chrome follows preference too.
+        Appearance.setColorScheme(mode === 'system' ? null : mode);
         const systemTheme = Appearance.getColorScheme() || 'dark';
         const newComputed = mode === 'system' ? systemTheme : mode;
 
@@ -435,6 +532,7 @@ export const useStore = create<AppState>((set, get) => ({
     updateComputedTheme: () => {
         const { themeMode } = get();
         if (themeMode === 'system') {
+            Appearance.setColorScheme(null);
             const systemTheme = Appearance.getColorScheme() || 'dark';
             set({
                 computedTheme: systemTheme,
@@ -485,19 +583,39 @@ export const useStore = create<AppState>((set, get) => ({
         if (user) {
             set({ isLoading: true, error: null });
             try {
-                const updatedUser = await apiService.updateProfile(updates);
-                // Merge with existing user data to ensure all fields are preserved
+                let updatedUser;
+                
+                // If the update contains an avatar URI, handle it via specialized upload endpoint
+                const isLocalFile = (uri?: string) => 
+                    uri && (uri.startsWith('file://') || uri.startsWith('/') || uri.startsWith('content://'));
+
+                if (updates.avatar && isLocalFile(updates.avatar)) {
+                    const uploadResult = await apiService.updateAvatar(updates.avatar);
+                    if (uploadResult.success) {
+                        // Profile was already updated on backend, just update local state with new URL
+                        updatedUser = { ...user, avatar: uploadResult.url };
+                        // Remove avatar from updates so we don't try to update it again via JSON PUT
+                        const { avatar: _, ...otherUpdates } = updates;
+                        if (Object.keys(otherUpdates).length > 0) {
+                            const profileResponse = await apiService.updateProfile(otherUpdates);
+                            updatedUser = { ...updatedUser, ...profileResponse };
+                        }
+                    } else {
+                        throw new Error("Failed to upload avatar");
+                    }
+                } else {
+                    updatedUser = await apiService.updateProfile(updates);
+                }
+
+                // Merge with existing user data
                 const finalUser = { ...user, ...updatedUser };
                 
-                // Keep nested user object in sync if it exists
                 if (finalUser.user) {
                     finalUser.user = { ...finalUser.user, ...updatedUser };
                 }
 
                 set({ user: finalUser, isLoading: false });
                 await AsyncStorage.setItem("user", JSON.stringify(finalUser));
-
-                // Optional: Trigger a background refresh to be absolutely sure we're in sync
                 get().refreshUserProfile();
             } catch (error: any) {
                 set({ 
@@ -506,6 +624,29 @@ export const useStore = create<AppState>((set, get) => ({
                 });
                 throw error;
             }
+        }
+    },
+
+    completeOAuthProfile: async (payload) => {
+        set({ isLoading: true, error: null });
+        try {
+            await apiService.updateProfile(payload);
+            const refreshedUser = await apiService.getMe();
+            set({
+                user: refreshedUser,
+                isAuthenticated: !!refreshedUser,
+                isLoading: false,
+            });
+            await AsyncStorage.setItem("user", JSON.stringify(refreshedUser));
+            return true;
+        } catch (error: any) {
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                error?.message ||
+                "Failed to complete profile";
+            set({ error: message, isLoading: false });
+            return false;
         }
     },
 
@@ -524,22 +665,39 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     refreshUserProfile: async () => {
-        try {
-            const user = await apiService.getMe();
-            if (user) {
-                const currentUser = get().user;
-                // Preserve local nested structure if it exists
-                const finalUser = { ...currentUser, ...user };
-                if (currentUser?.user) {
-                    finalUser.user = { ...currentUser.user, ...user };
+        const retry = async (count: number): Promise<void> => {
+            try {
+                const user = await apiService.getMe();
+                if (user) {
+                    const currentUser = get().user;
+                    // Preserve local nested structure if it exists
+                    const finalUser = { ...currentUser, ...user };
+                    if (currentUser?.user) {
+                        finalUser.user = { ...currentUser.user, ...user };
+                    }
+                    
+                    set({ user: finalUser });
+                    await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+                }
+            } catch (error: any) {
+                if (count > 0 && (error.code === 'ECONNABORTED' || error.message?.includes('timeout'))) {
+                    console.log(`Retrying profile refresh (${count} attempts left)...`);
+                    // Exponential backoff for background retry
+                    await new Promise(resolve => setTimeout(resolve, (3 - count + 1) * 2000));
+                    return retry(count - 1);
                 }
                 
-                set({ user: finalUser });
-                await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+                const { API_BASE_URL } = await import('../services/api');
+                if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+                    console.warn(`Background profile refresh timed out after multiple attempts. Backend unreachable at: ${API_BASE_URL}`);
+                } else {
+                    console.warn("Background profile refresh failed:", error.message || error);
+                }
             }
-        } catch (error) {
-            console.warn("Background profile refresh failed:", error);
-        }
+        };
+
+        // Try up to 2 retries (3 attempts total)
+        return retry(2);
     },
 
     setVenues: (venues) => set({ venues, filteredVenues: venues }),
@@ -744,9 +902,13 @@ export const useStore = create<AppState>((set, get) => ({
             set({ reservations: updated, isLoading: false });
             AsyncStorage.setItem("reservations", JSON.stringify(updated));
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error canceling reservation:", error);
-            set({ isLoading: false, error: "Failed to cancel reservation" });
+            const errorMessage =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                "Failed to cancel reservation";
+            set({ error: errorMessage, isLoading: false });
             return false;
         }
     },
@@ -785,11 +947,14 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     logout: async () => {
+        const { posthog } = await import("../services/analytics");
         try {
             await apiService.logout();
         } catch (error) {
             console.error("Logout API error:", error);
         }
+
+        posthog?.reset();
 
         set({
             user: null,
@@ -855,6 +1020,9 @@ export const initializeStore = async () => {
             ? themeModeStr
             : 'dark';
 
+        // Re-apply persisted preference at native level on cold start.
+        Appearance.setColorScheme(themeMode === 'system' ? null : themeMode);
+
         const systemTheme = Appearance.getColorScheme() || 'dark';
         const computedTheme = themeMode === 'system' ? systemTheme : themeMode;
         const colors = computedTheme === 'light' ? LIGHT_THEME : DARK_THEME;
@@ -883,8 +1051,11 @@ export const initializeStore = async () => {
 
         // Trigger background refresh if we have a token
         if (token) {
+            // Stagger requests to avoid congestion on initial load
             useStore.getState().refreshUserProfile();
-            useStore.getState().fetchFavourites();
+            setTimeout(() => {
+                useStore.getState().fetchFavourites();
+            }, 1000);
         }
     } catch (error) {
         console.error("Error initializing store:", error);

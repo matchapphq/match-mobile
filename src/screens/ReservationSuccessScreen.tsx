@@ -15,6 +15,7 @@ type SuccessParams = {
     dateLabel?: string;
     time?: string;
     guestsLabel?: string;
+    matchTitle?: string;
     reference?: string;
     image?: string;
 };
@@ -23,13 +24,14 @@ const DEFAULT_IMAGE =
     "https://lh3.googleusercontent.com/aida-public/AB6AXuDFKCVuOq4v4pl8GgumWkDkahxAgQfU5tllCtpxZGcY0k37BRwxsYjlp0QVSwkn52Y5nwqaOezIeVt5fnv8yBCYBNcRHV7bWa-owzsJnQKABidkqvB9pqnfRBjdxaNR6DZNBoYWyLC4OzbSAh2pk5KB8XK3Ki7zbkdr5eamtyFnv7dkfnojXaET-Hvr1LWwLe_c8TlWsydZRX1o5Hizo5AXMvuUlFbGYOOKcibcZ6dF1We8FNKOhydp80y-vbvsInR_weoOJ4yD27Kr";
 
 const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; route: { params?: SuccessParams } }) => {
-    const { colors, themeMode } = useStore();
+    const { colors } = useStore();
     const {
         venueName = "THE KOP BAR",
         address = "12 Rue de la Soif, Paris",
         dateLabel = "Ven 24 Nov",
         time = "20:45",
         guestsLabel = "4 personnes",
+        matchTitle = "Match de Football",
         reference = "#BK-7829-XP",
         image = DEFAULT_IMAGE,
     } = route.params ?? {};
@@ -71,6 +73,10 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                             <View style={styles.venueInfo}>
                                 <Text style={[styles.venueLabel, { color: colors.primary }]}>VENUE</Text>
                                 <Text style={[styles.venueName, { color: colors.text }]}>{venueName}</Text>
+                                <View style={styles.matchRow}>
+                                    <MaterialIcons name="live-tv" size={16} color={colors.primary} />
+                                    <Text style={[styles.matchText, { color: colors.primary }]}>{matchTitle}</Text>
+                                </View>
                                 <View style={styles.addressRow}>
                                     <MaterialIcons name="location-on" size={16} color={colors.textSecondary} />
                                     <Text style={[styles.venueAddress, { color: colors.textSecondary }]}>{address}</Text>
@@ -145,7 +151,13 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
 
                 {/* Bottom Actions */}
                 <View style={styles.actions}>
-                    <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+                    <TouchableOpacity 
+                        style={[styles.primaryButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+                        onPress={() => navigation.navigate("Tab", { 
+                            screen: "Reservations", 
+                            params: { reservationId: reference } 
+                        })}
+                    >
                         <MaterialIcons name="qr-code-2" size={24} color={colors.white} />
                         <Text style={[styles.primaryButtonText, { color: colors.white }]}>Voir mon QR Code</Text>
                     </TouchableOpacity>
@@ -259,6 +271,18 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "bold",
         marginBottom: 4,
+    },
+    matchRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 4,
+        marginBottom: 4,
+    },
+    matchText: {
+        fontSize: 14,
+        fontWeight: "600",
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
     },
     addressRow: {
         flexDirection: "row",

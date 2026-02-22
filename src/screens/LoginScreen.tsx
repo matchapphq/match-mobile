@@ -13,13 +13,20 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import { theme } from "../constants/theme";
+import * as WebBrowser from "expo-web-browser";
+import { PRIVACY_URL, TERMS_URL } from "../constants/legalUrls";
 import { useStore } from "../store/useStore";
+import { COLORS } from "../constants/colors";
 import { usePostHog } from "posthog-react-native";
+import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import { useAppleAuth } from "../hooks/useAppleAuth";
+import { hashId } from "../utils/analytics";
 
 const LoginScreen = () => {
     const navigation = useNavigation<any>();
-    const { login, isLoading, user } = useStore();
+    const { login, isLoading, colors } = useStore();
+    const { signInWithGoogle, isGoogleLoading, isGoogleConfigured } = useGoogleAuth();
+    const { signInWithApple, isAppleLoading, isAppleAvailable } = useAppleAuth();
     const posthog = usePostHog();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -33,24 +40,26 @@ const LoginScreen = () => {
 
         const success = await login(email, password);
         if (!success) {
-            posthog.capture("login_failed", { email });
-            Alert.alert("Erreur", "Identifiants incorrects");
+            posthog?.capture("login_failed", { method: 'email' });
+            const storeError = useStore.getState().error;
+            Alert.alert("Erreur", storeError || "Identifiants incorrects");
             return;
         }
 
-        // Identify user in PostHog
-        const userData = user?.user ?? user;
-        if (userData?.id) {
-            posthog.identify(userData.id, {
-                email: userData.email,
-                first_name: userData.first_name,
-                last_name: userData.last_name,
+        // Identify user in PostHog with HASHED ID for GDPR
+        const userData = useStore.getState().user;
+        const actualUser = userData?.user ?? userData;
+        
+        if (actualUser?.id) {
+            const anonymousId = await hashId(actualUser.id);
+            posthog?.identify(anonymousId, {
+                user_tier: (actualUser as { tier?: string }).tier || "standard",
+                is_authenticated: true,
             });
-            posthog.capture("login_success");
+            posthog?.capture("login_success", { method: 'email' });
         }
         
         // Navigation is handled automatically by AppNavigator's conditional rendering
-        // when isAuthenticated changes to true — no manual reset needed.
     };
 
     const handleForgotPassword = () => {
@@ -60,17 +69,30 @@ const LoginScreen = () => {
         );
     };
 
-    const handleSocialLogin = (provider: "google" | "apple") => {
-        Alert.alert(
-            "À venir",
-            `Connexion ${
-                provider === "google" ? "Google" : "Apple"
-            } en cours d'intégration`,
-        );
+    const handleGoogleLogin = async () => {
+        const result = await signInWithGoogle();
+        if (!result.success && result.error) {
+            Alert.alert("Google", result.error);
+        }
+    };
+
+    const handleAppleLogin = async () => {
+        const result = await signInWithApple();
+        if (!result.success && result.error) {
+            Alert.alert("Apple", result.error);
+        }
+    };
+
+    const openLegalUrl = async (url: string) => {
+        try {
+            await WebBrowser.openBrowserAsync(url);
+        } catch {
+            Alert.alert("Erreur", "Impossible d'ouvrir ce lien.");
+        }
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
+        <SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]}>
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={styles.keyboardAvoidingView}
@@ -86,27 +108,27 @@ const LoginScreen = () => {
                         <Ionicons
                             name="arrow-back"
                             size={22}
-                            color={theme.colors.text}
+                            color={colors.text}
                         />
                     </TouchableOpacity>
 
                     <View style={styles.logoContainer}>
-                        <View style={styles.iconCircle}>
+                        <View style={[styles.iconCircle, { backgroundColor: colors.surfaceGlass }]}>
                             <Ionicons
                                 name="beer"
                                 size={28}
-                                color={theme.colors.primary}
+                                color={colors.primary}
                             />
                         </View>
-                        <Text style={styles.logoText}>MATCH</Text>
+                        <Text style={[styles.logoText, { color: colors.text }]}>MATCH</Text>
                     </View>
 
                     <View style={styles.formCard}>
                         <View style={styles.inputsGroup}>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
                                 placeholder="E-mail"
-                                placeholderTextColor={theme.colors.textMuted}
+                                placeholderTextColor={colors.textMuted}
                                 value={email}
                                 onChangeText={setEmail}
                                 keyboardType="email-address"
@@ -116,9 +138,9 @@ const LoginScreen = () => {
 
                             <View>
                                 <TextInput
-                                    style={[styles.input, styles.passwordInput]}
+                                    style={[styles.input, styles.passwordInput, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
                                     placeholder="Mot de passe"
-                                    placeholderTextColor={theme.colors.textMuted}
+                                    placeholderTextColor={colors.textMuted}
                                     value={password}
                                     onChangeText={setPassword}
                                     secureTextEntry={!showPassword}
@@ -135,7 +157,7 @@ const LoginScreen = () => {
                                                 : "eye-outline"
                                         }
                                         size={20}
-                                        color={theme.colors.textMuted}
+                                        color={colors.textMuted}
                                     />
                                 </TouchableOpacity>
                             </View>
@@ -144,7 +166,7 @@ const LoginScreen = () => {
                                 onPress={handleForgotPassword}
                                 style={styles.forgotPasswordButton}
                             >
-                                <Text style={styles.forgotPasswordText}>
+                                <Text style={[styles.forgotPasswordText, { color: colors.textMuted }]}>
                                     Mot de passe oublié ?
                                 </Text>
                             </TouchableOpacity>
@@ -153,6 +175,7 @@ const LoginScreen = () => {
                         <TouchableOpacity
                             style={[
                                 styles.loginButton,
+                                { backgroundColor: colors.primary, shadowColor: colors.primary },
                                 isLoading && styles.loginButtonDisabled,
                             ]}
                             onPress={handleLogin}
@@ -164,37 +187,51 @@ const LoginScreen = () => {
                         </TouchableOpacity>
 
                         <View style={styles.dividerRow}>
-                            <View style={styles.divider} />
-                            <Text style={styles.dividerText}>
+                            <View style={[styles.divider, { backgroundColor: colors.divider }]} />
+                            <Text style={[styles.dividerText, { color: colors.textMuted }]}>
                                 Ou continuer avec
                             </Text>
-                            <View style={styles.divider} />
+                            <View style={[styles.divider, { backgroundColor: colors.divider }]} />
                         </View>
 
                         <View style={styles.socialRow}>
                             <TouchableOpacity
-                                style={[styles.socialButton, styles.googleButton]}
-                                onPress={() => handleSocialLogin("google")}
+                                style={[
+                                    styles.socialButton,
+                                    styles.googleButton,
+                                    (!isGoogleConfigured || isGoogleLoading || isLoading) &&
+                                        styles.loginButtonDisabled,
+                                ]}
+                                onPress={handleGoogleLogin}
+                                disabled={!isGoogleConfigured || isGoogleLoading || isLoading}
                             >
                                 <Ionicons
                                     name="logo-google"
                                     size={18}
-                                    color={theme.colors.textInverse}
+                                    color={colors.textInverse}
                                 />
-                                <Text style={styles.socialText}>Google</Text>
+                                <Text style={styles.socialText}>
+                                    {isGoogleLoading ? "Google..." : "Google"}
+                                </Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
-                                style={[styles.socialButton, styles.appleButton]}
-                                onPress={() => handleSocialLogin("apple")}
+                                style={[
+                                    styles.socialButton,
+                                    styles.appleButton,
+                                    (!isAppleAvailable || isAppleLoading || isLoading) &&
+                                        styles.loginButtonDisabled,
+                                ]}
+                                onPress={handleAppleLogin}
+                                disabled={!isAppleAvailable || isAppleLoading || isLoading}
                             >
                                 <Ionicons
                                     name="logo-apple"
                                     size={20}
-                                    color={theme.colors.text}
+                                    color={colors.text}
                                 />
                                 <Text style={[styles.socialText, styles.socialTextLight]}>
-                                    Apple
+                                    {isAppleLoading ? "Apple..." : "Apple"}
                                 </Text>
                             </TouchableOpacity>
                         </View>
@@ -202,11 +239,21 @@ const LoginScreen = () => {
                 </ScrollView>
 
                 <View style={styles.legalContainer}>
-                    <Text style={styles.legalText}>
+                    <Text style={[styles.legalText, { color: colors.textMuted }]}>
                         En continuant, tu acceptes nos
-                        <Text style={styles.link}> Conditions d'utilisation </Text>
+                        <Text
+                            style={[styles.link, { color: colors.text }]}
+                            onPress={() => void openLegalUrl(TERMS_URL)}
+                        >
+                            {" "}Conditions d'utilisation{" "}
+                        </Text>
                         et notre
-                        <Text style={styles.link}> Politique de confidentialité</Text>.
+                        <Text
+                            style={[styles.link, { color: colors.text }]}
+                            onPress={() => void openLegalUrl(PRIVACY_URL)}
+                        >
+                            {" "}Politique de confidentialité
+                        </Text>.
                     </Text>
                 </View>
             </KeyboardAvoidingView>
@@ -217,7 +264,6 @@ const LoginScreen = () => {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: theme.colors.background,
     },
     keyboardAvoidingView: {
         flex: 1,
@@ -231,7 +277,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: theme.colors.surfaceGlass,
+        backgroundColor: COLORS.surfaceGlass,
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 32,
@@ -244,7 +290,6 @@ const styles = StyleSheet.create({
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: theme.colors.surfaceGlass,
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 12,
@@ -252,7 +297,6 @@ const styles = StyleSheet.create({
     logoText: {
         fontSize: 28,
         fontWeight: "800",
-        color: theme.colors.text,
         letterSpacing: 2,
     },
     formCard: {
@@ -264,14 +308,11 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     input: {
-        backgroundColor: theme.colors.surface,
         borderRadius: 18,
         paddingHorizontal: 18,
         paddingVertical: Platform.OS === "ios" ? 18 : 12,
-        color: theme.colors.text,
         fontSize: 16,
         borderWidth: 1,
-        borderColor: theme.colors.border,
     },
     passwordInput: {
         paddingRight: 48,
@@ -289,16 +330,13 @@ const styles = StyleSheet.create({
         alignSelf: "flex-end",
     },
     forgotPasswordText: {
-        color: theme.colors.textMuted,
         fontSize: 13,
         fontWeight: "600",
     },
     loginButton: {
-        backgroundColor: theme.colors.primary,
         borderRadius: 20,
         paddingVertical: 16,
         alignItems: "center",
-        shadowColor: theme.colors.primary,
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.35,
         shadowRadius: 24,
@@ -320,10 +358,8 @@ const styles = StyleSheet.create({
     divider: {
         flex: 1,
         height: StyleSheet.hairlineWidth,
-        backgroundColor: theme.colors.divider,
     },
     dividerText: {
-        color: theme.colors.textMuted,
         fontSize: 11,
         letterSpacing: 1,
         textTransform: "uppercase",
@@ -343,32 +379,30 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     googleButton: {
-        backgroundColor: theme.colors.surfaceLight,
+        backgroundColor: COLORS.surfaceLight,
     },
     appleButton: {
-        backgroundColor: theme.colors.surface,
+        backgroundColor: COLORS.surface,
         borderWidth: 1,
-        borderColor: theme.colors.border,
+        borderColor: COLORS.border,
     },
     socialText: {
         fontWeight: "700",
-        color: theme.colors.textInverse,
+        color: COLORS.textInverse,
     },
     socialTextLight: {
-        color: theme.colors.text,
+        color: COLORS.text,
     },
     legalContainer: {
         paddingHorizontal: 32,
         paddingBottom: 24,
     },
     legalText: {
-        color: theme.colors.textMuted,
         fontSize: 12,
         textAlign: "center",
         lineHeight: 18,
     },
     link: {
-        color: theme.colors.text,
         textDecorationLine: "underline",
     },
 });

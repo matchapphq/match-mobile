@@ -17,11 +17,13 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 import { apiService } from "../services/api";
+import { usePostHog } from "posthog-react-native";
 
 const ChangePasswordScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
+    const posthog = usePostHog();
 
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -74,6 +76,7 @@ const ChangePasswordScreen = () => {
                 currentPassword,
                 newPassword,
             });
+            posthog?.capture('password_change_success');
             Alert.alert("Succès", "Votre mot de passe a été mis à jour.", [
                 { text: "OK", onPress: () => navigation.goBack() },
             ]);
@@ -83,6 +86,7 @@ const ChangePasswordScreen = () => {
                 error?.response?.data?.error ||
                 error?.response?.data?.message ||
                 "Impossible de mettre à jour le mot de passe.";
+            posthog?.capture('password_change_failed', { error: errorMessage });
             Alert.alert("Erreur", errorMessage);
         } finally {
             setIsLoading(false);
@@ -94,7 +98,7 @@ const ChangePasswordScreen = () => {
             <StatusBar barStyle={themeMode === "light" ? "dark-content" : "light-content"} />
 
             {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: "rgba(255,255,255,0.05)" }]}>
+            <View style={[styles.header, { paddingTop: insets.top, borderBottomColor: colors.border }]}>
                 <TouchableOpacity style={styles.backButton} onPress={handleBack} activeOpacity={0.7}>
                     <MaterialIcons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
@@ -115,19 +119,19 @@ const ChangePasswordScreen = () => {
                     {/* Title Section */}
                     <View style={styles.titleSection}>
                         <Text style={[styles.title, { color: colors.text }]}>Modifier le mot de passe</Text>
-                        <Text style={styles.subtitle}>
+                        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
                             Choisissez un mot de passe fort pour protéger votre compte et vos accès aux matchs.
                         </Text>
                     </View>
 
                     {/* Current Password */}
                     <View style={styles.fieldGroup}>
-                        <Text style={styles.label}>MOT DE PASSE ACTUEL</Text>
-                        <View style={styles.inputContainer}>
+                        <Text style={[styles.label, { color: colors.textMuted }]}>MOT DE PASSE ACTUEL</Text>
+                        <View style={[styles.inputContainer, { borderBottomColor: colors.border }]}>
                             <TextInput
                                 style={[styles.input, { color: colors.text }]}
                                 placeholder="Entrez votre mot de passe actuel"
-                                placeholderTextColor="rgba(255,255,255,0.2)"
+                                placeholderTextColor={colors.textMuted}
                                 value={currentPassword}
                                 onChangeText={setCurrentPassword}
                                 secureTextEntry={!showCurrentPassword}
@@ -150,12 +154,12 @@ const ChangePasswordScreen = () => {
 
                     {/* New Password */}
                     <View style={[styles.fieldGroup, { marginTop: 8 }]}>
-                        <Text style={styles.label}>NOUVEAU MOT DE PASSE</Text>
-                        <View style={styles.inputContainer}>
+                        <Text style={[styles.label, { color: colors.textMuted }]}>NOUVEAU MOT DE PASSE</Text>
+                        <View style={[styles.inputContainer, { borderBottomColor: colors.border }]}>
                             <TextInput
                                 style={[styles.input, { color: colors.text }]}
                                 placeholder="Entrez votre nouveau mot de passe"
-                                placeholderTextColor="rgba(255,255,255,0.2)"
+                                placeholderTextColor={colors.textMuted}
                                 value={newPassword}
                                 onChangeText={setNewPassword}
                                 secureTextEntry={!showNewPassword}
@@ -244,12 +248,12 @@ const ChangePasswordScreen = () => {
 
                     {/* Confirm Password */}
                     <View style={[styles.fieldGroup, { marginTop: 8 }]}>
-                        <Text style={styles.label}>CONFIRMER LE MOT DE PASSE</Text>
-                        <View style={styles.inputContainer}>
+                        <Text style={[styles.label, { color: colors.textMuted }]}>CONFIRMER LE MOT DE PASSE</Text>
+                        <View style={[styles.inputContainer, { borderBottomColor: colors.border }]}>
                             <TextInput
                                 style={[styles.input, { color: colors.text }]}
                                 placeholder="Répétez le nouveau mot de passe"
-                                placeholderTextColor="rgba(255,255,255,0.2)"
+                                placeholderTextColor={colors.textMuted}
                                 value={confirmPassword}
                                 onChangeText={setConfirmPassword}
                                 secureTextEntry
@@ -341,7 +345,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         borderBottomWidth: 1,
-        borderBottomColor: "rgba(255,255,255,0.1)",
     },
     input: {
         flex: 1,
@@ -360,7 +363,7 @@ const styles = StyleSheet.create({
     strengthTrack: {
         flex: 1,
         height: 4,
-        backgroundColor: "rgba(255,255,255,0.1)",
+        backgroundColor: "rgba(120,120,128,0.16)",
         borderRadius: 2,
         overflow: "hidden",
     },

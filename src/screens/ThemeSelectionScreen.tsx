@@ -12,13 +12,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../store/useStore';
 import { COLORS } from '../constants/colors';
+import { usePostHog } from 'posthog-react-native';
 
 type ThemeOption = 'dark' | 'light' | 'system';
 
 const ThemeSelectionScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
-    const { themeMode, setThemeMode, colors } = useStore();
+    const posthog = usePostHog();
+    const { themeMode, computedTheme, setThemeMode, colors } = useStore();
     const selectedTheme = themeMode;
 
     const ThemeCard = ({
@@ -67,7 +69,7 @@ const ThemeSelectionScreen = () => {
                             <View style={[styles.pill, { top: 16, width: '33%', backgroundColor: '#cbd5e1' }]} />
 
                             {/* Main content box */}
-                            <View style={[styles.contentBox, { backgroundColor: '#ffffff', borderColor: '#e2e8f0', shadowOpacity: 0.05 }]}>
+                            <View style={[styles.contentBox, { backgroundColor: '#ffffff', borderColor: '#e2e8f0' }]}>
                                 <View style={[styles.circle, { backgroundColor: '#e2e8f0' }]} />
                                 <View style={styles.linesContainer}>
                                     <View style={[styles.line, { width: '75%', backgroundColor: '#e2e8f0' }]} />
@@ -133,12 +135,12 @@ const ThemeSelectionScreen = () => {
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <StatusBar barStyle={themeMode === 'light' ? "dark-content" : "light-content"} />
+            <StatusBar barStyle={computedTheme === 'light' ? "dark-content" : "light-content"} />
 
             {/* Header */}
             <View style={[styles.header, {
                 paddingTop: insets.top + 8,
-                backgroundColor: themeMode === 'light' ? 'rgba(248,247,245,0.95)' : 'rgba(11, 11, 15, 0.9)',
+                backgroundColor: computedTheme === 'light' ? 'rgba(248,247,245,0.95)' : 'rgba(11, 11, 15, 0.9)',
                 borderBottomColor: colors.border
             }]}>
                 <TouchableOpacity
@@ -161,19 +163,28 @@ const ThemeSelectionScreen = () => {
                         type="dark"
                         label="Sombre"
                         isSelected={selectedTheme === 'dark'}
-                        onPress={() => setThemeMode('dark')}
+                        onPress={() => {
+                            posthog?.capture('theme_changed', { theme: 'dark' });
+                            setThemeMode('dark');
+                        }}
                     />
                     <ThemeCard
                         type="light"
                         label="Clair"
                         isSelected={selectedTheme === 'light'}
-                        onPress={() => setThemeMode('light')}
+                        onPress={() => {
+                            posthog?.capture('theme_changed', { theme: 'light' });
+                            setThemeMode('light');
+                        }}
                     />
                     <ThemeCard
                         type="system"
                         label="Système"
                         isSelected={selectedTheme === 'system'}
-                        onPress={() => setThemeMode('system')}
+                        onPress={() => {
+                            posthog?.capture('theme_changed', { theme: 'system' });
+                            setThemeMode('system');
+                        }}
                     />
                 </View>
             </ScrollView>
@@ -231,12 +242,11 @@ const styles = StyleSheet.create({
         aspectRatio: 2,
         borderRadius: 24,
         overflow: 'hidden',
-        borderWidth: 2,
-        borderColor: 'transparent',
         position: 'relative',
         backgroundColor: '#1c1c21', // Fallback
     },
     previewContainerSelected: {
+        borderWidth: 2,
         borderColor: COLORS.primary,
         shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 4 },

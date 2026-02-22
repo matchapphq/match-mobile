@@ -98,7 +98,7 @@ const FILTERS = [
 const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const {
         colors,
-        themeMode,
+        computedTheme: themeMode,
         addReservation,
         updateReservation,
         removeReservation,
@@ -338,6 +338,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                 dateLabel,
                 time: selectedMatch.time,
                 guestsLabel: `${guests} ${guests > 1 ? "personnes" : "personne"}`,
+                matchTitle: `${selectedMatch.team1} vs ${selectedMatch.team2}`,
                 reference,
                 image: selectedMatch.bgImage,
             });
@@ -949,9 +950,7 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: 'rgba(11, 11, 15, 0.95)',
         borderTopWidth: 1,
-        borderTopColor: COLORS.border,
         padding: 16,
         alignItems: 'center',
     },

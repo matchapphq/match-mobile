@@ -4,8 +4,8 @@ import { useNavigation } from '@react-navigation/native';
 
 export const useNotifications = () => {
   const navigation = useNavigation<any>();
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<Notifications.Subscription | null>(null);
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
     // This listener is fired whenever a notification is received while the app is foregrounded
@@ -30,10 +30,10 @@ export const useNotifications = () => {
 
     return () => {
       if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
+        notificationListener.current.remove();
       }
       if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+        responseListener.current.remove();
       }
     };
   }, [navigation]);

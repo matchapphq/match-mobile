@@ -122,7 +122,7 @@ export const mockSearchResults: SearchResult[] = mockVenues.map((venue) => ({
     id: venue.id,
     name: venue.name,
     tag: venue.tags[0],
-    distance: venue.distance,
+    distance: venue.distance ?? "",
     isLive: venue.isOpen,
     image: venue.image,
     rating: venue.rating,
@@ -136,6 +136,8 @@ export const mockSearchMatchResults: SearchMatchResult[] = [
         timeLabel: "Ce soir 21:00",
         kickoffTime: "21:00",
         statusLabel: "Aujourd'hui",
+        scheduledAt: new Date().toISOString(),
+        dateIso: new Date().toISOString().split("T")[0],
         stadium: "Parc des Princes",
         city: "Paris",
         heroImage:
@@ -157,6 +159,8 @@ export const mockSearchMatchResults: SearchMatchResult[] = [
         timeLabel: "Demain 18:30",
         kickoffTime: "18:30",
         statusLabel: "Demain",
+        scheduledAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        dateIso: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split("T")[0],
         stadium: "Emirates Stadium",
         city: "London",
         heroImage:

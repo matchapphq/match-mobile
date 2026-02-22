@@ -10,7 +10,6 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  Linking,
   Modal,
   TextInput,
   KeyboardAvoidingView,
@@ -22,7 +21,9 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import * as ImagePicker from 'expo-image-picker';
 import { useStore } from '../store/useStore';
+import { usePostHog } from 'posthog-react-native';
 import type { UserProfile } from '../services/mobileApi';
+import { openLiveChatFallback, openSupportEmail } from '../utils/supportEmail';
 
 type SectionRow = {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -38,7 +39,7 @@ const DEFAULT_PROFILE: UserProfile = {
   name: 'Utilisateur',
   email: '',
   badgeLabel: 'Fan',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+  avatar: 'https://avatars.matchapp.fr/defaults/default.jpg',
   memberSince: '2024',
   tier: 'Gold',
 };
@@ -58,7 +59,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
         icon: 'account-balance-wallet',
         color: '#f59e0b', // Amber-ish
         label: 'Mon Portefeuille',
-        meta: '12.50 €'
+        meta: '0€'
       },
       {
         icon: 'local-activity',
@@ -102,7 +103,8 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
 const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
-  const { logout, user, themeMode, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading, pushNotificationsEnabled, togglePushNotifications, setPushNotificationsEnabled } = useStore();
+  const posthog = usePostHog();
+  const { logout, user, computedTheme: themeMode, themeMode: themePreference, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading, pushNotificationsEnabled, togglePushNotifications, setPushNotificationsEnabled } = useStore();
   const userData = user?.user ?? user ?? null;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [bugModalVisible, setBugModalVisible] = useState(false);
@@ -156,7 +158,6 @@ const ProfileScreen = () => {
       default: return 'Sombre';
     }
   };
-
   // Build profile from store user data
   const profile: UserProfile = {
     name: userData
@@ -180,6 +181,7 @@ const ProfileScreen = () => {
         text: 'Confirmer',
         style: 'destructive',
         onPress: () => {
+          posthog?.capture('logout_performed');
           logout();
           // Navigation is handled automatically by AppNavigator's conditional rendering
         },
@@ -214,6 +216,10 @@ const ProfileScreen = () => {
       });
 
       if (success) {
+        posthog?.capture('bug_report_sent', {
+          description_length: bugContent.length,
+          platform: metadata.platform,
+        });
         Alert.alert('Merci !', 'Votre rapport de bug a été envoyé avec succès.');
         setBugModalVisible(false);
         setBugContent('');
@@ -225,6 +231,26 @@ const ProfileScreen = () => {
     } finally {
       setIsSubmittingBug(false);
     }
+  };
+
+  const supportEmail = profile.email || userData?.email;
+
+  const openAdvisorMenu = () => {
+    Alert.alert('Parler à un conseiller', 'Merci de choisir un canal de contact.', [
+      {
+        text: 'Chat en direct',
+        onPress: () => {
+          openLiveChatFallback(supportEmail);
+        },
+      },
+      {
+        text: 'Envoyer un mail',
+        onPress: () => {
+          void openSupportEmail({ userEmail: supportEmail });
+        },
+      },
+      { text: 'Annuler', style: 'cancel' },
+    ]);
   };
 
   return (
@@ -305,7 +331,11 @@ const ProfileScreen = () => {
                         </View>
                         <TouchableOpacity
                           activeOpacity={0.8}
-                          onPress={togglePushNotifications}
+                          onPress={() => {
+                            const newState = !pushNotificationsEnabled;
+                            posthog?.capture('notification_toggle', { enabled: newState });
+                            togglePushNotifications();
+                          }}
                         >
                           <View style={[styles.toggleTrack, pushNotificationsEnabled && styles.toggleTrackActive]}>
                             <View
@@ -321,7 +351,8 @@ const ProfileScreen = () => {
                   }
 
                   const showMeta = row.meta || row.accent || row.badge || (row.label === 'Thème');
-                  const displayMeta = row.label === 'Thème' ? getThemeLabel(themeMode) : row.meta;
+                  const displayMeta = row.label === 'Thème' ? getThemeLabel(themePreference) : row.meta;
+                  const isLanguageRow = row.label === 'Langue';
 
                   const handlePress = () => {
                       switch (row.label) {
@@ -347,7 +378,7 @@ const ProfileScreen = () => {
                               navigation.navigate('FaqSupport');
                               return;
                           case 'Parler à un conseiller':
-                              Alert.alert('Support', 'Nous connectons cette option prochainement.');
+                              openAdvisorMenu();
                               return;
                           case 'Signaler un bug':
                               setBugName(profile.name);
@@ -361,7 +392,7 @@ const ProfileScreen = () => {
                               navigation.navigate('DeleteAccountWarning');
                               return;
                           case 'Langue':
-                              navigation.navigate('LanguageSelection');
+                              // French-only for now: language picker is temporarily disabled.
                               return;
                           case 'Thème':
                               navigation.navigate('ThemeSelection');
@@ -376,8 +407,9 @@ const ProfileScreen = () => {
                     <TouchableOpacity
                       key={row.label}
                       style={[styles.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider }]}
-                      activeOpacity={0.85}
-                      onPress={handlePress}
+                      activeOpacity={isLanguageRow ? 1 : 0.85}
+                      disabled={isLanguageRow}
+                      onPress={isLanguageRow ? undefined : handlePress}
                     >
                       <View style={styles.rowLeft}>
                         <View style={[styles.rowIcon, { backgroundColor: `${row.color}1A` }]}>
@@ -396,7 +428,9 @@ const ProfileScreen = () => {
                       {displayMeta ? (
                         <View style={styles.metaContainer}>
                           <Text style={[styles.metaText, { color: colors.subtext }]}>{displayMeta}</Text>
-                          <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
+                          {!isLanguageRow && (
+                            <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
+                          )}
                         </View>
                       ) : row.badge ? (
                         <View style={styles.metaContainer}>
@@ -501,7 +535,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
   },
   headerTitle: {
     color: COLORS.text,
@@ -639,7 +672,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(120,120,128,0.2)',
     padding: 2,
     justifyContent: 'center',
   },

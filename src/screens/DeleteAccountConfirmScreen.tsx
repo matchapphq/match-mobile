@@ -27,7 +27,7 @@ const REASONS = [
 const DeleteAccountConfirmScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const posthog = usePostHog();
 
     const [selectedReason, setSelectedReason] = useState<string | null>(null);
@@ -62,7 +62,7 @@ const DeleteAccountConfirmScreen = () => {
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <View style={styles.headerRow}>
                     <TouchableOpacity
-                        style={[styles.backButton, { backgroundColor: "rgba(255,255,255,0.08)" }]}
+                        style={[styles.backButton, { backgroundColor: colors.surfaceGlass }]}
                         onPress={handleBack}
                         activeOpacity={0.85}
                     >
@@ -74,7 +74,7 @@ const DeleteAccountConfirmScreen = () => {
                 <View style={styles.progressBarContainer}>
                     <View style={[styles.progressBarSegment, { backgroundColor: "#f47b25" }]} />
                     <View style={[styles.progressBarSegment, { backgroundColor: "#f47b25" }]} />
-                    <View style={[styles.progressBarSegment, { backgroundColor: "rgba(255,255,255,0.1)" }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: colors.border }]} />
                 </View>
             </View>
 
@@ -105,7 +105,7 @@ const DeleteAccountConfirmScreen = () => {
                                 <View
                                     style={[
                                         styles.radioCircle,
-                                        { borderColor: isSelected ? colors.primary : "rgba(255,255,255,0.2)" },
+                                        { borderColor: isSelected ? colors.primary : colors.textMuted },
                                         isSelected && { backgroundColor: colors.primary },
                                     ]}
                                 >
@@ -126,7 +126,7 @@ const DeleteAccountConfirmScreen = () => {
                             { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text },
                         ]}
                         placeholder="Dites-nous en plus..."
-                        placeholderTextColor="rgba(255,255,255,0.25)"
+                        placeholderTextColor={colors.textMuted}
                         value={details}
                         onChangeText={setDetails}
                         multiline

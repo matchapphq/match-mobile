@@ -11,7 +11,11 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import * as WebBrowser from "expo-web-browser";
 import { useNavigation } from "@react-navigation/native";
+import { useGoogleAuth } from "../hooks/useGoogleAuth";
+import { useAppleAuth } from "../hooks/useAppleAuth";
+import { PRIVACY_URL, TERMS_URL } from "../constants/legalUrls";
 
 const HERO_IMAGE =
     "https://images.unsplash.com/photo-1572116469696-958721b7d6ca?q=80&w=2574&auto=format&fit=crop";
@@ -20,6 +24,8 @@ const { width } = Dimensions.get("window");
 
 const AuthEntryScreen = () => {
     const navigation = useNavigation<any>();
+    const { signInWithGoogle, isGoogleLoading, isGoogleConfigured } = useGoogleAuth();
+    const { signInWithApple, isAppleLoading, isAppleAvailable } = useAppleAuth();
 
     const handleRegister = () => {
         navigation.navigate("Onboarding");
@@ -29,8 +35,33 @@ const AuthEntryScreen = () => {
         navigation.navigate("Login");
     };
 
-    const handleSocial = (provider: string) => {
-        Alert.alert("Info", `Connexion ${provider} à venir.`);
+    const handleSocial = async (provider: string) => {
+        if (provider === "Google") {
+            const result = await signInWithGoogle();
+            if (!result.success && result.error) {
+                Alert.alert("Google", result.error);
+            }
+            return;
+        }
+
+        if (provider === "Apple") {
+            const result = await signInWithApple();
+            if (!result.success && result.error) {
+                Alert.alert("Apple", result.error);
+            }
+            return;
+        }
+
+        Alert.alert("Info", `Connexion ${provider} indisponible.`);
+    };
+
+    const openLegalUrl = async (url: string) => {
+        try {
+            await WebBrowser.openBrowserAsync(url);
+        } catch (error) {
+            console.error("Failed to open legal URL:", url, error);
+            Alert.alert("Erreur", "Impossible d'ouvrir ce lien.");
+        }
     };
 
     return (
@@ -75,27 +106,52 @@ const AuthEntryScreen = () => {
 
                         <View style={styles.socialRow}>
                             <TouchableOpacity
-                                style={[styles.socialButton, styles.socialPrimary]}
+                                style={[
+                                    styles.socialButton,
+                                    styles.socialPrimary,
+                                    (!isGoogleConfigured || isGoogleLoading) && { opacity: 0.5 },
+                                ]}
                                 onPress={() => handleSocial("Google")}
+                                disabled={!isGoogleConfigured || isGoogleLoading}
                                 activeOpacity={0.9}
                             >
                                 <FontAwesome5 name="google" size={16} color="#0b0b0f" />
-                                <Text style={[styles.socialLabel, styles.socialLabelDark]}>Google</Text>
+                                <Text style={[styles.socialLabel, styles.socialLabelDark]}>
+                                    {isGoogleLoading ? "Google..." : "Google"}
+                                </Text>
                             </TouchableOpacity>
                             <TouchableOpacity
-                                style={[styles.socialButton, styles.socialSecondary]}
+                                style={[
+                                    styles.socialButton,
+                                    styles.socialSecondary,
+                                    (!isAppleAvailable || isAppleLoading) && { opacity: 0.5 },
+                                ]}
                                 onPress={() => handleSocial("Apple")}
+                                disabled={!isAppleAvailable || isAppleLoading}
                                 activeOpacity={0.9}
                             >
                                 <FontAwesome5 name="apple" size={18} color="#ffffff" />
-                                <Text style={[styles.socialLabel, styles.socialLabelLight]}>Apple</Text>
+                                <Text style={[styles.socialLabel, styles.socialLabelLight]}>
+                                    {isAppleLoading ? "Apple..." : "Apple"}
+                                </Text>
                             </TouchableOpacity>
                         </View>
 
                         <Text style={styles.terms}>
                             En continuant, tu acceptes nos{" "}
-                            <Text style={styles.link}>Conditions d'utilisation</Text> et notre{" "}
-                            <Text style={styles.link}>Politique de confidentialité</Text>.
+                            <Text
+                                style={styles.link}
+                                onPress={() => void openLegalUrl(TERMS_URL)}
+                            >
+                                Conditions d'utilisation
+                            </Text>{" "}
+                            et notre{" "}
+                            <Text
+                                style={styles.link}
+                                onPress={() => void openLegalUrl(PRIVACY_URL)}
+                            >
+                                Politique de confidentialité
+                            </Text>.
                         </Text>
                     </View>
                 </SafeAreaView>

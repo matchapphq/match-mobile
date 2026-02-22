@@ -18,12 +18,38 @@ import { mobileApi, SearchMatchResult, SearchResult, SearchTrend } from "../serv
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import * as Location from "expo-location";
 
 type TabFilter = "all" | "matches" | "venues";
 
 const SearchMenu = ({ navigation }: { navigation: any }) => {
-    const { colors, themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
+    const { colors, computedTheme: themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
     const posthog = usePostHog();
+
+    // User location refs (not state — avoids re-triggering fetches)
+    const userLatRef = useRef<number | undefined>(undefined);
+    const userLngRef = useRef<number | undefined>(undefined);
+    const [locationReady, setLocationReady] = useState(false);
+
+    // Fetch user location on mount
+    useEffect(() => {
+        (async () => {
+            try {
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== "granted") {
+                    setLocationReady(true);
+                    return;
+                }
+                const loc = await Location.getCurrentPositionAsync({});
+                userLatRef.current = loc.coords.latitude;
+                userLngRef.current = loc.coords.longitude;
+            } catch (e) {
+                console.warn("Could not get user location", e);
+            } finally {
+                setLocationReady(true);
+            }
+        })();
+    }, []);
 
     // Refresh favourites when screen comes into focus
     useFocusEffect(
@@ -163,36 +189,41 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 setIsLoadingMore(true);
             }
 
-            const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate);
-
-            if (!append && debouncedQuery.trim().length > 0) {
-                posthog.capture("venue_searched", {
-                    query: debouncedQuery,
-                    tab: activeTab,
-                    selected_date: selectedFilterDate,
-                });
-            }
-
-            if (append) {
-                if (activeTab === "matches" || activeTab === "all") {
-                    setMatchResults(prev => [...prev, ...data.matches]);
-                }
-                if (activeTab === "venues" || activeTab === "all") {
-                    setVenueResults(prev => [...prev, ...data.venues]);
-                }
-            } else {
-                setMatchResults(data.matches);
-                setVenueResults(data.venues);
-            }
-
-            setHasMoreMatches(data.hasMoreMatches);
-            setHasMoreVenues(data.hasMoreVenues);
-
-            // Load trends for initial load
-            if (page === 1 && !append) {
+            // When query is empty, use fetchSearchData to get all venues/matches
+            // The backend search endpoint may return nothing for empty queries
+            if (!debouncedQuery.trim()) {
                 const initialData = await mobileApi.fetchSearchData();
                 setTrends(initialData.trends);
                 setRecentSearches(initialData.recentSearches);
+                setMatchResults(initialData.matchResults);
+                setVenueResults(initialData.results);
+                setHasMoreMatches(false);
+                setHasMoreVenues(false);
+            } else {
+                const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate, userLatRef.current, userLngRef.current);
+
+                if (!append) {
+                    posthog.capture("venue_searched", {
+                        query: debouncedQuery,
+                        tab: activeTab,
+                        selected_date: selectedFilterDate ?? "",
+                    });
+                }
+
+                if (append) {
+                    if (activeTab === "matches" || activeTab === "all") {
+                        setMatchResults(prev => [...prev, ...data.matches]);
+                    }
+                    if (activeTab === "venues" || activeTab === "all") {
+                        setVenueResults(prev => [...prev, ...data.venues]);
+                    }
+                } else {
+                    setMatchResults(data.matches);
+                    setVenueResults(data.venues);
+                }
+
+                setHasMoreMatches(data.hasMoreMatches);
+                setHasMoreVenues(data.hasMoreVenues);
             }
         } catch (err) {
             console.warn("Failed to load search data", err);
@@ -233,6 +264,28 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
             handleLoadMore();
         }
     }, [handleLoadMore]);
+
+    // Haversine formula: compute distance in km between two lat/lng points
+    const haversineKm = useCallback((lat1: number, lon1: number, lat2: number, lon2: number): number => {
+        const toRad = (v: number) => (v * Math.PI) / 180;
+        const R = 6371; // Earth radius in km
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }, []);
+
+    // Compute display distance for a venue
+    const getVenueDistance = useCallback((venue: SearchResult): string => {
+        if (userLatRef.current != null && userLngRef.current != null && venue.latitude != null && venue.longitude != null) {
+            const km = haversineKm(userLatRef.current, userLngRef.current, venue.latitude, venue.longitude);
+            if (km < 1) return `${Math.round(km * 1000)} m`;
+            return `${km.toFixed(1)} km`;
+        }
+        return venue.distance || "";
+    }, [haversineKm, locationReady]);
 
     const recentItems = React.useMemo(
         () =>
@@ -301,7 +354,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 <View style={[styles.tabContainer, { backgroundColor: colors.surface }]}>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === "all" && [styles.tabActive, { backgroundColor: colors.background }]]}
-                        onPress={() => setActiveTab("all")}
+                        onPress={() => {
+                            posthog?.capture('search_tab_switched', { tab: 'all' });
+                            setActiveTab("all");
+                        }}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.tabText, { color: activeTab === "all" ? colors.text : colors.textMuted }, activeTab === "all" && styles.tabTextActive]}>
@@ -310,7 +366,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === "matches" && [styles.tabActive, { backgroundColor: colors.background }]]}
-                        onPress={() => setActiveTab("matches")}
+                        onPress={() => {
+                            posthog?.capture('search_tab_switched', { tab: 'matches' });
+                            setActiveTab("matches");
+                        }}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.tabText, { color: activeTab === "matches" ? colors.text : colors.textMuted }, activeTab === "matches" && styles.tabTextActive]}>
@@ -319,7 +378,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.tab, activeTab === "venues" && [styles.tabActive, { backgroundColor: colors.background }]]}
-                        onPress={() => setActiveTab("venues")}
+                        onPress={() => {
+                            posthog?.capture('search_tab_switched', { tab: 'venues' });
+                            setActiveTab("venues");
+                        }}
                         activeOpacity={0.7}
                     >
                         <Text style={[styles.tabText, { color: activeTab === "venues" ? colors.text : colors.textMuted }, activeTab === "venues" && styles.tabTextActive]}>
@@ -346,7 +408,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                         borderColor: selectedDateIndex === index ? colors.primary : colors.divider,
                                     }
                                 ]}
-                                onPress={() => setSelectedDateIndex(index)}
+                                onPress={() => {
+                                    posthog?.capture('search_date_filtered', { date: pill.fullDate });
+                                    setSelectedDateIndex(index);
+                                }}
                                 activeOpacity={0.8}
                             >
                                 <Text style={[
@@ -548,7 +613,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                     <Text style={[styles.venueTagLineNew, { color: colors.textMuted }]}>{venue.tag}</Text>
                                                                     <View style={styles.venueLocationRow}>
                                                                         <MaterialIcons name="location-on" size={12} color={colors.textMuted} />
-                                                                        <Text style={[styles.venueLocationText, { color: colors.textMuted }]}>{venue.distance}</Text>
+                                                                        <Text style={[styles.venueLocationText, { color: colors.textMuted }]}>{getVenueDistance(venue)}</Text>
                                                                     </View>
                                                                     <View style={styles.venueAmenitiesNew}>
                                                                         <View style={[styles.amenityChipNew, { backgroundColor: themeMode === 'light' ? '#fff' : 'rgba(255,255,255,0.05)', borderColor: colors.divider }]}>

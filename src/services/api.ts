@@ -1,5 +1,6 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Platform } from "react-native";
 import {
     Venue,
     Match,
@@ -13,11 +14,30 @@ import { cacheService } from "./cache";
 import { tokenStorage } from "../utils/tokenStorage";
 import PostHog from 'posthog-react-native';
 
-const API_BASE_URL = Constants.expoConfig?.extra?.apiBase || "http://localhost:8008/api";
+const getApiBaseUrl = () => {
+    if (process.env.EXPO_PUBLIC_API_URL) {
+        return process.env.EXPO_PUBLIC_API_URL;
+    }
+    
+    const apiBase = Constants.expoConfig?.extra?.apiBase || "http://localhost:8008/api";
+    
+    // Auto-fix localhost for Android emulator and potentially physical devices
+    if (__DEV__ && apiBase.includes("localhost")) {
+        if (Platform.OS === 'android') {
+            return apiBase.replace("localhost", "10.0.2.2");
+        }
+        // For physical devices, we can't easily auto-detect host IP here without more complex logic
+        // but using process.env.EXPO_PUBLIC_API_URL is the recommended way.
+    }
+    
+    return apiBase;
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 10000,
+    timeout: 15000, // Increased to 15s to be more resilient
     headers: {
         "Content-Type": "application/json",
     },
@@ -234,16 +254,7 @@ export interface CreateReservationPayload {
 
 export interface CreateReservationResponse {
     message?: string;
-    reservation?: {
-        id: string;
-        status: string;
-        partySize: number;
-        venueMatchId: string;
-        venue?: string;
-        match?: {
-            scheduledAt?: string;
-        };
-    };
+    reservation?: ApiReservation;
     qr_code?: string;
     qrCode?: string;
 }
@@ -273,6 +284,8 @@ export interface ApiReservation {
             scheduled_at: string;
             homeTeam?: { name: string };
             awayTeam?: { name: string };
+            home_team?: { name: string };
+            away_team?: { name: string };
             league?: { name: string };
         };
     };
@@ -296,6 +309,26 @@ export const apiService = {
         return response.data;
     },
 
+    googleLogin: async (idToken: string) => {
+        const response = await api.post("/auth/google", { id_token: idToken });
+        if (!response) throw new Error("Google login failed");
+        return response.data;
+    },
+
+    appleLogin: async (payload: {
+        idToken: string;
+        firstName?: string;
+        lastName?: string;
+    }) => {
+        const response = await api.post("/auth/apple", {
+            id_token: payload.idToken,
+            first_name: payload.firstName,
+            last_name: payload.lastName,
+        });
+        if (!response) throw new Error("Apple login failed");
+        return response.data;
+    },
+
     logout: async () => {
         try {
             await api.post("/auth/logout");
@@ -311,7 +344,7 @@ export const apiService = {
 
     getMe: async (): Promise<User> => {
         const response = await api.get("/users/me");
-        return response.data?.data || response.data;
+        return response.data?.user || response.data?.data || response.data;
     },
 
     // Venues
@@ -528,7 +561,36 @@ export const apiService = {
 
     updateProfile: async (data: any): Promise<User> => {
         const response = await api.put("/users/me", data);
-        return response.data?.data || response.data;
+        return response.data?.user || response.data?.data || response.data;
+    },
+
+    /**
+     * Update user avatar via multipart upload to S3
+     */
+    updateAvatar: async (uri: string): Promise<{ success: boolean; url: string }> => {
+        const formData = new FormData();
+        
+        // Extract filename and type from URI
+        const filename = uri.split('/').pop() || 'avatar.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+        // @ts-ignore
+        formData.append('file', {
+            uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+            name: filename,
+            type,
+        });
+
+        const response = await api.post("/media/avatar", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            // Needed for Axios to correctly calculate progress and handle FormData in some environments
+            transformRequest: (data) => data,
+        });
+
+        return response.data;
     },
 
     // Discovery

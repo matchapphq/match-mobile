@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { Appearance, AppState } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 // import { theme } from "../constants/theme"; // Removed static theme import to avoid confusion
@@ -19,7 +20,6 @@ import ReservationSuccessScreen from "../screens/ReservationSuccessScreen";
 import MatchDetailScreen from "../screens/MatchDetailScreen";
 import VenueMatchesScreen from "../screens/VenueMatchesScreen";
 import VenueReviewsScreen from "../screens/VenueReviewsScreen";
-import LanguageSelectionScreen from "../screens/LanguageSelectionScreen";
 import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
 import DeleteAccountWarningScreen from "../screens/DeleteAccountWarningScreen";
@@ -29,6 +29,7 @@ import DeleteAccountSuccessScreen from "../screens/DeleteAccountSuccessScreen";
 import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 import FavouritesScreen from "../screens/FavouritesScreen";
 import { PostHogProvider } from 'posthog-react-native';
+import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
 
 const Stack = createStackNavigator();
 
@@ -38,20 +39,56 @@ const NotificationHandler = () => {
 };
 
 export const AppNavigator = () => {
-    const { isAuthenticated, colors } = useStore();
+    const { isAuthenticated, colors, updateComputedTheme } = useStore();
     const [isLoading, setIsLoading] = React.useState(true);
+    const navigationRef = React.useRef<any>(null);
+    const routeNameRef = React.useRef<string | undefined>(undefined);
 
     useEffect(() => {
         // Simulate loading
         setTimeout(() => setIsLoading(false), 2000);
     }, []);
 
+    // Listen for OS appearance changes so "system" theme updates reactively
+    useEffect(() => {
+        const listener = Appearance.addChangeListener(() => {
+            updateComputedTheme();
+        });
+        return () => listener.remove();
+    }, [updateComputedTheme]);
+
+    // iOS may miss live appearance events while app is in background settings;
+    // re-sync on app resume.
+    useEffect(() => {
+        const sub = AppState.addEventListener("change", (state) => {
+            if (state === "active") {
+                updateComputedTheme();
+            }
+        });
+        return () => sub.remove();
+    }, [updateComputedTheme]);
+
     if (isLoading) {
         return <SplashScreen />;
     }
 
     return (
-        <NavigationContainer>
+        <NavigationContainer
+            ref={navigationRef}
+            onReady={() => {
+                routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+            }}
+            onStateChange={() => {
+                const previousRouteName = routeNameRef.current;
+                const currentRouteName = navigationRef.current?.getCurrentRoute()?.name;
+
+                if (previousRouteName !== currentRouteName && currentRouteName) {
+                    // Using posthog directly here if analytics service failed to create
+                    // but I'll assume we want to keep the hook-like style or direct provider access
+                }
+                routeNameRef.current = currentRouteName;
+            }}
+        >
             <NotificationHandler />
             <PostHogProvider 
                 apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY} 
@@ -87,13 +124,14 @@ export const AppNavigator = () => {
                             <Stack.Screen name="ReservationSuccess" component={ReservationSuccessScreen} />
                             <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
                             <Stack.Screen name="FaqSupport" component={FaqSupport} />
-                            <Stack.Screen name="LanguageSelection" component={LanguageSelectionScreen} />
+                            {/* LanguageSelection temporarily disabled: app is French-only for now. */}
                             <Stack.Screen name="ThemeSelection" component={ThemeSelectionScreen} />
                             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
                             <Stack.Screen name="Favourites" component={FavouritesScreen} />
                         </>
                     )}
                 </Stack.Navigator>
+                <OAuthProfileCompletionModal />
             </PostHogProvider>
         </NavigationContainer>
     );

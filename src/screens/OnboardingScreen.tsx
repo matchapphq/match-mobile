@@ -24,6 +24,8 @@ import {
 import { useOnboardingForm } from "../store/useOnboardingForm";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
+import { hashId } from "../utils/analytics";
+import { analytics } from "../services/analytics";
 
 type OnboardingStackParamList = {
     OnboardingName: undefined;
@@ -771,27 +773,26 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
         const payload = buildRequestPayload();
         const success = await signup(payload);
         if (success) {
-            // Identify user in PostHog after successful signup
+            // Identify user in PostHog after successful signup with HASHED ID
             const newUser = useStore.getState().user;
             const userData = newUser?.user ?? newUser;
             if (userData?.id) {
-                posthog.identify(userData.id, {
-                    email: userData.email as string,
-                    first_name: userData.first_name as string,
-                    last_name: userData.last_name as string,
-                    username: userData.username as string,
+                const anonymousId = await hashId(userData.id);
+                posthog?.identify(anonymousId, {
                     fav_sports: data.fav_sports,
                     budget: data.budget,
+                    is_authenticated: true,
                 });
-                posthog.capture("signup_success");
+                analytics.capture("signup_success");
             }
             
             reset();
             // Navigation is handled automatically by AppNavigator's conditional rendering
         } else {
-            posthog.capture("signup_failed", { email: data.email });
+            analytics.capture("signup_failed");
+            const storeError = useStore.getState().error;
             setSubmissionError(
-                "Impossible de finaliser ton compte pour le moment. Réessaie dans un instant.",
+                `${storeError || "Impossible de finaliser ton compte pour le moment"}. Merci de réessayer.`
             );
         }
     };
@@ -803,6 +804,7 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
             subtitle="Nous trouverons les bars qui correspondent à tes attentes."
             canContinue={Boolean(data.budget) && !isLoading}
             nextLabel={isLoading ? "Connexion..." : "Terminer"}
+            error={submissionError}
             onNext={handleNext}
             onBack={() => navigation.goBack()}
             footerNote="Choix modifiable plus tard dans les réglages."

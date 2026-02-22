@@ -94,11 +94,13 @@ const transformToSearchResult = (apiVenue: any): SearchResult => ({
     id: apiVenue.id,
     name: apiVenue.name,
     tag: apiVenue.type || "Bar",
-    distance: apiVenue.distance !== undefined && apiVenue.distance !== null ? `${Number(apiVenue.distance).toFixed(1)} km` : "0.5 km",
+    distance: apiVenue.distance !== undefined && apiVenue.distance !== null ? `${Number(apiVenue.distance).toFixed(1)} km` : "",
     isLive: false,
     image: apiVenue.cover_image_url || apiVenue.photos?.[0]?.url || apiVenue.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
     rating: Number(apiVenue.average_rating ?? apiVenue.rating ?? 4.5),
     priceLevel: apiVenue.price_range || apiVenue.priceLevel || "€€",
+    latitude: apiVenue.latitude != null ? Number(apiVenue.latitude) : undefined,
+    longitude: apiVenue.longitude != null ? Number(apiVenue.longitude) : undefined,
 });
 
 // Transform API reservation to Booking format
@@ -107,8 +109,8 @@ const transformApiReservation = (apiRes: any): Booking => {
     const match = venueMatch?.match;
     const venue = venueMatch?.venue;
     const scheduledAt = match?.scheduled_at ? new Date(match.scheduled_at) : new Date();
-    const homeTeam = match?.homeTeam?.name || "Home";
-    const awayTeam = match?.awayTeam?.name || "Away";
+    const homeTeam = match?.homeTeam?.name || match?.home_team?.name || "Home";
+    const awayTeam = match?.awayTeam?.name || match?.away_team?.name || "Away";
     
     return {
         id: apiRes.id,
@@ -250,15 +252,14 @@ export const mobileApi = {
     }> {
         try {
             // Call backend paginated search endpoint
+            const geoParams = (lat != null && lng != null) ? { lat, lng, radius_km: 50 } : {};
             const response = await apiService.searchPaginated({
                 q: query,
                 type,
                 page,
                 limit,
                 date: filterDate,
-                lat,
-                lng,
-                radius_km: 50, // Default 50km radius
+                ...geoParams,
             });
 
             // Transform backend response to frontend format

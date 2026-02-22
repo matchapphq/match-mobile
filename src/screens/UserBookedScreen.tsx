@@ -18,11 +18,12 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../constants/colors';
 import { useStore } from '../store/useStore';
 import { apiService } from '../services/api';
+import { usePostHog } from 'posthog-react-native';
 import CancelReservationModal, { CancelReservationData } from '../components/CancelReservationModal';
 
 const { width } = Dimensions.get('window');
@@ -63,7 +64,7 @@ const FILTERS: { label: string; value: FilterType }[] = [
 const UserBookedScreen = () => {
   const {
     colors,
-    themeMode,
+    computedTheme: themeMode,
     reservations,
     fetchReservations,
     refreshReservations,
@@ -73,6 +74,8 @@ const UserBookedScreen = () => {
   } = useStore();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
+  const posthog = usePostHog();
   
   // UI State
   const [searchQuery, setSearchQuery] = useState('');
@@ -167,6 +170,14 @@ const UserBookedScreen = () => {
     
     const success = await cancelReservationApi(bookingId);
     
+    if (success) {
+      posthog?.capture('reservation_cancelled', {
+        reservation_id: bookingId,
+        venue_name: cancelModalBooking.venue,
+        match_title: cancelModalBooking.match,
+      });
+    }
+    
     setCancelingIds((prev) => {
       const next = new Set(prev);
       next.delete(bookingId);
@@ -174,7 +185,8 @@ const UserBookedScreen = () => {
     });
     
     if (!success) {
-      setCancelError("Impossible d'annuler la réservation. Réessaie.");
+      const storeError = useStore.getState().error;
+      setCancelError(`${storeError || "Impossible d'annuler la réservation"}. Merci de réessayer.`);
     }
   }, [cancelModalBooking, cancelReservationApi]);
 
@@ -182,6 +194,12 @@ const UserBookedScreen = () => {
     setActiveQrBooking(booking);
     setQrCode(null);
     setQrError(null);
+
+    posthog?.capture('qr_code_viewed', {
+      reservation_id: booking.id,
+      venue_name: booking.venue,
+      match_title: booking.match,
+    });
 
     if (!booking.id) {
       setQrError("Identifiant de réservation introuvable");
@@ -221,7 +239,7 @@ const UserBookedScreen = () => {
     return (
       <View
         key={booking.id}
-        style={[styles.upcomingCard, { backgroundColor: colors.card, borderColor: 'rgba(255,255,255,0.05)' }]}
+        style={[styles.upcomingCard, { backgroundColor: colors.card, borderColor: colors.border }]}
       >
         <View style={styles.upcomingCardContent}>
           <View style={styles.upcomingCardInfo}>
@@ -249,7 +267,7 @@ const UserBookedScreen = () => {
           />
         </View>
         {/* Actions */}
-        <View style={[styles.upcomingActionsRow, { borderTopColor: 'rgba(255,255,255,0.05)' }]}>
+        <View style={[styles.upcomingActionsRow, { borderTopColor: colors.border }]}>
           <TouchableOpacity
             style={styles.upcomingCancelButton}
             onPress={() => handleCancelReservation(booking)}
@@ -272,7 +290,7 @@ const UserBookedScreen = () => {
               <Text style={[styles.upcomingTicketText, { color: colors.primary }]}>Ticket</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={[styles.upcomingModifyButton, { backgroundColor: 'rgba(255,255,255,0.05)' }]}>
+            <TouchableOpacity style={[styles.upcomingModifyButton, { backgroundColor: colors.surfaceAlt }]}>
               <Text style={[styles.upcomingModifyText, { color: colors.text }]}>Modifier</Text>
             </TouchableOpacity>
           )}
@@ -331,6 +349,19 @@ const UserBookedScreen = () => {
     return filtered;
   }, [bookings, selectedFilter, searchQuery]);
 
+  // Handle deep link or navigation with reservationId
+  useEffect(() => {
+    const reservationId = route.params?.reservationId;
+    if (reservationId && bookings.length > 0) {
+      const target = bookings.find(b => b.id === reservationId);
+      if (target) {
+        handleOpenQrModal(target);
+        // Clear param to avoid re-triggering
+        navigation.setParams({ reservationId: undefined });
+      }
+    }
+  }, [route.params?.reservationId, bookings, handleOpenQrModal, navigation]);
+
   // Get the next upcoming reservation (confirmed or pending, future date)
   const nextReservation = useMemo(() => {
     const now = new Date();
@@ -385,7 +416,7 @@ const UserBookedScreen = () => {
                 styles.filterTab,
                 selectedFilter === filter.value
                   ? { backgroundColor: colors.primary }
-                  : { backgroundColor: colors.card, borderColor: 'rgba(255,255,255,0.05)', borderWidth: 1 }
+                  : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }
               ]}
               onPress={() => setSelectedFilter(filter.value)}
             >
@@ -456,7 +487,7 @@ const UserBookedScreen = () => {
             {nextReservation && selectedFilter === 'all' && !searchQuery.trim() && (
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: colors.primary }]}>Prochain Événement</Text>
-                <View style={[styles.featuredCard, { backgroundColor: colors.card, borderColor: 'rgba(255,255,255,0.05)' }]}>
+                <View style={[styles.featuredCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   {/* Featured Image */}
                   <View style={styles.featuredImageContainer}>
                     <ImageBackground
@@ -491,7 +522,7 @@ const UserBookedScreen = () => {
                   
                   {/* Featured Details */}
                   <View style={styles.featuredDetails}>
-                    <View style={[styles.featuredInfoRow, { borderBottomColor: 'rgba(255,255,255,0.05)' }]}>
+                    <View style={[styles.featuredInfoRow, { borderBottomColor: colors.border }]}>
                       <View style={styles.featuredInfoItem}>
                         <MaterialIcons name="calendar-month" size={18} color={colors.primary} />
                         <Text style={[styles.featuredInfoText, { color: colors.text }]}>{nextReservation.dateFormatted}</Text>
@@ -515,7 +546,7 @@ const UserBookedScreen = () => {
                     {/* Action Buttons */}
                     <View style={styles.featuredActionsRow}>
                       <TouchableOpacity
-                        style={[styles.featuredCancelButton, { borderColor: 'rgba(255,255,255,0.1)' }]}
+                        style={[styles.featuredCancelButton, { borderColor: colors.border }]}
                         onPress={() => handleCancelReservation(nextReservation)}
                         disabled={cancelingIds.has(nextReservation.id)}
                       >
@@ -547,7 +578,7 @@ const UserBookedScreen = () => {
 
         {/* Find Another Bar Button */}
         <TouchableOpacity
-          style={[styles.findButton, { borderColor: 'rgba(255,255,255,0.1)' }]}
+          style={[styles.findButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
           onPress={() => navigation.navigate('Map' as never)}
         >
           <MaterialIcons name="add-circle" size={20} color={colors.primary} />
@@ -1179,7 +1210,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   contactText: {
-    color: COLORS.text,
+    color: '#fff',
     fontSize: 14,
     fontWeight: '700',
   },
@@ -1202,14 +1233,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: 'rgba(255,255,255,0.3)',
     borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'rgba(255,255,255,0.02)',
   },
   findButtonText: {
     color: '#e5e7eb',
@@ -1273,7 +1302,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   modalSheet: {
-    backgroundColor: '#221710',
+    backgroundColor: COLORS.surface,
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingBottom: 24,
@@ -1307,7 +1336,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#221710',
+    backgroundColor: COLORS.surface,
     left: -12,
     top: '68%',
   },
@@ -1316,7 +1345,7 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#221710',
+    backgroundColor: COLORS.surface,
     right: -12,
     top: '68%',
   },
@@ -1451,7 +1480,7 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
   },
   modalCloseText: {
-    color: COLORS.text,
+    color: '#fff',
     fontSize: 16,
     fontWeight: '700',
   },

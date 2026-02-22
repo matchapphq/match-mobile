@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, ImageBackground, StatusBar, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, ImageBackground, StatusBar, ActivityIndicator, Platform, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -14,7 +14,7 @@ import { usePostHog } from "posthog-react-native";
 const { width } = Dimensions.get('window');
 
 const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, themeMode, favouriteVenueIds, toggleFavourite, checkAndCacheFavourite } = useStore();
+    const { colors, computedTheme: themeMode, favouriteVenueIds, toggleFavourite, checkAndCacheFavourite } = useStore();
     const posthog = usePostHog();
     const insets = useSafeAreaInsets();
     const venueId: string | undefined = route?.params?.venueId;
@@ -32,7 +32,12 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
 
     const handleToggleFavourite = async () => {
         if (venueId) {
+            const newState = !isFavourite;
             await toggleFavourite(venueId);
+            posthog?.capture(newState ? 'favourite_added' : 'favourite_removed', {
+                venue_id: venueId,
+                venue_name: venue?.name ?? "",
+            });
         }
     };
 
@@ -121,6 +126,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar barStyle="light-content" />
+            {/* Note: StatusBar stays light-content because the header image area is always dark */}
             <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 180 }}>
                 {/* Header Image Section */}
                 <View style={styles.imageContainer}>
@@ -212,7 +218,24 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.divider} />
+                    <TouchableOpacity
+                        style={[styles.itineraireButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                        onPress={() => {
+                            const lat = venue.latitude;
+                            const lng = venue.longitude;
+                            const label = encodeURIComponent(venue.name);
+                            const url = Platform.select({
+                                ios: `maps:0,0?q=${label}@${lat},${lng}`,
+                                android: `geo:${lat},${lng}?q=${lat},${lng}(${label})`,
+                            });
+                            if (url) Linking.openURL(url);
+                        }}
+                    >
+                        <MaterialIcons name="directions" size={20} color={colors.primary} />
+                        <Text style={[styles.actionButtonText, { color: colors.primary }]}>Itinéraire</Text>
+                    </TouchableOpacity>
+
+                    <View style={[styles.divider, { backgroundColor: colors.divider }]} />
 
                     {/* Matchs Recommandés */}
                     <View style={styles.sectionHeader}>
@@ -253,7 +276,15 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             style={styles.mapImage}
                         >
                             <View style={styles.mapOverlay}>
-                                <TouchableOpacity style={styles.viewMapButton}>
+                                <TouchableOpacity
+                                    style={styles.viewMapButton}
+                                    onPress={() => navigation.navigate('Map', {
+                                        focusVenueId: venue.id,
+                                        focusLat: venue.latitude,
+                                        focusLng: venue.longitude,
+                                        focusVenueName: venue.name,
+                                    })}
+                                >
                                     <MaterialIcons name="map" size={18} color={COLORS.white} />
                                     <Text style={styles.viewMapText}>Voir sur la carte</Text>
                                 </TouchableOpacity>
@@ -275,6 +306,28 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                         <MaterialIcons name="calendar-today" size={20} color={colors.white} />
                         <Text style={styles.reserveButtonText}>Réserver une table</Text>
                     </TouchableOpacity>
+
+                    {/* Contact Venue Owner */}
+                    <View style={[styles.contactContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <View style={styles.contactHeader}>
+                            <MaterialIcons name="support-agent" size={22} color={colors.primary} />
+                            <Text style={[styles.contactTitle, { color: colors.text }]}>Besoin d’aide ?</Text>
+                        </View>
+                        <Text style={[styles.contactSubtitle, { color: colors.textSecondary }]}>
+                            Contactez directement l’établissement pour toute question sur votre réservation.
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.contactButton, { borderColor: colors.primary }]}
+                            onPress={() => {
+                                posthog?.capture('venue_contact_pressed', { venue_id: venue.id, venue_name: venue.name });
+                                // TODO: Replace with real venue phone/email when available
+                                Linking.openURL('tel:+33000000000');
+                            }}
+                        >
+                            <MaterialIcons name="phone" size={18} color={colors.primary} />
+                            <Text style={[styles.contactButtonText, { color: colors.primary }]}>Appeler l’établissement</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </ScrollView>
 
@@ -421,7 +474,6 @@ const styles = StyleSheet.create({
     },
     divider: {
         height: 1,
-        backgroundColor: 'rgba(255,255,255,0.1)',
         marginBottom: 32,
     },
     sectionHeader: {
@@ -653,7 +705,52 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.4,
         shadowRadius: 10,
         elevation: 8,
-        zIndex: 20, // Ensure it sits above scroll content but below nav (nav is zIndex ?) Nav needs high zIndex
+        zIndex: 20,
+    },
+    itineraireButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        height: 48,
+        borderRadius: 16,
+        borderWidth: 1,
+        marginBottom: 12,
+    },
+    contactContainer: {
+        borderRadius: 20,
+        padding: 20,
+        borderWidth: 1,
+        marginTop: 8,
+        marginBottom: 32,
+    },
+    contactHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 8,
+    },
+    contactTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    contactSubtitle: {
+        fontSize: 13,
+        lineHeight: 19,
+        marginBottom: 16,
+    },
+    contactButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        height: 44,
+        borderRadius: 12,
+        borderWidth: 1.5,
+    },
+    contactButtonText: {
+        fontSize: 14,
+        fontWeight: '700',
     },
 });
 

@@ -7,6 +7,8 @@ export interface User {
         email?: string;
         avatar?: string;
         bio?: string;
+        phone?: string;
+        auth_provider?: "email" | "google" | "apple" | null;
         created_at?: string;
         preferences?: UserPreferences;
     };
@@ -18,6 +20,8 @@ export interface User {
     avatar?: string;
     bio?: string;
     created_at?: string;
+    phone?: string;
+    auth_provider?: "email" | "google" | "apple" | null;
     preferences?: UserPreferences;
 }
 

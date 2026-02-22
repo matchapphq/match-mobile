@@ -55,6 +55,8 @@ export interface SearchResult {
     image: string;
     rating: number;
     priceLevel: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 export interface SearchMatchResult {
@@ -108,4 +110,21 @@ export interface ReservationDate {
     month: string;
     weekDay: string;
     isoDate: string;
+}
+
+export interface MockReservation {
+    id: string;
+    venueName: string;
+    date: string;
+    details: string;
+    status: "confirmed" | "pending";
+    qrCode: string | null;
+}
+
+export interface NotificationSetting {
+    id: string;
+    type: "match" | "venue" | "promo" | "reservation";
+    title: string;
+    message: string;
+    badge: "ON/OFF";
 }

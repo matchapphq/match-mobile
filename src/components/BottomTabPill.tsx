@@ -11,7 +11,7 @@ interface BottomTabPillProps {
 }
 
 const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) => {
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
 
     const TabBarWrapper = Platform.OS === 'ios' ? BlurView : View;
     const wrapperProps = Platform.OS === 'ios'

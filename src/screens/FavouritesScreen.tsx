@@ -22,7 +22,7 @@ type FilterTab = 'all' | 'bars' | 'restaurants';
 const FavouritesScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
-    const { colors, themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
+    const { colors, computedTheme: themeMode, favouriteVenueIds, toggleFavourite, fetchFavourites } = useStore();
 
     const [venues, setVenues] = useState<SearchResult[]>([]);
     const [isLoading, setIsLoading] = useState(true);
