@@ -39,7 +39,7 @@ const DEFAULT_PROFILE: UserProfile = {
   name: 'Utilisateur',
   email: '',
   badgeLabel: 'Fan',
-  avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200',
+  avatar: 'https://avatars.matchapp.fr/defaults/default.jpg',
   memberSince: '2024',
   tier: 'Gold',
 };
