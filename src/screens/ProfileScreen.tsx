@@ -59,7 +59,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
         icon: 'account-balance-wallet',
         color: '#f59e0b', // Amber-ish
         label: 'Mon Portefeuille',
-        meta: '12.50 €'
+        meta: '0€'
       },
       {
         icon: 'local-activity',
@@ -158,7 +158,6 @@ const ProfileScreen = () => {
       default: return 'Sombre';
     }
   };
-
   // Build profile from store user data
   const profile: UserProfile = {
     name: userData

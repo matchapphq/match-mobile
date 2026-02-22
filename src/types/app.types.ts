@@ -55,6 +55,8 @@ export interface SearchResult {
     image: string;
     rating: number;
     priceLevel: string;
+    latitude?: number;
+    longitude?: number;
 }
 
 export interface SearchMatchResult {

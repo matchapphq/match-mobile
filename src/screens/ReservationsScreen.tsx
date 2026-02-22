@@ -338,6 +338,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                 dateLabel,
                 time: selectedMatch.time,
                 guestsLabel: `${guests} ${guests > 1 ? "personnes" : "personne"}`,
+                matchTitle: `${selectedMatch.team1} vs ${selectedMatch.team2}`,
                 reference,
                 image: selectedMatch.bgImage,
             });

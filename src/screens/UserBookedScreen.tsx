@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { COLORS } from '../constants/colors';
 import { useStore } from '../store/useStore';
@@ -74,6 +74,7 @@ const UserBookedScreen = () => {
   } = useStore();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const posthog = usePostHog();
   
   // UI State
@@ -184,7 +185,8 @@ const UserBookedScreen = () => {
     });
     
     if (!success) {
-      setCancelError("Impossible d'annuler la réservation. Réessaie.");
+      const storeError = useStore.getState().error;
+      setCancelError(`${storeError || "Impossible d'annuler la réservation"}. Merci de réessayer.`);
     }
   }, [cancelModalBooking, cancelReservationApi]);
 
@@ -346,6 +348,19 @@ const UserBookedScreen = () => {
     
     return filtered;
   }, [bookings, selectedFilter, searchQuery]);
+
+  // Handle deep link or navigation with reservationId
+  useEffect(() => {
+    const reservationId = route.params?.reservationId;
+    if (reservationId && bookings.length > 0) {
+      const target = bookings.find(b => b.id === reservationId);
+      if (target) {
+        handleOpenQrModal(target);
+        // Clear param to avoid re-triggering
+        navigation.setParams({ reservationId: undefined });
+      }
+    }
+  }, [route.params?.reservationId, bookings, handleOpenQrModal, navigation]);
 
   // Get the next upcoming reservation (confirmed or pending, future date)
   const nextReservation = useMemo(() => {

@@ -790,8 +790,9 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
             // Navigation is handled automatically by AppNavigator's conditional rendering
         } else {
             analytics.capture("signup_failed");
+            const storeError = useStore.getState().error;
             setSubmissionError(
-                "Impossible de finaliser ton compte pour le moment. Réessaie dans un instant.",
+                `${storeError || "Impossible de finaliser ton compte pour le moment"}. Merci de réessayer.`
             );
         }
     };
@@ -803,6 +804,7 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
             subtitle="Nous trouverons les bars qui correspondent à tes attentes."
             canContinue={Boolean(data.budget) && !isLoading}
             nextLabel={isLoading ? "Connexion..." : "Terminer"}
+            error={submissionError}
             onNext={handleNext}
             onBack={() => navigation.goBack()}
             footerNote="Choix modifiable plus tard dans les réglages."

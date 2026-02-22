@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Appearance, ColorSchemeName } from 'react-native';
+import { Appearance, ColorSchemeName, Platform } from 'react-native';
 import { DARK_THEME, LIGHT_THEME, ThemeColors } from "../constants/colors";
 import {
     User,
@@ -44,7 +44,7 @@ export const transformApiReservation = (
         numberOfPeople: apiRes.party_size,
         matchId: match?.id,
         matchTitle: match
-            ? `${match.homeTeam?.name || "TBD"} vs ${match.awayTeam?.name || "TBD"}`
+            ? `${match.homeTeam?.name || match.home_team?.name || "TBD"} vs ${match.awayTeam?.name || match.away_team?.name || "TBD"}`
             : undefined,
         status,
         conditions: apiRes.special_requests || undefined,
@@ -354,7 +354,12 @@ export const useStore = create<AppState>((set, get) => ({
 
             return true;
         } catch (error: any) {
-            set({ error: error.message || "Login failed", isLoading: false });
+            const errorMessage =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                error.message ||
+                "Login failed";
+            set({ error: errorMessage, isLoading: false });
             return false;
         }
     },
@@ -529,19 +534,39 @@ export const useStore = create<AppState>((set, get) => ({
         if (user) {
             set({ isLoading: true, error: null });
             try {
-                const updatedUser = await apiService.updateProfile(updates);
-                // Merge with existing user data to ensure all fields are preserved
+                let updatedUser;
+                
+                // If the update contains an avatar URI, handle it via specialized upload endpoint
+                const isLocalFile = (uri?: string) => 
+                    uri && (uri.startsWith('file://') || uri.startsWith('/') || uri.startsWith('content://'));
+
+                if (updates.avatar && isLocalFile(updates.avatar)) {
+                    const uploadResult = await apiService.updateAvatar(updates.avatar);
+                    if (uploadResult.success) {
+                        // Profile was already updated on backend, just update local state with new URL
+                        updatedUser = { ...user, avatar: uploadResult.url };
+                        // Remove avatar from updates so we don't try to update it again via JSON PUT
+                        const { avatar: _, ...otherUpdates } = updates;
+                        if (Object.keys(otherUpdates).length > 0) {
+                            const profileResponse = await apiService.updateProfile(otherUpdates);
+                            updatedUser = { ...updatedUser, ...profileResponse };
+                        }
+                    } else {
+                        throw new Error("Failed to upload avatar");
+                    }
+                } else {
+                    updatedUser = await apiService.updateProfile(updates);
+                }
+
+                // Merge with existing user data
                 const finalUser = { ...user, ...updatedUser };
                 
-                // Keep nested user object in sync if it exists
                 if (finalUser.user) {
                     finalUser.user = { ...finalUser.user, ...updatedUser };
                 }
 
                 set({ user: finalUser, isLoading: false });
                 await AsyncStorage.setItem("user", JSON.stringify(finalUser));
-
-                // Optional: Trigger a background refresh to be absolutely sure we're in sync
                 get().refreshUserProfile();
             } catch (error: any) {
                 set({ 
@@ -568,22 +593,39 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     refreshUserProfile: async () => {
-        try {
-            const user = await apiService.getMe();
-            if (user) {
-                const currentUser = get().user;
-                // Preserve local nested structure if it exists
-                const finalUser = { ...currentUser, ...user };
-                if (currentUser?.user) {
-                    finalUser.user = { ...currentUser.user, ...user };
+        const retry = async (count: number): Promise<void> => {
+            try {
+                const user = await apiService.getMe();
+                if (user) {
+                    const currentUser = get().user;
+                    // Preserve local nested structure if it exists
+                    const finalUser = { ...currentUser, ...user };
+                    if (currentUser?.user) {
+                        finalUser.user = { ...currentUser.user, ...user };
+                    }
+                    
+                    set({ user: finalUser });
+                    await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+                }
+            } catch (error: any) {
+                if (count > 0 && (error.code === 'ECONNABORTED' || error.message?.includes('timeout'))) {
+                    console.log(`Retrying profile refresh (${count} attempts left)...`);
+                    // Exponential backoff for background retry
+                    await new Promise(resolve => setTimeout(resolve, (3 - count + 1) * 2000));
+                    return retry(count - 1);
                 }
                 
-                set({ user: finalUser });
-                await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+                const { API_BASE_URL } = await import('../services/api');
+                if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+                    console.warn(`Background profile refresh timed out after multiple attempts. Backend unreachable at: ${API_BASE_URL}`);
+                } else {
+                    console.warn("Background profile refresh failed:", error.message || error);
+                }
             }
-        } catch (error) {
-            console.warn("Background profile refresh failed:", error);
-        }
+        };
+
+        // Try up to 2 retries (3 attempts total)
+        return retry(2);
     },
 
     setVenues: (venues) => set({ venues, filteredVenues: venues }),
@@ -788,9 +830,13 @@ export const useStore = create<AppState>((set, get) => ({
             set({ reservations: updated, isLoading: false });
             AsyncStorage.setItem("reservations", JSON.stringify(updated));
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error canceling reservation:", error);
-            set({ isLoading: false, error: "Failed to cancel reservation" });
+            const errorMessage =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                "Failed to cancel reservation";
+            set({ error: errorMessage, isLoading: false });
             return false;
         }
     },
@@ -930,8 +976,11 @@ export const initializeStore = async () => {
 
         // Trigger background refresh if we have a token
         if (token) {
+            // Stagger requests to avoid congestion on initial load
             useStore.getState().refreshUserProfile();
-            useStore.getState().fetchFavourites();
+            setTimeout(() => {
+                useStore.getState().fetchFavourites();
+            }, 1000);
         }
     } catch (error) {
         console.error("Error initializing store:", error);

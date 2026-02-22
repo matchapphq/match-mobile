@@ -10,6 +10,8 @@ import {
     Animated,
     StatusBar,
     ActivityIndicator,
+    Linking,
+    Platform,
 } from "react-native";
 import MapView, { Marker, PROVIDER_DEFAULT, Region } from "react-native-maps";
 import * as Location from "expo-location";
@@ -309,8 +311,12 @@ const LIGHT_MAP_STYLE = [
     }
 ];
 
-const MapScreen = ({ navigation }: { navigation: any }) => {
+const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const { colors, themeMode } = useStore();
+    const focusVenueId: string | undefined = route?.params?.focusVenueId;
+    const focusLat: number | undefined = route?.params?.focusLat;
+    const focusLng: number | undefined = route?.params?.focusLng;
+    const focusVenueName: string | undefined = route?.params?.focusVenueName;
     const posthog = usePostHog();
     const mapRef = useRef<MapView>(null);
     const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
@@ -342,9 +348,36 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
         };
     }, []);
 
-    // Location Logic
+    // Location Logic - focus on venue if params provided, otherwise user location
     useEffect(() => {
         (async () => {
+            if (focusLat != null && focusLng != null) {
+                // Focus on the specific venue
+                if (mapRef.current) {
+                    mapRef.current.animateToRegion({
+                        latitude: focusLat,
+                        longitude: focusLng,
+                        latitudeDelta: 0.02,
+                        longitudeDelta: 0.02,
+                    }, 1000);
+                }
+                // Load the venue as a pin
+                if (focusVenueId) {
+                    try {
+                        const venueData = await mobileApi.fetchVenueById(focusVenueId);
+                        if (venueData) {
+                            setVenues([venueData]);
+                            setSelectedVenue(venueData);
+                            setHasSearchedArea(true);
+                            setIsSheetOpen(true);
+                        }
+                    } catch (e) {
+                        console.warn('Failed to load focused venue', e);
+                    }
+                }
+                return;
+            }
+
             let { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 console.log('Permission to access location was denied');
@@ -361,7 +394,7 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                 }, 1000);
             }
         })();
-    }, []);
+    }, [focusVenueId, focusLat, focusLng]);
 
     const handleCenterOnUser = async () => {
         let { status } = await Location.getForegroundPermissionsAsync();
@@ -642,60 +675,48 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                             <MaterialIcons name="tune" size={24} color={colors.white} />
                         </TouchableOpacity>
                     </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.headerTabs} contentContainerStyle={{ paddingHorizontal: 16 }}>
-                        <FilterTab label="Tout" active colors={colors} />
-                        <FilterTab label="Football" colors={colors} />
-                        <FilterTab label="Rugby" colors={colors} />
-                        <FilterTab label="Tennis" colors={colors} />
-                    </ScrollView>
+                    
+                    <View style={styles.headerSearchContainer}>
+                        {(showSearchButton || !hasSearchedArea) && !isSearchingArea && (
+                            <Animated.View
+                                style={{
+                                    opacity: hasSearchedArea ? searchButtonAnim : 1,
+                                    transform: [{
+                                        translateY: hasSearchedArea 
+                                                ? searchButtonAnim.interpolate({
+                                                    inputRange: [0, 1],
+                                                    outputRange: [-5, 0],
+                                                })
+                                                : 0,                                    }],
+                                }}
+                            >
+                                <TouchableOpacity
+                                    style={[
+                                        styles.searchAreaButton,
+                                        { backgroundColor: colors.surfaceDark, borderColor: colors.border }
+                                    ]}
+                                    onPress={handleSearchArea}
+                                    activeOpacity={0.8}
+                                >
+                                    <MaterialIcons name="search" size={18} color={colors.text} />
+                                    <Text style={[styles.searchAreaButtonText, { color: colors.text }]}>
+                                        Rechercher dans cette zone
+                                    </Text>
+                                </TouchableOpacity>
+                            </Animated.View>
+                        )}
+
+                        {isSearchingArea && (
+                            <View style={[styles.searchAreaButton, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
+                                <ActivityIndicator color={colors.primary} size="small" />
+                                <Text style={[styles.searchAreaButtonText, { color: colors.textMuted }]}>
+                                    Recherche en cours...
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                 </SafeAreaView>
             </LinearGradient>
-
-            {/* Search in this area button */}
-            {(showSearchButton || !hasSearchedArea) && !isSearchingArea && (
-                <Animated.View
-                    style={[
-                        styles.searchAreaButtonContainer,
-                        {
-                            opacity: hasSearchedArea ? searchButtonAnim : 1,
-                            transform: [{
-                                translateY: hasSearchedArea 
-                                    ? searchButtonAnim.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [-20, 0],
-                                    })
-                                    : 0,
-                            }],
-                        },
-                    ]}
-                >
-                    <TouchableOpacity
-                        style={[
-                            styles.searchAreaButton,
-                            { backgroundColor: colors.surfaceDark, borderColor: colors.border }
-                        ]}
-                        onPress={handleSearchArea}
-                        activeOpacity={0.8}
-                    >
-                        <MaterialIcons name="search" size={18} color={colors.text} />
-                        <Text style={[styles.searchAreaButtonText, { color: colors.text }]}>
-                            Rechercher dans cette zone
-                        </Text>
-                    </TouchableOpacity>
-                </Animated.View>
-            )}
-
-            {/* Area Search Loading */}
-            {isSearchingArea && (
-                <View style={styles.searchAreaButtonContainer}>
-                    <View style={[styles.searchAreaButton, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
-                        <ActivityIndicator color={colors.primary} size="small" />
-                        <Text style={[styles.searchAreaButtonText, { color: colors.textMuted }]}>
-                            Recherche en cours...
-                        </Text>
-                    </View>
-                </View>
-            )}
 
             {/* Empty State - No venues found (auto-dismisses after 4 seconds) */}
             {noVenuesFound && !isSearchingArea && (
@@ -757,7 +778,21 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
                         </View>
                     </View>
                     <View style={[styles.venueActions, { backgroundColor: colors.card }]}>
-                        <TouchableOpacity style={styles.venueBtnSecondary}>
+                        <TouchableOpacity
+                            style={styles.venueBtnSecondary}
+                            onPress={() => {
+                                if (selectedVenue) {
+                                    const lat = selectedVenue.latitude;
+                                    const lng = selectedVenue.longitude;
+                                    const label = encodeURIComponent(selectedVenue.name);
+                                    const url = Platform.select({
+                                        ios: `maps:0,0?q=${label}@${lat},${lng}`,
+                                        android: `geo:${lat},${lng}?q=${lat},${lng}(${label})`,
+                                    });
+                                    if (url) Linking.openURL(url);
+                                }
+                            }}
+                        >
                             <MaterialIcons name="directions" size={18} color={colors.slate400} />
                             <Text style={[styles.venueBtnTextSecondary, { color: colors.slate400 }]}>Itinéraire</Text>
                         </TouchableOpacity>
@@ -841,21 +876,6 @@ const MapScreen = ({ navigation }: { navigation: any }) => {
     );
 };
 
-const FilterTab = ({ label, active, colors }: any) => (
-    <TouchableOpacity style={[
-        styles.filterTab,
-        { backgroundColor: colors.inputBackground, borderColor: colors.border },
-        active && { backgroundColor: colors.white, borderColor: colors.white }
-    ]}>
-        <Text style={[
-            styles.filterTabText,
-            { color: colors.text }, // Default to text color (white in dark, black in light?) Wait.
-            // If active, it should be inverted.
-            active && { color: colors.black }
-        ]}>{label}</Text>
-    </TouchableOpacity>
-);
-
 const MatchItem = ({ date, month, team1, team2, team1Color, team2Color, time, league, divider = "vs", colors }: any) => (
     <TouchableOpacity style={[styles.matchItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
         <View style={styles.matchDate}>
@@ -936,15 +956,15 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         zIndex: 20,
-        paddingBottom: 4, // Reduced padding
+        paddingBottom: 0,
     },
     headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        marginBottom: 16,
-        marginTop: 12, // More top margin
+        marginBottom: 4,
+        marginTop: 0,
     },
     menuButton: {
         width: 40,
@@ -977,30 +997,10 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.5,
         shadowRadius: 10,
     },
-    headerTabs: {
-        paddingBottom: 12, // Increased padding
-    },
-    filterTab: {
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 20,
-        backgroundColor: 'rgba(30, 41, 59, 0.8)', // Surface dark / 80
-        borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)',
-        marginRight: 8,
-    },
-    filterTabActive: {
-        backgroundColor: COLORS.white,
-        borderColor: COLORS.white,
-    },
-    filterTabText: {
-        color: COLORS.white,
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    filterTabTextActive: {
-        color: COLORS.slate900,
-        fontWeight: 'bold',
+    headerSearchContainer: {
+        alignItems: 'center',
+        paddingBottom: 4,
+        minHeight: 32,
     },
 
     // Floating Elements
@@ -1478,14 +1478,6 @@ const styles = StyleSheet.create({
     },
 
     // Search Area Button
-    searchAreaButtonContainer: {
-        position: 'absolute',
-        top: 160,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-        zIndex: 30,
-    },
     searchAreaButton: {
         flexDirection: 'row',
         alignItems: 'center',
