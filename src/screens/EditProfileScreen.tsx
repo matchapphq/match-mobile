@@ -24,7 +24,7 @@ const EditProfileScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const posthog = usePostHog();
-    const { user, colors, themeMode, updateUser } = useStore();
+    const { user, colors, computedTheme: themeMode, updateUser } = useStore();
     const userData = useMemo(() => user?.user ?? user ?? null, [user]);
     const isLightTheme = themeMode === "light";
 

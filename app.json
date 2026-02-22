@@ -6,7 +6,7 @@
     "version": "0.8.7",
     "orientation": "portrait",
     "icon": "./assets/logo_app.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",

@@ -24,7 +24,7 @@ import { hashId } from "../utils/analytics";
 
 const LoginScreen = () => {
     const navigation = useNavigation<any>();
-    const { login, isLoading, colors, themeMode } = useStore();
+    const { login, isLoading, colors } = useStore();
     const { signInWithGoogle, isGoogleLoading, isGoogleConfigured } = useGoogleAuth();
     const { signInWithApple, isAppleLoading, isAppleAvailable } = useAppleAuth();
     const posthog = usePostHog();

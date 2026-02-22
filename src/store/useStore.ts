@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Appearance, ColorSchemeName, Platform } from 'react-native';
+import { Appearance, ColorSchemeName } from 'react-native';
 import { DARK_THEME, LIGHT_THEME, ThemeColors } from "../constants/colors";
 import {
     User,
@@ -509,6 +509,8 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     setThemeMode: (mode) => {
+        // Keep native color scheme in sync so iOS/Android chrome follows preference too.
+        Appearance.setColorScheme(mode === 'system' ? null : mode);
         const systemTheme = Appearance.getColorScheme() || 'dark';
         const newComputed = mode === 'system' ? systemTheme : mode;
 
@@ -523,6 +525,7 @@ export const useStore = create<AppState>((set, get) => ({
     updateComputedTheme: () => {
         const { themeMode } = get();
         if (themeMode === 'system') {
+            Appearance.setColorScheme(null);
             const systemTheme = Appearance.getColorScheme() || 'dark';
             set({
                 computedTheme: systemTheme,
@@ -986,6 +989,9 @@ export const initializeStore = async () => {
         const themeMode = (themeModeStr === 'light' || themeModeStr === 'dark' || themeModeStr === 'system')
             ? themeModeStr
             : 'dark';
+
+        // Re-apply persisted preference at native level on cold start.
+        Appearance.setColorScheme(themeMode === 'system' ? null : themeMode);
 
         const systemTheme = Appearance.getColorScheme() || 'dark';
         const computedTheme = themeMode === 'system' ? systemTheme : themeMode;

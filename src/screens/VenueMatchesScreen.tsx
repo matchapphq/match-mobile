@@ -29,7 +29,7 @@ interface GroupedMatches {
 }
 
 const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const insets = useSafeAreaInsets();
     const venueId: string | undefined = route?.params?.venueId;
     const venueName: string | undefined = route?.params?.venueName;

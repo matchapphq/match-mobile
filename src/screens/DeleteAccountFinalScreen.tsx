@@ -28,7 +28,7 @@ const DeleteAccountFinalScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const route = useRoute<RouteProp<RouteParams, "DeleteAccountFinal">>();
-    const { colors, themeMode, logout } = useStore();
+    const { colors, computedTheme: themeMode, logout } = useStore();
     const posthog = usePostHog();
 
     const [password, setPassword] = useState("");

@@ -98,7 +98,7 @@ const FILTERS = [
 const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const {
         colors,
-        themeMode,
+        computedTheme: themeMode,
         addReservation,
         updateReservation,
         removeReservation,

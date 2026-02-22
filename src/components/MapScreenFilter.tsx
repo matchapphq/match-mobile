@@ -47,7 +47,7 @@ type Props = {
 };
 
 const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props) => {
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const sheetAnim = useRef(new Animated.Value(0)).current;
     const [rendered, setRendered] = useState(visible);
     const [selections, setSelections] = useState<FilterSelections>(

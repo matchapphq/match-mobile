@@ -33,7 +33,7 @@ interface RatingDistribution {
 }
 
 const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const insets = useSafeAreaInsets();
     const venueName: string = route?.params?.venueName || 'Bar';
     const venueRating: number = route?.params?.venueRating || 4.8;

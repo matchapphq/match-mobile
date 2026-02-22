@@ -47,7 +47,7 @@ const FAQ_ITEMS = [
 ];
 
 const FaqSupport = ({ navigation }: { navigation: any }) => {
-  const { colors, themeMode } = useStore();
+  const { colors, computedTheme: themeMode } = useStore();
   const insets = useSafeAreaInsets();
   const [search, setSearch] = useState('');
   const [openId, setOpenId] = useState<string | null>(FAQ_ITEMS[0]?.id ?? null);

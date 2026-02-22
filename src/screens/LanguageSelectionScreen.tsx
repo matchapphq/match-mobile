@@ -37,7 +37,7 @@ const LanguageSelectionScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation();
     const posthog = usePostHog();
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const [selectedLang, setSelectedLang] = useState('fr'); // Default to French as per design
 
     const RadioButton = ({ selected }: { selected: boolean }) => (

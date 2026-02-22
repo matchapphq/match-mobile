@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Appearance } from "react-native";
+import { Appearance, AppState } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 // import { theme } from "../constants/theme"; // Removed static theme import to avoid confusion
@@ -55,6 +55,17 @@ export const AppNavigator = () => {
             updateComputedTheme();
         });
         return () => listener.remove();
+    }, [updateComputedTheme]);
+
+    // iOS may miss live appearance events while app is in background settings;
+    // re-sync on app resume.
+    useEffect(() => {
+        const sub = AppState.addEventListener("change", (state) => {
+            if (state === "active") {
+                updateComputedTheme();
+            }
+        });
+        return () => sub.remove();
     }, [updateComputedTheme]);
 
     if (isLoading) {

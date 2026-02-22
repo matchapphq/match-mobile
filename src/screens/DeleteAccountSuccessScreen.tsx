@@ -16,7 +16,7 @@ import { usePostHog } from "posthog-react-native";
 const DeleteAccountSuccessScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
-    const { colors, themeMode } = useStore();
+    const { colors, computedTheme: themeMode } = useStore();
     const posthog = usePostHog();
 
     React.useEffect(() => {
