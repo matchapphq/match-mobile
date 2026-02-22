@@ -19,6 +19,7 @@ export type OnboardingLayoutProps = {
     nextLabel?: string;
     canContinue?: boolean;
     footerNote?: ReactNode;
+    error?: string | null;
     onNext: () => void;
     onBack: () => void;
     children: ReactNode;
@@ -31,6 +32,7 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
     nextLabel = "Continuer",
     canContinue = true,
     footerNote,
+    error,
     onNext,
     onBack,
     children,
@@ -65,6 +67,12 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                     <View style={styles.contentHeader}>
                         <Text style={styles.title}>{title}</Text>
                         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+                        {error ? (
+                            <View style={styles.errorBanner}>
+                                <MaterialIcons name="error-outline" size={20} color="#ff6b6b" />
+                                <Text style={styles.errorText}>{error}</Text>
+                            </View>
+                        ) : null}
                     </View>
                     {children}
                 </ScrollView>
@@ -166,6 +174,23 @@ const styles = StyleSheet.create({
     contentHeader: {
         gap: 12,
         marginBottom: 12,
+    },
+    errorBanner: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(255, 107, 107, 0.1)",
+        padding: 12,
+        borderRadius: 12,
+        gap: 8,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: "rgba(255, 107, 107, 0.2)",
+    },
+    errorText: {
+        color: "#ff6b6b",
+        fontSize: 14,
+        fontWeight: "500",
+        flex: 1,
     },
     title: {
         fontSize: 32,

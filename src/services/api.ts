@@ -14,11 +14,30 @@ import { cacheService } from "./cache";
 import { tokenStorage } from "../utils/tokenStorage";
 import PostHog from 'posthog-react-native';
 
-const API_BASE_URL = Constants.expoConfig?.extra?.apiBase || "http://localhost:8008/api";
+const getApiBaseUrl = () => {
+    if (process.env.EXPO_PUBLIC_API_URL) {
+        return process.env.EXPO_PUBLIC_API_URL;
+    }
+    
+    const apiBase = Constants.expoConfig?.extra?.apiBase || "http://localhost:8008/api";
+    
+    // Auto-fix localhost for Android emulator and potentially physical devices
+    if (__DEV__ && apiBase.includes("localhost")) {
+        if (Platform.OS === 'android') {
+            return apiBase.replace("localhost", "10.0.2.2");
+        }
+        // For physical devices, we can't easily auto-detect host IP here without more complex logic
+        // but using process.env.EXPO_PUBLIC_API_URL is the recommended way.
+    }
+    
+    return apiBase;
+};
+
+export const API_BASE_URL = getApiBaseUrl();
 
 const api = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 10000,
+    timeout: 15000, // Increased to 15s to be more resilient
     headers: {
         "Content-Type": "application/json",
     },

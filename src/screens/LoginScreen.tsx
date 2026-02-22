@@ -37,7 +37,8 @@ const LoginScreen = () => {
         const success = await login(email, password);
         if (!success) {
             posthog?.capture("login_failed", { method: 'email' });
-            Alert.alert("Erreur", "Identifiants incorrects");
+            const storeError = useStore.getState().error;
+            Alert.alert("Erreur", storeError || "Identifiants incorrects");
             return;
         }
 

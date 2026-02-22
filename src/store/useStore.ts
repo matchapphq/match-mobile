@@ -354,7 +354,12 @@ export const useStore = create<AppState>((set, get) => ({
 
             return true;
         } catch (error: any) {
-            set({ error: error.message || "Login failed", isLoading: false });
+            const errorMessage =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                error.message ||
+                "Login failed";
+            set({ error: errorMessage, isLoading: false });
             return false;
         }
     },
@@ -588,22 +593,39 @@ export const useStore = create<AppState>((set, get) => ({
     },
 
     refreshUserProfile: async () => {
-        try {
-            const user = await apiService.getMe();
-            if (user) {
-                const currentUser = get().user;
-                // Preserve local nested structure if it exists
-                const finalUser = { ...currentUser, ...user };
-                if (currentUser?.user) {
-                    finalUser.user = { ...currentUser.user, ...user };
+        const retry = async (count: number): Promise<void> => {
+            try {
+                const user = await apiService.getMe();
+                if (user) {
+                    const currentUser = get().user;
+                    // Preserve local nested structure if it exists
+                    const finalUser = { ...currentUser, ...user };
+                    if (currentUser?.user) {
+                        finalUser.user = { ...currentUser.user, ...user };
+                    }
+                    
+                    set({ user: finalUser });
+                    await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+                }
+            } catch (error: any) {
+                if (count > 0 && (error.code === 'ECONNABORTED' || error.message?.includes('timeout'))) {
+                    console.log(`Retrying profile refresh (${count} attempts left)...`);
+                    // Exponential backoff for background retry
+                    await new Promise(resolve => setTimeout(resolve, (3 - count + 1) * 2000));
+                    return retry(count - 1);
                 }
                 
-                set({ user: finalUser });
-                await AsyncStorage.setItem("user", JSON.stringify(finalUser));
+                const { API_BASE_URL } = await import('../services/api');
+                if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+                    console.warn(`Background profile refresh timed out after multiple attempts. Backend unreachable at: ${API_BASE_URL}`);
+                } else {
+                    console.warn("Background profile refresh failed:", error.message || error);
+                }
             }
-        } catch (error) {
-            console.warn("Background profile refresh failed:", error);
-        }
+        };
+
+        // Try up to 2 retries (3 attempts total)
+        return retry(2);
     },
 
     setVenues: (venues) => set({ venues, filteredVenues: venues }),
@@ -808,9 +830,13 @@ export const useStore = create<AppState>((set, get) => ({
             set({ reservations: updated, isLoading: false });
             AsyncStorage.setItem("reservations", JSON.stringify(updated));
             return true;
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error canceling reservation:", error);
-            set({ isLoading: false, error: "Failed to cancel reservation" });
+            const errorMessage =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                "Failed to cancel reservation";
+            set({ error: errorMessage, isLoading: false });
             return false;
         }
     },
@@ -950,8 +976,11 @@ export const initializeStore = async () => {
 
         // Trigger background refresh if we have a token
         if (token) {
+            // Stagger requests to avoid congestion on initial load
             useStore.getState().refreshUserProfile();
-            useStore.getState().fetchFavourites();
+            setTimeout(() => {
+                useStore.getState().fetchFavourites();
+            }, 1000);
         }
     } catch (error) {
         console.error("Error initializing store:", error);

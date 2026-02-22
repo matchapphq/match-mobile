@@ -81,8 +81,10 @@ const EditProfileScreen = () => {
             });
             Alert.alert("Profil mis à jour", "Tes informations ont bien été enregistrées.");
             navigation.goBack();
-        } catch (error) {
-            Alert.alert("Erreur", "Impossible d'enregistrer pour le moment.");
+        } catch (error: any) {
+            const storeError = useStore.getState().error;
+            const errorMessage = storeError || error?.message || "Impossible d'enregistrer pour le moment.";
+            Alert.alert("Erreur", `${errorMessage} Merci de réessayer.`);
         } finally {
             setIsSaving(false);
         }

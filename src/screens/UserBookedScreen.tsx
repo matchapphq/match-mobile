@@ -185,7 +185,8 @@ const UserBookedScreen = () => {
     });
     
     if (!success) {
-      setCancelError("Impossible d'annuler la réservation. Réessaie.");
+      const storeError = useStore.getState().error;
+      setCancelError(`${storeError || "Impossible d'annuler la réservation"}. Merci de réessayer.`);
     }
   }, [cancelModalBooking, cancelReservationApi]);
 
