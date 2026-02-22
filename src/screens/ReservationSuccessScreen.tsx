@@ -151,7 +151,13 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
 
                 {/* Bottom Actions */}
                 <View style={styles.actions}>
-                    <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+                    <TouchableOpacity 
+                        style={[styles.primaryButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
+                        onPress={() => navigation.navigate("Tab", { 
+                            screen: "Reservations", 
+                            params: { reservationId: reference } 
+                        })}
+                    >
                         <MaterialIcons name="qr-code-2" size={24} color={colors.white} />
                         <Text style={[styles.primaryButtonText, { color: colors.white }]}>Voir mon QR Code</Text>
                     </TouchableOpacity>

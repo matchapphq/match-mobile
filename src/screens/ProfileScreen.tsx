@@ -158,7 +158,7 @@ const ProfileScreen = () => {
       default: return 'Sombre';
     }
   };
-
+    console.log(userData?.avatar);
   // Build profile from store user data
   const profile: UserProfile = {
     name: userData
