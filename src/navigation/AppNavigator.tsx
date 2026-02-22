@@ -30,6 +30,7 @@ import DeleteAccountSuccessScreen from "../screens/DeleteAccountSuccessScreen";
 import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 import FavouritesScreen from "../screens/FavouritesScreen";
 import { PostHogProvider } from 'posthog-react-native';
+import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
 
 const Stack = createStackNavigator();
 
@@ -131,6 +132,7 @@ export const AppNavigator = () => {
                         </>
                     )}
                 </Stack.Navigator>
+                <OAuthProfileCompletionModal />
             </PostHogProvider>
         </NavigationContainer>
     );

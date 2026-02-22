@@ -102,6 +102,13 @@ interface AppState {
     setOnboardingCompleted: (completed: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
     updateUser: (updates: Partial<User>) => Promise<void>;
+    completeOAuthProfile: (payload: {
+        phone: string;
+        fav_sports: string[];
+        ambiances: string[];
+        venue_types: string[];
+        budget: string;
+    }) => Promise<boolean>;
     fetchUserProfile: () => Promise<void>;
     refreshUserProfile: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
@@ -617,6 +624,29 @@ export const useStore = create<AppState>((set, get) => ({
                 });
                 throw error;
             }
+        }
+    },
+
+    completeOAuthProfile: async (payload) => {
+        set({ isLoading: true, error: null });
+        try {
+            await apiService.updateProfile(payload);
+            const refreshedUser = await apiService.getMe();
+            set({
+                user: refreshedUser,
+                isAuthenticated: !!refreshedUser,
+                isLoading: false,
+            });
+            await AsyncStorage.setItem("user", JSON.stringify(refreshedUser));
+            return true;
+        } catch (error: any) {
+            const message =
+                error?.response?.data?.error ||
+                error?.response?.data?.message ||
+                error?.message ||
+                "Failed to complete profile";
+            set({ error: message, isLoading: false });
+            return false;
         }
     },
 

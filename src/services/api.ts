@@ -561,7 +561,7 @@ export const apiService = {
 
     updateProfile: async (data: any): Promise<User> => {
         const response = await api.put("/users/me", data);
-        return response.data?.data || response.data;
+        return response.data?.user || response.data?.data || response.data;
     },
 
     /**
