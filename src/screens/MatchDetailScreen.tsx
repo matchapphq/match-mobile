@@ -18,6 +18,7 @@ import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { SearchMatchResult, Venue, mobileApi } from "../services/mobileApi";
+import { MatchDetailSkeleton } from "../components/Skeleton";
 
 type MatchDetailRoute = {
     params?: {
@@ -134,12 +135,7 @@ const MatchDetailScreen = ({
     );
 
     if (isLoading) {
-        return (
-            <View style={[styles.container, { justifyContent: "center", backgroundColor: colors.background }]}>
-                <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
-                {renderState("Chargement des détails du match…")}
-            </View>
-        );
+        return <MatchDetailSkeleton />;
     }
 
     if (error || !match) {

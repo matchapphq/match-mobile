@@ -16,6 +16,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { COLORS } from '../constants/colors';
 import { mobileApi, SearchResult } from '../services/mobileApi';
 import { useStore } from '../store/useStore';
+import { VenueCardSkeleton } from '../components/Skeleton';
 
 type FilterTab = 'all' | 'bars' | 'restaurants';
 
@@ -300,11 +301,11 @@ const FavouritesScreen = () => {
             </View>
 
             {isLoading ? (
-                <View style={styles.centerState}>
-                    <ActivityIndicator color={colors.primary} />
-                    <Text style={[styles.stateText, { color: colors.textMuted }]}>
-                        Chargement des favoris...
-                    </Text>
+                <View style={[styles.venueList, { paddingTop: 16 }]}>
+                    <VenueCardSkeleton />
+                    <VenueCardSkeleton />
+                    <VenueCardSkeleton />
+                    <VenueCardSkeleton />
                 </View>
             ) : venues.length === 0 ? (
                 <View style={styles.centerState}>
