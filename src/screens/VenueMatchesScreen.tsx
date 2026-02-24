@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 import { mobileApi, Venue, VenueMatch } from '../services/mobileApi';
 import { useStore } from '../store/useStore';
+import { MatchListItemSkeleton } from '../components/Skeleton';
 
 const { width } = Dimensions.get('window');
 
@@ -215,9 +216,17 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
 
     if (isLoading) {
         return (
-            <View style={[styles.container, styles.centerState, { backgroundColor: colors.background }]}>
-                <ActivityIndicator color={colors.primary} />
-                <Text style={[styles.stateText, { color: colors.textSecondary }]}>Chargement des matchs...</Text>
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
+                <StatusBar barStyle="light-content" />
+                <View style={[styles.imageContainer, { backgroundColor: colors.surfaceAlt }]}>
+                    <View style={styles.imageGradient} />
+                </View>
+                <View style={[styles.contentContainer, { paddingHorizontal: 24, paddingTop: 32 }]}>
+                    <MatchListItemSkeleton />
+                    <MatchListItemSkeleton />
+                    <MatchListItemSkeleton />
+                    <MatchListItemSkeleton />
+                </View>
             </View>
         );
     }

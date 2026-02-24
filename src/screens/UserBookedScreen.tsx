@@ -25,6 +25,7 @@ import { useStore } from '../store/useStore';
 import { apiService } from '../services/api';
 import { usePostHog } from 'posthog-react-native';
 import CancelReservationModal, { CancelReservationData } from '../components/CancelReservationModal';
+import { ReservationCardSkeleton } from '../components/Skeleton';
 
 const { width } = Dimensions.get('window');
 
@@ -460,9 +461,10 @@ const UserBookedScreen = () => {
 
         {/* Loading State */}
         {isLoading && bookings.length === 0 ? (
-          <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <ActivityIndicator color={colors.primary} />
-            <Text style={[styles.stateText, { color: colors.text }]}>Chargement de vos réservations...</Text>
+          <View style={{ gap: 12 }}>
+            <ReservationCardSkeleton />
+            <ReservationCardSkeleton />
+            <ReservationCardSkeleton />
           </View>
         ) : error && bookings.length === 0 ? (
           <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
