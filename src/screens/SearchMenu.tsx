@@ -19,6 +19,7 @@ import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
+import { VenueCardSkeleton, MatchCardSkeleton } from "../components/Skeleton";
 
 type TabFilter = "all" | "matches" | "venues";
 
@@ -465,7 +466,35 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
             </View>
 
             {isLoading
-                ? renderState("Chargement des suggestions…")
+                ? (
+                    <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+                        {activeTab === 'all' && (
+                            <>
+                                <MatchCardSkeleton />
+                                <MatchCardSkeleton />
+                                <View style={{ marginTop: 24 }}>
+                                    <VenueCardSkeleton />
+                                    <VenueCardSkeleton />
+                                </View>
+                            </>
+                        )}
+                        {activeTab === 'matches' && (
+                            <>
+                                <MatchCardSkeleton />
+                                <MatchCardSkeleton />
+                                <MatchCardSkeleton />
+                            </>
+                        )}
+                        {activeTab === 'venues' && (
+                            <>
+                                <VenueCardSkeleton />
+                                <VenueCardSkeleton />
+                                <VenueCardSkeleton />
+                                <VenueCardSkeleton />
+                            </>
+                        )}
+                    </ScrollView>
+                )
                 : error
                     ? renderState(error, true)
                     : (

@@ -10,6 +10,7 @@ import { mobileApi, Venue, VenueMatch } from '../services/mobileApi';
 
 import { useStore } from '../store/useStore';
 import { usePostHog } from "posthog-react-native";
+import { VenueProfileSkeleton } from '../components/Skeleton';
 
 const { width } = Dimensions.get('window');
 
@@ -95,12 +96,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
     );
 
     if (isLoading) {
-        return (
-            <View style={[styles.container, styles.centerState, { backgroundColor: colors.background }]}>
-                <ActivityIndicator color={colors.primary} />
-                <Text style={[styles.stateText, { color: colors.textSecondary }]}>Chargement du bar...</Text>
-            </View>
-        );
+        return <VenueProfileSkeleton />;
     }
 
     if (error || !venue) {
