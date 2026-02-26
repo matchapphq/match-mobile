@@ -35,6 +35,15 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
+type AuthFailureReason = "refresh_failed" | "missing_refresh_token";
+type AuthFailureHandler = (reason: AuthFailureReason) => void | Promise<void>;
+
+let authFailureHandler: AuthFailureHandler | null = null;
+
+export const setAuthFailureHandler = (handler: AuthFailureHandler | null) => {
+    authFailureHandler = handler;
+};
+
 const api = axios.create({
     baseURL: API_BASE_URL,
     timeout: 15000, // Increased to 15s to be more resilient
@@ -130,6 +139,13 @@ api.interceptors.response.use(
             } catch (err) {
                 processQueue(err, null);
                 await tokenStorage.clearTokens();
+                if (authFailureHandler) {
+                    const reason =
+                        err instanceof Error && err.message === "No refresh token available"
+                            ? "missing_refresh_token"
+                            : "refresh_failed";
+                    await authFailureHandler(reason);
+                }
                 // We might want to trigger a logout action in the store here
                 // but avoiding circular dependencies is tricky. 
                 // The store should listen to isAuthenticated state which will be false next app load
@@ -331,7 +347,8 @@ export const apiService = {
 
     logout: async () => {
         try {
-            await api.post("/auth/logout");
+            const refreshToken = await tokenStorage.getRefreshToken();
+            await api.post("/auth/logout", refreshToken ? { refresh_token: refreshToken } : undefined);
         } catch (error) {
             console.warn("Logout API call failed", error);
         }
@@ -659,8 +676,16 @@ export const apiService = {
     /**
      * Change user password
      */
-    changePassword: async (payload: { currentPassword: string; newPassword: string }): Promise<void> => {
-        await api.put("/users/me/password", payload);
+    changePassword: async (payload: {
+        currentPassword: string;
+        newPassword: string;
+        confirmPassword: string;
+    }): Promise<void> => {
+        await api.put("/users/me/password", {
+            current_password: payload.currentPassword,
+            new_password: payload.newPassword,
+            confirm_password: payload.confirmPassword,
+        });
     },
 
     /**
