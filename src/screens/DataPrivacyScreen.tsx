@@ -23,6 +23,9 @@ import { usePostHog } from "posthog-react-native";
 const DEFAULT_EXPORT_MESSAGE =
     "Bonjour,\nJe souhaite recevoir un export de mes données personnelles liées à mon compte Match.\nMerci.";
 
+const formatGraceDaysLabel = (days: number | null) =>
+    days === null ? "le délai de réactivation" : `${days} jour${days > 1 ? "s" : ""}`;
+
 const DataPrivacyScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
@@ -32,6 +35,27 @@ const DataPrivacyScreen = () => {
     const [exportModalVisible, setExportModalVisible] = useState(false);
     const [exportMessage, setExportMessage] = useState(DEFAULT_EXPORT_MESSAGE);
     const [isSubmittingExport, setIsSubmittingExport] = useState(false);
+    const [accountDeletionGraceDays, setAccountDeletionGraceDays] = useState<number | null>(null);
+    const accountDeletionGraceLabel = formatGraceDaysLabel(accountDeletionGraceDays);
+
+    React.useEffect(() => {
+        let isMounted = true;
+
+        apiService
+            .getPrivacyPreferences()
+            .then((preferences) => {
+                if (!isMounted) return;
+                const days = preferences?.account_deletion_grace_days;
+                setAccountDeletionGraceDays(
+                    Number.isFinite(days) && days > 0 ? days : null
+                );
+            })
+            .catch(() => undefined);
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     const handleBack = () => navigation.goBack();
 
@@ -137,14 +161,16 @@ const DataPrivacyScreen = () => {
                         <Text style={[styles.cardTitle, { color: colors.text }]}>Désactiver le compte</Text>
                     </View>
                     <Text style={[styles.cardDescription, { color: colors.textMuted }]}>
-                        Le compte est désactivé immédiatement. Les données sont conservées pendant le délai
-                        de réactivation avant suppression définitive. Vous pouvez réactiver en vous reconnectant
-                        durant ce délai.
+                        {`Le compte est désactivé immédiatement. Les données sont conservées pendant ${accountDeletionGraceLabel} avant suppression définitive. Vous pouvez réactiver en vous reconnectant durant ce délai.`}
                     </Text>
                     <TouchableOpacity
                         style={styles.dangerButton}
                         activeOpacity={0.9}
-                        onPress={() => navigation.navigate("DeleteAccountWarning")}
+                        onPress={() =>
+                            navigation.navigate("DeleteAccountWarning", {
+                                accountDeletionGraceDays: accountDeletionGraceDays ?? undefined,
+                            })
+                        }
                     >
                         <Text style={styles.dangerButtonText}>Désactiver mon compte</Text>
                     </TouchableOpacity>

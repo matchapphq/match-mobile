@@ -364,6 +364,16 @@ export const apiService = {
         return response.data?.user || response.data?.data || response.data;
     },
 
+    getPrivacyPreferences: async (): Promise<{
+        analytics_consent: boolean;
+        marketing_consent: boolean;
+        legal_updates_email: boolean;
+        account_deletion_grace_days: number;
+    }> => {
+        const response = await api.get("/users/me/privacy-preferences");
+        return response.data;
+    },
+
     // Venues
     getVenues: async (filters?: any): Promise<Venue[]> => {
         const response = await api.get("/venues", { params: filters });

@@ -21,8 +21,12 @@ type RouteParams = {
     DeleteAccountFinal: {
         reason: string;
         details?: string;
+        accountDeletionGraceDays?: number;
     };
 };
+
+const formatGraceDaysLabel = (days: number | null | undefined) =>
+    typeof days === "number" && days > 0 ? `${days} jour${days > 1 ? "s" : ""}` : "le délai prévu";
 
 const DeleteAccountFinalScreen = () => {
     const insets = useSafeAreaInsets();
@@ -35,7 +39,8 @@ const DeleteAccountFinalScreen = () => {
     const [showPassword, setShowPassword] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
 
-    const { reason, details } = route.params || {};
+    const { reason, details, accountDeletionGraceDays } = route.params || {};
+    const graceDaysLabel = formatGraceDaysLabel(accountDeletionGraceDays);
 
     React.useEffect(() => {
         posthog?.capture("delete_account_final_step_reached", { reason });
@@ -72,7 +77,10 @@ const DeleteAccountFinalScreen = () => {
             await logout();
             navigation.reset({
                 index: 0,
-                routes: [{ name: "DeleteAccountSuccess" }],
+                routes: [{
+                    name: "DeleteAccountSuccess",
+                    params: { accountDeletionGraceDays },
+                }],
             });
         } catch (error: any) {
             console.error("Delete account error:", error);
@@ -135,7 +143,7 @@ const DeleteAccountFinalScreen = () => {
 
                 <Text style={[styles.title, { color: colors.text }]}>Confirmer la désactivation</Text>
                 <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                    Saisis ton mot de passe pour confirmer. Tu pourras réactiver le compte en te reconnectant pendant le délai prévu.
+                    {`Saisis ton mot de passe pour confirmer. Tu pourras réactiver le compte en te reconnectant sous ${graceDaysLabel}.`}
                 </Text>
 
                 {/* Password Input */}

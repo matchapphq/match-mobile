@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
@@ -24,9 +24,16 @@ const REASONS = [
     "Autre raison",
 ];
 
+type RouteParams = {
+    DeleteAccountConfirm: {
+        accountDeletionGraceDays?: number;
+    };
+};
+
 const DeleteAccountConfirmScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
+    const route = useRoute<RouteProp<RouteParams, "DeleteAccountConfirm">>();
     const { colors, computedTheme: themeMode } = useStore();
     const posthog = usePostHog();
 
@@ -52,6 +59,7 @@ const DeleteAccountConfirmScreen = () => {
         navigation.navigate("DeleteAccountFinal", {
             reason: selectedReason,
             details: details.trim() || undefined,
+            accountDeletionGraceDays: route.params?.accountDeletionGraceDays,
         });
     };
 
