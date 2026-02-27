@@ -674,6 +674,18 @@ export const apiService = {
     },
 
     /**
+     * Request user data export
+     */
+    requestDataExport: async (payload: { message: string }): Promise<{
+        success: boolean;
+        message?: string;
+        traceId?: string;
+    }> => {
+        const response = await api.post("/support/data-export-request", payload);
+        return response.data;
+    },
+
+    /**
      * Change user password
      */
     changePassword: async (payload: {
@@ -693,6 +705,25 @@ export const apiService = {
      */
     updatePushToken: async (token: string): Promise<void> => {
         await api.put("/users/me/push-token", { push_token: token });
+    },
+
+    /**
+     * Explicitly refresh session last activity timestamp.
+     */
+    sendSessionHeartbeat: async (payload?: {
+        location?: {
+            city?: string | null;
+            region?: string | null;
+            country?: string | null;
+        };
+    }): Promise<void> => {
+        const hasLocation = Boolean(
+            payload?.location?.city || payload?.location?.region || payload?.location?.country
+        );
+        await api.post(
+            "/users/me/session-heartbeat",
+            hasLocation ? { location: payload?.location } : undefined
+        );
     },
 
     /**
