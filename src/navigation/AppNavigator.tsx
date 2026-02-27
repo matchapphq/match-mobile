@@ -46,6 +46,7 @@ export const AppNavigator = () => {
     const navigationRef = React.useRef<any>(null);
     const routeNameRef = React.useRef<string | undefined>(undefined);
     const lastHeartbeatRef = React.useRef(0);
+    const heartbeatInFlightRef = React.useRef(false);
 
     const sendSessionHeartbeat = React.useCallback(
         async (force: boolean = false) => {
@@ -54,11 +55,17 @@ export const AppNavigator = () => {
             if (!force && now - lastHeartbeatRef.current < 20_000) {
                 return;
             }
-            lastHeartbeatRef.current = now;
+            if (!force && heartbeatInFlightRef.current) {
+                return;
+            }
+            heartbeatInFlightRef.current = true;
             try {
                 await apiService.sendSessionHeartbeat();
+                lastHeartbeatRef.current = Date.now();
             } catch (error) {
                 console.log("[SESSION_HEARTBEAT] request failed:", error);
+            } finally {
+                heartbeatInFlightRef.current = false;
             }
         },
         [isAuthenticated]
