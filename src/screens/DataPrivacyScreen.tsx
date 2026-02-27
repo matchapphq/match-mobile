@@ -54,7 +54,12 @@ const DataPrivacyScreen = () => {
 
         setIsSubmittingExport(true);
         try {
-            await apiService.requestDataExport({ message });
+            const result = await apiService.requestDataExport({ message });
+            if (!result?.success) {
+                throw new Error(
+                    result?.message || "Impossible d'envoyer la demande pour le moment."
+                );
+            }
             posthog?.capture("data_export_request_success");
             setExportModalVisible(false);
             Alert.alert(
@@ -69,12 +74,12 @@ const DataPrivacyScreen = () => {
                 error?.message ||
                 "Impossible d'envoyer la demande pour le moment.";
             const normalized = String(rawMessage).toLowerCase();
-            const message = normalized.includes("timeout")
+            const errorMessage = normalized.includes("timeout")
                 ? "La demande prend trop de temps. Réessayez dans quelques secondes."
                 : String(rawMessage);
 
-            posthog?.capture("data_export_request_failed", { error: message });
-            Alert.alert("Erreur", message);
+            posthog?.capture("data_export_request_failed", { error: errorMessage });
+            Alert.alert("Erreur", errorMessage);
         } finally {
             setIsSubmittingExport(false);
         }

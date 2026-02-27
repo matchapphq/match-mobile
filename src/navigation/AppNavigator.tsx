@@ -55,7 +55,7 @@ export const AppNavigator = () => {
             if (!force && now - lastHeartbeatRef.current < 20_000) {
                 return;
             }
-            if (!force && heartbeatInFlightRef.current) {
+            if (heartbeatInFlightRef.current) {
                 return;
             }
             heartbeatInFlightRef.current = true;

@@ -150,10 +150,6 @@ api.interceptors.response.use(
                             : "refresh_failed";
                     await authFailureHandler(reason);
                 }
-                // We might want to trigger a logout action in the store here
-                // but avoiding circular dependencies is tricky. 
-                // The store should listen to isAuthenticated state which will be false next app load
-                // or we can emit an event.
                 return Promise.reject(err);
             } finally {
                 isRefreshing = false;
