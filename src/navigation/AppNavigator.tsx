@@ -105,7 +105,7 @@ export const AppNavigator = () => {
         void sendSessionHeartbeat(true);
 
         const interval = setInterval(() => {
-            void sendSessionHeartbeat(true);
+            void sendSessionHeartbeat();
         }, 60_000);
 
         return () => clearInterval(interval);
