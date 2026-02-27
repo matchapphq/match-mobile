@@ -994,6 +994,10 @@ export const useStore = create<AppState>((set, get) => ({
 }));
 
 const clearClientAuthState = async () => {
+    const { posthog } = await import("../services/analytics");
+
+    posthog?.reset();
+
     useStore.setState({
         user: null,
         isAuthenticated: false,
