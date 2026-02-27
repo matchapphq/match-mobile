@@ -15,11 +15,11 @@ const LOSS_ITEMS = [
     {
         icon: "autorenew",
         title: "Réactivation possible",
-        subtitle: "Reconnectez-vous sous 30 jours pour restaurer le compte",
+        subtitle: "Reconnectez-vous pendant le délai prévu pour restaurer le compte",
     },
     {
         icon: "delete-forever",
-        title: "Suppression définitive après 30 jours",
+        title: "Suppression définitive à la fin du délai",
         subtitle: "Passé ce délai, les données sont supprimées",
     },
 ];
@@ -78,7 +78,7 @@ const DeleteAccountWarningScreen = () => {
                     Désactiver mon{"\n"}compte ?
                 </Text>
                 <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                    Votre compte sera désactivé immédiatement. Vous pourrez le réactiver en vous reconnectant pendant 30 jours.
+                    Votre compte sera désactivé immédiatement. Vous pourrez le réactiver en vous reconnectant pendant le délai prévu.
                 </Text>
 
                 {/* Loss Cards */}

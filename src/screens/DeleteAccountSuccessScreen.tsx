@@ -61,7 +61,7 @@ const DeleteAccountSuccessScreen = () => {
                         Compte désactivé
                     </Text>
                     <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                        Vos données seront conservées 30 jours. Reconnectez-vous pendant ce délai pour réactiver votre compte.
+                        Vos données seront conservées pendant le délai de réactivation. Reconnectez-vous avant son expiration pour réactiver votre compte.
                     </Text>
                 </View>
 

@@ -135,7 +135,7 @@ const DeleteAccountFinalScreen = () => {
 
                 <Text style={[styles.title, { color: colors.text }]}>Confirmer la désactivation</Text>
                 <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                    Saisis ton mot de passe pour confirmer. Tu pourras réactiver le compte en te reconnectant sous 30 jours.
+                    Saisis ton mot de passe pour confirmer. Tu pourras réactiver le compte en te reconnectant pendant le délai prévu.
                 </Text>
 
                 {/* Password Input */}

@@ -137,8 +137,9 @@ const DataPrivacyScreen = () => {
                         <Text style={[styles.cardTitle, { color: colors.text }]}>Désactiver le compte</Text>
                     </View>
                     <Text style={[styles.cardDescription, { color: colors.textMuted }]}>
-                        Le compte est désactivé immédiatement. Les données sont conservées 30 jours avant
-                        suppression définitive. Vous pouvez réactiver en vous reconnectant durant ce délai.
+                        Le compte est désactivé immédiatement. Les données sont conservées pendant le délai
+                        de réactivation avant suppression définitive. Vous pouvez réactiver en vous reconnectant
+                        durant ce délai.
                     </Text>
                     <TouchableOpacity
                         style={styles.dangerButton}
