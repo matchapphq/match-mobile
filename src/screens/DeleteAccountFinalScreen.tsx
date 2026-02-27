@@ -76,10 +76,17 @@ const DeleteAccountFinalScreen = () => {
             });
         } catch (error: any) {
             console.error("Delete account error:", error);
-            const errorMessage =
+            const rawMessage =
                 error?.response?.data?.error ||
                 error?.response?.data?.message ||
                 "Mot de passe incorrect ou erreur serveur.";
+            const normalized = String(rawMessage).trim().toLowerCase();
+            const errorMessage =
+                normalized === "invalid password"
+                    ? "Mot de passe incorrect."
+                    : normalized === "password is required"
+                      ? "Mot de passe requis."
+                      : String(rawMessage);
             
             posthog?.capture("delete_account_execution_failed", { 
                 reason, 
@@ -126,9 +133,9 @@ const DeleteAccountFinalScreen = () => {
                     </View>
                 </View>
 
-                <Text style={[styles.title, { color: colors.text }]}>Action Irréversible</Text>
+                <Text style={[styles.title, { color: colors.text }]}>Confirmer la désactivation</Text>
                 <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                    Saisis ton mot de passe pour confirmer la suppression définitive.
+                    Saisis ton mot de passe pour confirmer. Tu pourras réactiver le compte en te reconnectant sous 30 jours.
                 </Text>
 
                 {/* Password Input */}
@@ -177,7 +184,7 @@ const DeleteAccountFinalScreen = () => {
                     ) : (
                         <>
                             <MaterialIcons name="delete-forever" size={22} color="#fff" />
-                            <Text style={styles.deleteButtonText}>SUPPRIMER DÉFINITIVEMENT</Text>
+                            <Text style={styles.deleteButtonText}>DÉSACTIVER MON COMPTE</Text>
                         </>
                     )}
                 </TouchableOpacity>

@@ -8,19 +8,19 @@ import { usePostHog } from "posthog-react-native";
 
 const LOSS_ITEMS = [
     {
-        icon: "history",
-        title: "Historique des matchs",
-        subtitle: "Vos statistiques et scores passés",
+        icon: "pause-circle-outline",
+        title: "Accès suspendu immédiatement",
+        subtitle: "Votre compte sera désactivé dès confirmation",
     },
     {
-        icon: "leaderboard",
-        title: "Points Social Sport",
-        subtitle: "Votre rang et progression",
+        icon: "autorenew",
+        title: "Réactivation possible",
+        subtitle: "Reconnectez-vous sous 30 jours pour restaurer le compte",
     },
     {
-        icon: "emoji-events",
-        title: "Badges débloqués",
-        subtitle: "Toutes vos récompenses",
+        icon: "delete-forever",
+        title: "Suppression définitive après 30 jours",
+        subtitle: "Passé ce délai, les données sont supprimées",
     },
 ];
 
@@ -75,10 +75,10 @@ const DeleteAccountWarningScreen = () => {
                 </View>
 
                 <Text style={[styles.title, { color: colors.text }]}>
-                    Supprimer mon{"\n"}compte ?
+                    Désactiver mon{"\n"}compte ?
                 </Text>
                 <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                    Cette action est irréversible. Si vous continuez, vous perdrez définitivement l'accès aux éléments suivants :
+                    Votre compte sera désactivé immédiatement. Vous pourrez le réactiver en vous reconnectant pendant 30 jours.
                 </Text>
 
                 {/* Loss Cards */}
@@ -110,7 +110,7 @@ const DeleteAccountWarningScreen = () => {
                     <Text style={styles.primaryButtonText}>Garder mon compte</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.7} onPress={handleContinue}>
-                    <Text style={styles.secondaryButtonText}>Continuer la suppression</Text>
+                    <Text style={styles.secondaryButtonText}>Continuer</Text>
                 </TouchableOpacity>
             </View>
         </View>

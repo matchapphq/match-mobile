@@ -58,10 +58,10 @@ const DeleteAccountSuccessScreen = () => {
                 {/* Message */}
                 <View style={styles.messageSection}>
                     <Text style={[styles.title, { color: colors.text }]}>
-                        Votre compte a été{"\n"}supprimé
+                        Compte désactivé
                     </Text>
                     <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                        Merci d'avoir fait partie de l'aventure Match.
+                        Vos données seront conservées 30 jours. Reconnectez-vous pendant ce délai pour réactiver votre compte.
                     </Text>
                 </View>
 
