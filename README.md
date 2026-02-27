@@ -12,6 +12,8 @@ A React Native Expo app for finding the best sports bars and venues to watch mat
 - **Reservations**: Book tables at your favorite venues directly from the app
 - **User Profile**: Manage your preferences, reservations, and notifications
 - **Search**: Quick search for venues and matches with history and trending suggestions
+- **Account Privacy**: Request a GDPR data export and manage account deactivation from the profile
+- **Session Security**: Automatic session heartbeat and logout handling aligned with backend session revocation
 
 ## 📱 Screens Implemented
 
@@ -26,6 +28,8 @@ A React Native Expo app for finding the best sports bars and venues to watch mat
 9. **Reservations Screen** - Manage your reservations
 10. **Notifications Screen** - Configure notification preferences
 11. **Search Screen** - Search for venues and matches
+12. **Data Privacy Screen** - GDPR export request and account deactivation entry point
+13. **Delete Account Flow** - Warning, reason, confirmation, and success screens
 
 ## 🛠️ Tech Stack
 
@@ -132,6 +136,12 @@ The app is configured to use mock data by default. To connect to a real API:
    EXPO_PUBLIC_API_URL=your-api-url
    ```
 
+### Account Deactivation Grace Period
+
+The mobile app does not configure the deactivation/reactivation delay locally.
+It reads `account_deletion_grace_days` from `GET /users/me/privacy-preferences`,
+which is controlled by the backend env variable `ACCOUNT_DELETION_GRACE_DAYS`.
+
 ### Google Maps (for iOS)
 Add your Google Maps API key in `app.json`:
 ```json
@@ -155,6 +165,8 @@ Run the app in development mode and test the following flows:
 3. **Venue Details**: Tap on venue markers to view details
 4. **Match Browsing**: Navigate to matches and view details
 5. **Profile Management**: Access profile and settings
+6. **Data Export Request**: Open Données personnelles and submit a GDPR export request
+7. **Account Deactivation**: Verify grace-period copy matches backend configuration
 
 ## 📝 Notes
 
