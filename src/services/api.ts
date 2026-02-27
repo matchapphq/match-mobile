@@ -139,6 +139,10 @@ api.interceptors.response.use(
             } catch (err) {
                 processQueue(err, null);
                 await tokenStorage.clearTokens();
+                delete api.defaults.headers.common["Authorization"];
+                if (originalRequest.headers) {
+                    delete originalRequest.headers["Authorization"];
+                }
                 if (authFailureHandler) {
                     const reason =
                         err instanceof Error && err.message === "No refresh token available"
