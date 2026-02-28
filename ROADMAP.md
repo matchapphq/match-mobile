@@ -18,7 +18,7 @@ Ce document définit les étapes clés pour faire évoluer l'application Match d
 - [x] **Optimisation Image** : Utiliser `expo-image` for a better cache and smooth transitions on venue photos.
 
 ### 📢 Partage
-- [ ] **Partage Social** : Bouton de partage sur les fiches bars/matchs générant un lien propre et un texte d'invitation.
+- [x] **Partage Social** : Bouton de partage sur les fiches bars/matchs générant un lien propre et un texte d'invitation.
 
 ---
 

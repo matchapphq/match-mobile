@@ -13,6 +13,7 @@ import { useStore } from '../store/useStore';
 import { usePostHog } from "posthog-react-native";
 import { VenueProfileSkeleton } from '../components/Skeleton';
 import { hapticFeedback } from '../utils/haptics';
+import { sharing } from '../utils/sharing';
 
 const { width } = Dimensions.get('window');
 
@@ -41,6 +42,16 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
             posthog?.capture(newState ? 'favourite_added' : 'favourite_removed', {
                 venue_id: venueId,
                 venue_name: venue?.name ?? "",
+            });
+        }
+    };
+
+    const handleShare = () => {
+        if (venue && venueId) {
+            sharing.shareVenue(venue.name, venueId);
+            posthog?.capture('venue_shared', {
+                venue_id: venueId,
+                venue_name: venue.name,
             });
         }
     };
@@ -156,6 +167,18 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             ) : (
                                 <View style={[styles.backButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
                                     <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.primary : COLORS.white} />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={[styles.shareHeaderButton, { top: insets.top + 16 }]} onPress={handleShare} activeOpacity={0.7}>
+                            {Platform.OS === 'ios' ? (
+                                <BlurView intensity={30} tint="dark" style={styles.backButtonBlur}>
+                                    <MaterialIcons name="share" size={22} color={COLORS.white} />
+                                </BlurView>
+                            ) : (
+                                <View style={[styles.backButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                                    <MaterialIcons name="share" size={22} color={COLORS.white} />
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -391,6 +414,11 @@ const styles = StyleSheet.create({
     favouriteButton: {
         position: 'absolute',
         right: 16,
+        zIndex: 10,
+    },
+    shareHeaderButton: {
+        position: 'absolute',
+        right: 68,
         zIndex: 10,
     },
     backButtonBlur: {

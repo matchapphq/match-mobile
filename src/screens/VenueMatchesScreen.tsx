@@ -19,6 +19,7 @@ import { COLORS } from '../constants/colors';
 import { mobileApi, Venue, VenueMatch } from '../services/mobileApi';
 import { useStore } from '../store/useStore';
 import { MatchListItemSkeleton } from '../components/Skeleton';
+import { sharing } from '../utils/sharing';
 
 const { width } = Dimensions.get('window');
 
@@ -69,6 +70,14 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
 
     const handleBack = () => {
         navigation.goBack();
+    };
+
+    const handleShare = () => {
+        if (venue && venueId) {
+            sharing.shareVenue(venue.name, venueId);
+        } else if (venueName && venueId) {
+            sharing.shareVenue(venueName, venueId);
+        }
     };
 
     const filteredMatches = useMemo(() => {
@@ -294,7 +303,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                                         </View>
                                     )}
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.headerButton}>
+                                <TouchableOpacity style={styles.headerButton} onPress={handleShare}>
                                     {Platform.OS === 'ios' ? (
                                         <BlurView intensity={30} tint="dark" style={styles.headerButtonBlur}>
                                             <MaterialIcons name="share" size={22} color={COLORS.white} />
