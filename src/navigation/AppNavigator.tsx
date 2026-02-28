@@ -32,6 +32,11 @@ import DataPrivacyScreen from "../screens/DataPrivacyScreen";
 import FavouritesScreen from "../screens/FavouritesScreen";
 import { PostHogProvider } from 'posthog-react-native';
 import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
+import * as Network from 'expo-network';
+import OfflineBanner from "../components/OfflineBanner";
+import * as Linking from 'expo-linking';
+
+const prefix = Linking.createURL('/');
 
 const Stack = createStackNavigator();
 
@@ -41,7 +46,7 @@ const NotificationHandler = () => {
 };
 
 export const AppNavigator = () => {
-    const { isAuthenticated, colors, updateComputedTheme } = useStore();
+    const { isAuthenticated, colors, updateComputedTheme, setOffline } = useStore();
     const [isLoading, setIsLoading] = React.useState(true);
     const navigationRef = React.useRef<any>(null);
     const routeNameRef = React.useRef<string | undefined>(undefined);
@@ -111,13 +116,49 @@ export const AppNavigator = () => {
         return () => clearInterval(interval);
     }, [isAuthenticated, sendSessionHeartbeat]);
 
+    useEffect(() => {
+        const checkNetwork = async () => {
+            try {
+                const state = await Network.getNetworkStateAsync();
+                setOffline(!state.isConnected);
+            } catch (e) {
+                console.warn("Failed to get network state", e);
+            }
+        };
+
+        checkNetwork();
+        
+        // Poll every 10 seconds for connectivity changes
+        const interval = setInterval(checkNetwork, 10000);
+        return () => clearInterval(interval);
+    }, [setOffline]);
+
     if (isLoading) {
         return <SplashScreen />;
     }
 
+    const linking = {
+        prefixes: [prefix, 'com.matchapps.match://'],
+        config: {
+            screens: {
+                VenueProfile: 'venue/:venueId',
+                MatchDetail: 'match/:matchId',
+                Tab: {
+                    screens: {
+                        Map: 'map',
+                        Search: 'search',
+                        Reservations: 'reservations',
+                        Profile: 'profile',
+                    }
+                }
+            },
+        },
+    };
+
     return (
         <NavigationContainer
             ref={navigationRef}
+            linking={linking}
             onReady={() => {
                 routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
             }}
@@ -134,6 +175,7 @@ export const AppNavigator = () => {
             }}
         >
             <NotificationHandler />
+            <OfflineBanner />
             <PostHogProvider 
                 apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY} 
                 options={{

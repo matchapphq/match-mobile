@@ -9,8 +9,8 @@ import {
     StatusBar,
     Animated,
     ActivityIndicator,
-    Image,
 } from "react-native";
+import { Image } from "expo-image";
 import { MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
