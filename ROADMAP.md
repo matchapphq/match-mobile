@@ -10,7 +10,7 @@ Ce document définit les étapes clés pour faire évoluer l'application Match d
 ### 🎨 Expérience Utilisateur (UX)
 - [x] **Skeleton Screens** : Remplacer les indicateurs de chargement circulaires par des chargements fantômes sur la liste des bars et la recherche.
 - [x] **Haptic Feedback** : Ajouter des micro-vibrations (Expo Haptics) sur les actions clés : validation de réservation, ajout aux favoris, et erreurs de formulaire.
-- [ ] **Empty States Illustrés** : Améliorer les écrans "Aucun résultat" avec des visuels plus engageants.
+- [x] **Empty States Illustrés** : Améliorer les écrans "Aucun résultat" avec des visuels plus engageants.
 
 ### 🛠️ Stabilité Technique
 - [x] **Gestion du Mode Hors-ligne** : Afficher une bannière de déconnexion et permettre la consultation des bars mis en cache via `AsyncStorage`.

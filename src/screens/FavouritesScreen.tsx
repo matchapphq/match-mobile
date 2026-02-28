@@ -17,6 +17,7 @@ import { COLORS } from '../constants/colors';
 import { mobileApi, SearchResult } from '../services/mobileApi';
 import { useStore } from '../store/useStore';
 import { VenueCardSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 type FilterTab = 'all' | 'bars' | 'restaurants';
 
@@ -308,15 +309,13 @@ const FavouritesScreen = () => {
                     <VenueCardSkeleton />
                 </View>
             ) : venues.length === 0 ? (
-                <View style={styles.centerState}>
-                    <MaterialIcons name="favorite-border" size={64} color={colors.textMuted} />
-                    <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                        Aucun favori
-                    </Text>
-                    <Text style={[styles.stateText, { color: colors.textMuted }]}>
-                        Ajoutez des bars et restaurants à vos favoris pour les retrouver ici.
-                    </Text>
-                </View>
+                <EmptyState
+                    icon="favorite-border"
+                    title="Aucun favori"
+                    description="Ajoute des bars et restaurants à tes favoris pour les retrouver ici."
+                    actionLabel="Découvrir des lieux"
+                    onAction={() => navigation.navigate('Map')}
+                />
             ) : (
                 <ScrollView
                     contentContainerStyle={{ paddingBottom: 32 + insets.bottom }}
