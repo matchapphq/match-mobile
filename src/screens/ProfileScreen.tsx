@@ -372,7 +372,7 @@ const ProfileScreen = () => {
                               navigation.navigate('ChangePassword');
                               return;
                           case 'Données personnelles':
-                              Alert.alert('Données personnelles', 'Cette fonctionnalité sera disponible prochainement.');
+                              navigation.navigate('DataPrivacy');
                               return;
                           case 'Questions fréquentes':
                               navigation.navigate('FaqSupport');

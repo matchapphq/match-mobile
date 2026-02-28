@@ -10,7 +10,7 @@ import {
     Reservation,
     Notification,
 } from "../types";
-import { apiService, ApiReservation } from "../services/api";
+import { apiService, ApiReservation, setAuthFailureHandler } from "../services/api";
 import { tokenStorage } from "../utils/tokenStorage";
 
 // Transform API reservation to mobile Reservation type
@@ -992,6 +992,44 @@ export const useStore = create<AppState>((set, get) => ({
         ]);
     },
 }));
+
+const clearClientAuthState = async () => {
+    const { posthog } = await import("../services/analytics");
+
+    posthog?.reset();
+
+    useStore.setState({
+        user: null,
+        isAuthenticated: false,
+        onboardingCompleted: false,
+        venues: [],
+        selectedVenue: null,
+        filteredVenues: [],
+        matches: [],
+        selectedMatch: null,
+        reservations: [],
+        favouriteVenueIds: new Set<string>(),
+        notifications: [],
+        unreadNotificationCount: 0,
+        filters: {
+            sports: [],
+            ambiance: [],
+            foodTypes: [],
+            priceRange: [],
+            sortOption: null,
+            sortDirection: "asc",
+        },
+        isLoading: false,
+        error: null,
+    });
+
+    await tokenStorage.clearTokens();
+    await AsyncStorage.multiRemove(["user", "onboardingCompleted", "reservations"]);
+};
+
+setAuthFailureHandler(async () => {
+    await clearClientAuthState();
+});
 
 // Initialize store from AsyncStorage
 export const initializeStore = async () => {
