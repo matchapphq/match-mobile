@@ -6,10 +6,10 @@ import {
     ScrollView,
     TouchableOpacity,
     StatusBar,
-    Image,
     ActivityIndicator,
     RefreshControl,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
