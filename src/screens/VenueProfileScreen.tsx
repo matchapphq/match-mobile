@@ -11,6 +11,7 @@ import { mobileApi, Venue, VenueMatch } from '../services/mobileApi';
 import { useStore } from '../store/useStore';
 import { usePostHog } from "posthog-react-native";
 import { VenueProfileSkeleton } from '../components/Skeleton';
+import { hapticFeedback } from '../utils/haptics';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +35,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
     const handleToggleFavourite = async () => {
         if (venueId) {
             const newState = !isFavourite;
+            hapticFeedback.light();
             await toggleFavourite(venueId);
             posthog?.capture(newState ? 'favourite_added' : 'favourite_removed', {
                 venue_id: venueId,
