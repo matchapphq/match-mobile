@@ -20,6 +20,7 @@ import { usePostHog } from "posthog-react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
 import { VenueCardSkeleton, MatchCardSkeleton } from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
 
 type TabFilter = "all" | "matches" | "venues";
 
@@ -576,7 +577,12 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                         ))}
                                                 </View>
                                             ) : (
-                                                <Text style={[styles.emptyText, { color: colors.textMuted }]}>Aucun match trouvé.</Text>
+                                                <EmptyState
+                                                    icon="event-busy"
+                                                    title="Aucun match trouvé"
+                                                    description="Essaie une autre recherche ou change de date."
+                                                    style={{ paddingVertical: 40 }}
+                                                />
                                             )}
                                         </>
                                     )}
@@ -656,7 +662,12 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                             </TouchableOpacity>
                                                         ))
                                                 ) : (
-                                                    <Text style={[styles.emptyText, { color: colors.textMuted }]}>Aucun bar disponible.</Text>
+                                                    <EmptyState
+                                                        icon="storefront"
+                                                        title="Aucun bar trouvé"
+                                                        description="Nous n'avons pas trouvé de bar correspondant à ta recherche."
+                                                        style={{ paddingVertical: 40 }}
+                                                    />
                                                 )}
                                             </View>
                                         </>
