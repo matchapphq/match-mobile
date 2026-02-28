@@ -13,9 +13,9 @@ Ce document définit les étapes clés pour faire évoluer l'application Match d
 - [ ] **Empty States Illustrés** : Améliorer les écrans "Aucun résultat" avec des visuels plus engageants.
 
 ### 🛠️ Stabilité Technique
-- [ ] **Gestion du Mode Hors-ligne** : Afficher une bannière de déconnexion et permettre la consultation des bars mis en cache via `AsyncStorage`.
+- [x] **Gestion du Mode Hors-ligne** : Afficher une bannière de déconnexion et permettre la consultation des bars mis en cache via `AsyncStorage`.
 - [ ] **Deep Linking** : Configurer les schémas d'URL (`matchapp://`) pour ouvrir l'app directement sur un bar ou un match spécifique.
-- [ ] **Optimisation Image** : Utiliser `expo-image` pour un meilleur cache et des transitions fluides sur les photos des bars.
+- [x] **Optimisation Image** : Utiliser `expo-image` for a better cache and smooth transitions on venue photos.
 
 ### 📢 Partage
 - [ ] **Partage Social** : Bouton de partage sur les fiches bars/matchs générant un lien propre et un texte d'invitation.

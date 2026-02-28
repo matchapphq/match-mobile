@@ -87,6 +87,7 @@ interface AppState {
     unreadNotificationCount: number;
     pushNotificationsEnabled: boolean;
     hapticsEnabled: boolean;
+    isOffline: boolean;
 
     // Filters
     filters: {
@@ -118,6 +119,7 @@ interface AppState {
     togglePushNotifications: () => Promise<void>;
     setHapticsEnabled: (enabled: boolean) => void;
     toggleHaptics: () => void;
+    setOffline: (offline: boolean) => void;
 
     setVenues: (venues: Venue[]) => void;
     setSelectedVenue: (venue: Venue | null) => void;
@@ -210,6 +212,7 @@ export const useStore = create<AppState>((set, get) => ({
     unreadNotificationCount: 0,
     pushNotificationsEnabled: false,
     hapticsEnabled: true,
+    isOffline: false,
     filters: {
         sports: [],
         ambiance: [],
@@ -561,6 +564,8 @@ export const useStore = create<AppState>((set, get) => ({
         set({ hapticsEnabled: newState });
         AsyncStorage.setItem("hapticsEnabled", JSON.stringify(newState));
     },
+
+    setOffline: (offline) => set({ isOffline: offline }),
 
     togglePushNotifications: async () => {
         const { pushNotificationsEnabled } = get();

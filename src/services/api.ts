@@ -13,6 +13,7 @@ import Constants from "expo-constants";
 import { cacheService } from "./cache";
 import { tokenStorage } from "../utils/tokenStorage";
 import PostHog from 'posthog-react-native';
+import { useStore } from "../store/useStore";
 
 const getApiBaseUrl = () => {
     if (process.env.EXPO_PUBLIC_API_URL) {
@@ -59,6 +60,14 @@ const posthog = new PostHog(process.env.EXPO_PUBLIC_POSTHOG_API_KEY || "", {
 
 // Add auth token to requests
 api.interceptors.request.use(async (config) => {
+    // Check if offline
+    if (useStore.getState().isOffline) {
+        // We use a custom error that can be caught as a network error
+        const error = new Error("Network Error");
+        (error as any).isOffline = true;
+        throw error;
+    }
+
     try {
         const token = await tokenStorage.getAccessToken();
         if (token) {
