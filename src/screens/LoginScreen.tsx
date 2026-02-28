@@ -21,6 +21,7 @@ import { usePostHog } from "posthog-react-native";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { useAppleAuth } from "../hooks/useAppleAuth";
 import { hashId } from "../utils/analytics";
+import { hapticFeedback } from "../utils/haptics";
 
 const LoginScreen = () => {
     const navigation = useNavigation<any>();
@@ -40,6 +41,7 @@ const LoginScreen = () => {
 
         const success = await login(email, password);
         if (!success) {
+            hapticFeedback.error();
             posthog?.capture("login_failed", { method: 'email' });
             const storeError = useStore.getState().error;
             Alert.alert("Erreur", storeError || "Identifiants incorrects");
@@ -57,6 +59,7 @@ const LoginScreen = () => {
                 is_authenticated: true,
             });
             posthog?.capture("login_success", { method: 'email' });
+            hapticFeedback.success();
         }
         
         // Navigation is handled automatically by AppNavigator's conditional rendering

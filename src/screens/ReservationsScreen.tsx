@@ -19,6 +19,7 @@ import { useStore, transformApiReservation } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { apiService, MatchVenue } from "../services/api";
 import type { Match, Reservation } from "../types";
+import { hapticFeedback } from "../utils/haptics";
 
 const { width } = Dimensions.get("window");
 
@@ -321,6 +322,8 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                 venue_name: selectedMatch.venueName,
             });
 
+            hapticFeedback.success();
+
             const dateLabel = formatFullDateLabel(selectedDate) || selectedMatch.dateIso;
             const reference = response.reservation?.id || `#BK-${Date.now()}`;
             if (response.reservation) {
@@ -349,6 +352,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                 party_size: guests,
                 reason: extractErrorMessage(error),
             });
+            hapticFeedback.error();
             removeReservation(tempId);
             setIsSubmitting(false);
             setReservationError(extractErrorMessage(error));

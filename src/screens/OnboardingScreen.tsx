@@ -26,6 +26,7 @@ import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { hashId } from "../utils/analytics";
 import { analytics } from "../services/analytics";
+import { hapticFeedback } from "../utils/haptics";
 
 type OnboardingStackParamList = {
     OnboardingName: undefined;
@@ -784,12 +785,14 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
                     is_authenticated: true,
                 });
                 analytics.capture("signup_success");
+                hapticFeedback.success();
             }
             
             reset();
             // Navigation is handled automatically by AppNavigator's conditional rendering
         } else {
             analytics.capture("signup_failed");
+            hapticFeedback.error();
             const storeError = useStore.getState().error;
             setSubmissionError(
                 `${storeError || "Impossible de finaliser ton compte pour le moment"}. Merci de réessayer.`
