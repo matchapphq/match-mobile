@@ -20,6 +20,7 @@ import {
     SPORTS_OPTIONS,
     VENUE_OPTIONS,
 } from "../screens/onboarding/options";
+import { hapticFeedback } from "../utils/haptics";
 
 const { height } = Dimensions.get("window");
 
@@ -78,6 +79,7 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
     }, [visible, initialSelections, sheetAnim]);
 
     const toggleSelection = (key: keyof FilterSelections, value: string) => {
+        hapticFeedback.selection();
         setSelections((prev) => {
             if (key === "budget") {
                 return { ...prev, budget: value };
@@ -90,6 +92,7 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
     };
 
     const handleApply = () => {
+        hapticFeedback.medium();
         onApply(selections);
     };
 
