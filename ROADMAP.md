@@ -14,7 +14,7 @@ Ce document définit les étapes clés pour faire évoluer l'application Match d
 
 ### 🛠️ Stabilité Technique
 - [x] **Gestion du Mode Hors-ligne** : Afficher une bannière de déconnexion et permettre la consultation des bars mis en cache via `AsyncStorage`.
-- [ ] **Deep Linking** : Configurer les schémas d'URL (`matchapp://`) pour ouvrir l'app directement sur un bar ou un match spécifique.
+- [x] **Deep Linking** : Configurer les schémas d'URL (`matchapp://`) pour ouvrir l'app directement sur un bar ou un match spécifique.
 - [x] **Optimisation Image** : Utiliser `expo-image` for a better cache and smooth transitions on venue photos.
 
 ### 📢 Partage

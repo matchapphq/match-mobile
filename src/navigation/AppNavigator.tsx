@@ -34,6 +34,9 @@ import { PostHogProvider } from 'posthog-react-native';
 import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
 import * as Network from 'expo-network';
 import OfflineBanner from "../components/OfflineBanner";
+import * as Linking from 'expo-linking';
+
+const prefix = Linking.createURL('/');
 
 const Stack = createStackNavigator();
 
@@ -134,9 +137,28 @@ export const AppNavigator = () => {
         return <SplashScreen />;
     }
 
+    const linking = {
+        prefixes: [prefix, 'com.matchapps.match://'],
+        config: {
+            screens: {
+                VenueProfile: 'venue/:venueId',
+                MatchDetail: 'match/:matchId',
+                Tab: {
+                    screens: {
+                        Map: 'map',
+                        Search: 'search',
+                        Reservations: 'reservations',
+                        Profile: 'profile',
+                    }
+                }
+            },
+        },
+    };
+
     return (
         <NavigationContainer
             ref={navigationRef}
+            linking={linking}
             onReady={() => {
                 routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
             }}
