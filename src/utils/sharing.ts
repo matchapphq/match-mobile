@@ -1,27 +1,22 @@
 import { Share, Platform } from 'react-native';
 
-interface ShareOptions {
-  title: string;
-  message: string;
-  url?: string;
-}
+const APP_SCHEME = 'com.matchapps.match://';
 
 export const sharing = {
   /**
-   * Share a venue with friends
+   * Share a venue with friends via deep link
    */
   shareVenue: async (venueName: string, venueId: string) => {
-    const url = `https://matchapp.fr/venue/${venueId}`;
+    const deepLink = `${APP_SCHEME}venue/${venueId}`;
     const message = Platform.OS === 'ios' 
       ? `Rejoins-moi au ${venueName} pour voir le match ! 🍻` 
-      : `Rejoins-moi au ${venueName} pour voir le match ! 🍻
-${url}`;
+      : `Rejoins-moi au ${venueName} pour voir le match ! 🍻\n${deepLink}`;
 
     try {
       await Share.share({
         title: `Match au ${venueName}`,
         message,
-        url, // iOS only for the dedicated URL field
+        url: deepLink, // iOS only for the dedicated URL field
       });
     } catch (error) {
       console.warn('Sharing venue failed', error);
@@ -29,21 +24,20 @@ ${url}`;
   },
 
   /**
-   * Share a specific match
+   * Share a specific match via deep link
    */
   shareMatch: async (homeTeam: string, awayTeam: string, matchId: string) => {
-    const url = `https://matchapp.fr/match/${matchId}`;
+    const deepLink = `${APP_SCHEME}match/${matchId}`;
     const matchTitle = `${homeTeam} vs ${awayTeam}`;
     const message = Platform.OS === 'ios'
       ? `On regarde le match ${matchTitle} ensemble ? ⚽️`
-      : `On regarde le match ${matchTitle} ensemble ? ⚽️
-${url}`;
+      : `On regarde le match ${matchTitle} ensemble ? ⚽️\n${deepLink}`;
 
     try {
       await Share.share({
         title: matchTitle,
         message,
-        url,
+        url: deepLink,
       });
     } catch (error) {
       console.warn('Sharing match failed', error);
