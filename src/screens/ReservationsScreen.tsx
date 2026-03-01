@@ -70,6 +70,17 @@ const buildReservationDate = (date: Date): ReservationDate => {
     };
 };
 
+const buildNextReservationDates = (numberOfDays: number): ReservationDate[] => {
+    const startDate = new Date();
+    startDate.setHours(0, 0, 0, 0);
+
+    return Array.from({ length: numberOfDays }, (_, index) => {
+        const nextDate = new Date(startDate);
+        nextDate.setDate(startDate.getDate() + index);
+        return buildReservationDate(nextDate);
+    });
+};
+
 const formatFullDateLabel = (reservationDate?: ReservationDate) => {
     if (!reservationDate) return "";
     return `${reservationDate.weekDay} ${reservationDate.day} ${reservationDate.month}`;
@@ -228,19 +239,27 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
             const sorted = [...results].sort((a, b) => a.date.getTime() - b.date.getTime());
             setUpcomingMatches(sorted);
 
-            const uniqueDates = Array.from(
-                new Map(sorted.map((match) => [toIsoDate(match.date), buildReservationDate(match.date)])).values(),
-            );
-            setDates(uniqueDates);
+            const nextReservationDates = buildNextReservationDates(7);
+            setDates(nextReservationDates);
 
-            let initialDate = preselectedDateIsoFromRoute || uniqueDates[0]?.isoDate || null;
+            let initialDate = nextReservationDates[0]?.isoDate || null;
             let initialMatchId = null;
+
+            if (
+                preselectedDateIsoFromRoute &&
+                nextReservationDates.some((date) => date.isoDate === preselectedDateIsoFromRoute)
+            ) {
+                initialDate = preselectedDateIsoFromRoute;
+            }
 
             if (preselectedMatchIdFromRoute) {
                 const preselectedMatch = sorted.find(match => match.id === preselectedMatchIdFromRoute);
                 if (preselectedMatch) {
-                    initialDate = toIsoDate(preselectedMatch.date);
-                    initialMatchId = preselectedMatchIdFromRoute;
+                    const preselectedMatchDateIso = toIsoDate(preselectedMatch.date);
+                    if (nextReservationDates.some((date) => date.isoDate === preselectedMatchDateIso)) {
+                        initialDate = preselectedMatchDateIso;
+                        initialMatchId = preselectedMatchIdFromRoute;
+                    }
                 }
             }
 
