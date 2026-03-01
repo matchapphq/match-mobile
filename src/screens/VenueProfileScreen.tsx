@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Dimensions, ImageBackground, StatusBar, ActivityIndicator, Platform, Linking } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, ImageBackground, StatusBar, ActivityIndicator, Platform, Linking } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -11,6 +12,8 @@ import { mobileApi, Venue, VenueMatch } from '../services/mobileApi';
 import { useStore } from '../store/useStore';
 import { usePostHog } from "posthog-react-native";
 import { VenueProfileSkeleton } from '../components/Skeleton';
+import { hapticFeedback } from '../utils/haptics';
+import { sharing } from '../utils/sharing';
 
 const { width } = Dimensions.get('window');
 
@@ -34,10 +37,21 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
     const handleToggleFavourite = async () => {
         if (venueId) {
             const newState = !isFavourite;
+            hapticFeedback.light();
             await toggleFavourite(venueId);
             posthog?.capture(newState ? 'favourite_added' : 'favourite_removed', {
                 venue_id: venueId,
                 venue_name: venue?.name ?? "",
+            });
+        }
+    };
+
+    const handleShare = () => {
+        if (venue && venueId) {
+            sharing.shareVenue(venue.name, venueId);
+            posthog?.capture('venue_shared', {
+                venue_id: venueId,
+                venue_name: venue.name,
             });
         }
     };
@@ -75,11 +89,19 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
             <View style={styles.matchCardLeft}>
                 <View style={styles.matchTeams}>
                     <View style={[styles.teamLogo, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
-                        <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team1.slice(0, 3).toUpperCase()}</Text>
+                        {match.team1Logo ? (
+                            <Image source={{ uri: match.team1Logo }} style={styles.teamLogoImage} />
+                        ) : (
+                            <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team1.slice(0, 3).toUpperCase()}</Text>
+                        )}
                     </View>
                     <Text style={[styles.vsText, { color: colors.textSecondary }]}>VS</Text>
                     <View style={[styles.teamLogo, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
-                        <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team2.slice(0, 3).toUpperCase()}</Text>
+                        {match.team2Logo ? (
+                            <Image source={{ uri: match.team2Logo }} style={styles.teamLogoImage} />
+                        ) : (
+                            <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team2.slice(0, 3).toUpperCase()}</Text>
+                        )}
                     </View>
                 </View>
                 <View style={styles.matchDetails}>
@@ -153,6 +175,18 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             ) : (
                                 <View style={[styles.backButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
                                     <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.primary : COLORS.white} />
+                                </View>
+                            )}
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={[styles.shareHeaderButton, { top: insets.top + 16 }]} onPress={handleShare} activeOpacity={0.7}>
+                            {Platform.OS === 'ios' ? (
+                                <BlurView intensity={30} tint="dark" style={styles.backButtonBlur}>
+                                    <MaterialIcons name="share" size={22} color={COLORS.white} />
+                                </BlurView>
+                            ) : (
+                                <View style={[styles.backButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                                    <MaterialIcons name="share" size={22} color={COLORS.white} />
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -390,6 +424,11 @@ const styles = StyleSheet.create({
         right: 16,
         zIndex: 10,
     },
+    shareHeaderButton: {
+        position: 'absolute',
+        right: 68,
+        zIndex: 10,
+    },
     backButtonBlur: {
         width: 40,
         height: 40,
@@ -523,6 +562,11 @@ const styles = StyleSheet.create({
         color: COLORS.white,
         fontSize: 10,
         fontWeight: 'bold',
+    },
+    teamLogoImage: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 18,
     },
     vsText: {
         color: COLORS.textSecondary,

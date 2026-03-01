@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from "re
 import { BlurView } from "expo-blur";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useStore } from "../store/useStore";
+import { hapticFeedback } from "../utils/haptics";
 
 interface BottomTabPillProps {
     state: any;
@@ -41,6 +42,7 @@ const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) =
                 const isFocused = state.index === index;
 
                 const onPress = () => {
+                    hapticFeedback.light();
                     const event = navigation.emit({
                         type: 'tabPress',
                         target: route.key,

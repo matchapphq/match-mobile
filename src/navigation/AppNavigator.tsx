@@ -5,6 +5,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 // import { theme } from "../constants/theme"; // Removed static theme import to avoid confusion
 import { useStore } from "../store/useStore";
 import { useNotifications } from "../hooks/useNotifications";
+import { apiService } from "../services/api";
 
 // Import screens
 import SplashScreen from "../screens/SplashScreen";
@@ -27,9 +28,15 @@ import DeleteAccountConfirmScreen from "../screens/DeleteAccountConfirmScreen";
 import DeleteAccountFinalScreen from "../screens/DeleteAccountFinalScreen";
 import DeleteAccountSuccessScreen from "../screens/DeleteAccountSuccessScreen";
 import ChangePasswordScreen from "../screens/ChangePasswordScreen";
+import DataPrivacyScreen from "../screens/DataPrivacyScreen";
 import FavouritesScreen from "../screens/FavouritesScreen";
 import { PostHogProvider } from 'posthog-react-native';
 import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
+import * as Network from 'expo-network';
+import OfflineBanner from "../components/OfflineBanner";
+import * as Linking from 'expo-linking';
+
+const prefix = Linking.createURL('/');
 
 const Stack = createStackNavigator();
 
@@ -39,10 +46,35 @@ const NotificationHandler = () => {
 };
 
 export const AppNavigator = () => {
-    const { isAuthenticated, colors, updateComputedTheme } = useStore();
+    const { isAuthenticated, colors, updateComputedTheme, setOffline } = useStore();
     const [isLoading, setIsLoading] = React.useState(true);
     const navigationRef = React.useRef<any>(null);
     const routeNameRef = React.useRef<string | undefined>(undefined);
+    const lastHeartbeatRef = React.useRef(0);
+    const heartbeatInFlightRef = React.useRef(false);
+
+    const sendSessionHeartbeat = React.useCallback(
+        async (force: boolean = false) => {
+            if (!isAuthenticated) return;
+            const now = Date.now();
+            if (!force && now - lastHeartbeatRef.current < 20_000) {
+                return;
+            }
+            if (heartbeatInFlightRef.current) {
+                return;
+            }
+            heartbeatInFlightRef.current = true;
+            try {
+                await apiService.sendSessionHeartbeat();
+                lastHeartbeatRef.current = Date.now();
+            } catch (error) {
+                console.log("[SESSION_HEARTBEAT] request failed:", error);
+            } finally {
+                heartbeatInFlightRef.current = false;
+            }
+        },
+        [isAuthenticated]
+    );
 
     useEffect(() => {
         // Simulate loading
@@ -63,18 +95,70 @@ export const AppNavigator = () => {
         const sub = AppState.addEventListener("change", (state) => {
             if (state === "active") {
                 updateComputedTheme();
+                void sendSessionHeartbeat(true);
             }
         });
         return () => sub.remove();
-    }, [updateComputedTheme]);
+    }, [sendSessionHeartbeat, updateComputedTheme]);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            return;
+        }
+
+        lastHeartbeatRef.current = 0;
+        void sendSessionHeartbeat(true);
+
+        const interval = setInterval(() => {
+            void sendSessionHeartbeat();
+        }, 60_000);
+
+        return () => clearInterval(interval);
+    }, [isAuthenticated, sendSessionHeartbeat]);
+
+    useEffect(() => {
+        const checkNetwork = async () => {
+            try {
+                const state = await Network.getNetworkStateAsync();
+                setOffline(!state.isConnected);
+            } catch (e) {
+                console.warn("Failed to get network state", e);
+            }
+        };
+
+        checkNetwork();
+        
+        // Poll every 10 seconds for connectivity changes
+        const interval = setInterval(checkNetwork, 10000);
+        return () => clearInterval(interval);
+    }, [setOffline]);
 
     if (isLoading) {
         return <SplashScreen />;
     }
 
+    const linking = {
+        prefixes: [prefix, 'com.matchapps.match://'],
+        config: {
+            screens: {
+                VenueProfile: 'venue/:venueId',
+                MatchDetail: 'match/:matchId',
+                Tab: {
+                    screens: {
+                        Map: 'map',
+                        Search: 'search',
+                        Reservations: 'reservations',
+                        Profile: 'profile',
+                    }
+                }
+            },
+        },
+    };
+
     return (
         <NavigationContainer
             ref={navigationRef}
+            linking={linking}
             onReady={() => {
                 routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
             }}
@@ -85,11 +169,13 @@ export const AppNavigator = () => {
                 if (previousRouteName !== currentRouteName && currentRouteName) {
                     // Using posthog directly here if analytics service failed to create
                     // but I'll assume we want to keep the hook-like style or direct provider access
+                    void sendSessionHeartbeat();
                 }
                 routeNameRef.current = currentRouteName;
             }}
         >
             <NotificationHandler />
+            <OfflineBanner />
             <PostHogProvider 
                 apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY} 
                 options={{
@@ -127,6 +213,7 @@ export const AppNavigator = () => {
                             {/* LanguageSelection temporarily disabled: app is French-only for now. */}
                             <Stack.Screen name="ThemeSelection" component={ThemeSelectionScreen} />
                             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+                            <Stack.Screen name="DataPrivacy" component={DataPrivacyScreen} />
                             <Stack.Screen name="Favourites" component={FavouritesScreen} />
                         </>
                     )}

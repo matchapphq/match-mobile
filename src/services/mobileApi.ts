@@ -52,6 +52,8 @@ const transformApiMatch = (apiMatch: any): VenueMatch => {
         time: scheduledAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
         team1Color: "#1e3a8a",
         team2Color: "#dc2626",
+        team1Logo: apiMatch.homeTeam?.logo_url || apiMatch.home_team?.logo_url,
+        team2Logo: apiMatch.awayTeam?.logo_url || apiMatch.away_team?.logo_url,
         bgImage: apiMatch.thumbnail,
     };
 };
@@ -80,11 +82,13 @@ const transformToSearchMatch = (apiMatch: any): SearchMatchResult => {
             badge: homeTeam.slice(0, 3).toUpperCase(),
             name: homeTeam,
             color: "#1e3a8a",
+            logo: apiMatch.homeTeam?.logo_url || apiMatch.home_team?.logo_url || apiMatch.homeTeamLogo,
         },
         away: {
             badge: awayTeam.slice(0, 3).toUpperCase(),
             name: awayTeam,
             color: "#dc2626",
+            logo: apiMatch.awayTeam?.logo_url || apiMatch.away_team?.logo_url || apiMatch.awayTeamLogo,
         },
     };
 };
@@ -252,7 +256,7 @@ export const mobileApi = {
     }> {
         try {
             // Call backend paginated search endpoint
-            const geoParams = (lat != null && lng != null) ? { lat, lng, radius_km: 50 } : {};
+            const geoParams = (lat != null && lng != null) ? { lat, lng, radius_km: 50000 } : {};
             const response = await apiService.searchPaginated({
                 q: query,
                 type,

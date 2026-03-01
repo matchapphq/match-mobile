@@ -75,6 +75,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
       { icon: 'language', color: '#818cf8', label: 'Langue', meta: 'Français' },
       { icon: 'dark-mode', color: '#a78bfa', label: 'Thème' },
       { icon: 'notifications', color: '#fb923c', label: 'Notifications', toggle: true },
+      { icon: 'vibration', color: '#34d399', label: 'Haptique', toggle: true },
     ],
   },
   {
@@ -104,7 +105,22 @@ const ProfileScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const posthog = usePostHog();
-  const { logout, user, computedTheme: themeMode, themeMode: themePreference, colors, updateUser, fetchUserProfile, refreshUserProfile, isLoading, pushNotificationsEnabled, togglePushNotifications, setPushNotificationsEnabled } = useStore();
+  const { 
+    logout, 
+    user, 
+    computedTheme: themeMode, 
+    themeMode: themePreference, 
+    colors, 
+    updateUser, 
+    fetchUserProfile, 
+    refreshUserProfile, 
+    isLoading, 
+    pushNotificationsEnabled, 
+    togglePushNotifications, 
+    setPushNotificationsEnabled,
+    hapticsEnabled,
+    toggleHaptics
+  } = useStore();
   const userData = user?.user ?? user ?? null;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [bugModalVisible, setBugModalVisible] = useState(false);
@@ -321,6 +337,9 @@ const ProfileScreen = () => {
                 {section.rows.map((row, index) => {
                   const isLast = index === section.rows.length - 1;
                   if (row.toggle) {
+                    const isHapticToggle = row.label === 'Haptique';
+                    const isEnabled = isHapticToggle ? hapticsEnabled : pushNotificationsEnabled;
+
                     return (
                       <View key={row.label} style={[styles.row, !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.divider }]}>
                         <View style={styles.rowLeft}>
@@ -332,16 +351,20 @@ const ProfileScreen = () => {
                         <TouchableOpacity
                           activeOpacity={0.8}
                           onPress={() => {
-                            const newState = !pushNotificationsEnabled;
-                            posthog?.capture('notification_toggle', { enabled: newState });
-                            togglePushNotifications();
+                            if (isHapticToggle) {
+                                toggleHaptics();
+                            } else {
+                                const newState = !pushNotificationsEnabled;
+                                posthog?.capture('notification_toggle', { enabled: newState });
+                                togglePushNotifications();
+                            }
                           }}
                         >
-                          <View style={[styles.toggleTrack, pushNotificationsEnabled && styles.toggleTrackActive]}>
+                          <View style={[styles.toggleTrack, isEnabled && styles.toggleTrackActive]}>
                             <View
                               style={[
                                 styles.toggleThumb,
-                                pushNotificationsEnabled && styles.toggleThumbActive,
+                                isEnabled && styles.toggleThumbActive,
                               ]}
                             />
                           </View>
@@ -372,7 +395,7 @@ const ProfileScreen = () => {
                               navigation.navigate('ChangePassword');
                               return;
                           case 'Données personnelles':
-                              Alert.alert('Données personnelles', 'Cette fonctionnalité sera disponible prochainement.');
+                              navigation.navigate('DataPrivacy');
                               return;
                           case 'Questions fréquentes':
                               navigation.navigate('FaqSupport');

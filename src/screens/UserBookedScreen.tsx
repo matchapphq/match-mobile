@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   ImageBackground,
   StatusBar,
   Modal,
@@ -16,6 +15,7 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
@@ -26,6 +26,7 @@ import { apiService } from '../services/api';
 import { usePostHog } from 'posthog-react-native';
 import CancelReservationModal, { CancelReservationData } from '../components/CancelReservationModal';
 import { ReservationCardSkeleton } from '../components/Skeleton';
+import EmptyState from '../components/EmptyState';
 
 const { width } = Dimensions.get('window');
 
@@ -475,14 +476,13 @@ const UserBookedScreen = () => {
             </TouchableOpacity>
           </View>
         ) : bookings.length === 0 ? (
-          <View style={[styles.stateWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <MaterialIcons name="event-busy" size={36} color={colors.textSecondary} />
-            <Text style={[styles.stateText, { color: colors.text }]}>Vous n'avez aucune réservation pour le moment.</Text>
-            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('Map' as never)} activeOpacity={0.85}>
-              <MaterialIcons name="search" size={18} color={colors.white} />
-              <Text style={[styles.retryButtonText, { color: colors.white }]}>Explorer les bars</Text>
-            </TouchableOpacity>
-          </View>
+          <EmptyState
+            icon="event-busy"
+            title="Aucune réservation"
+            description="Tu n'as pas encore de réservation. Trouve un bar et réserve ta place pour le prochain match !"
+            actionLabel="Explorer les bars"
+            onAction={() => navigation.navigate('Map' as never)}
+          />
         ) : (
           <>
             {/* Featured Next Event - only show when filter is "all" and no search */}

@@ -75,6 +75,7 @@ const ChangePasswordScreen = () => {
             await apiService.changePassword({
                 currentPassword,
                 newPassword,
+                confirmPassword,
             });
             posthog?.capture('password_change_success');
             Alert.alert("Succès", "Votre mot de passe a été mis à jour.", [

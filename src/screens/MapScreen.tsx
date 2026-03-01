@@ -23,6 +23,7 @@ import MapScreenFilter, {
     DEFAULT_FILTER_SELECTIONS,
     FilterSelections,
 } from "../components/MapScreenFilter";
+import EmptyState from "../components/EmptyState";
 import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
 import { mobileApi, Venue, VenueMatch } from "../services/mobileApi";
@@ -804,19 +805,20 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
             {/* Empty State - No venues found (auto-dismisses after 4 seconds) */}
             {noVenuesFound && !isSearchingArea && (
                 <View style={styles.emptyStateContainer}>
-                    <View style={[styles.emptyStateCard, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
-                        <View style={[styles.emptyStateIcon, { backgroundColor: 'rgba(248, 113, 113, 0.2)' }]}>
-                            <MaterialIcons name="search-off" size={24} color={colors.red400} />
-                        </View>
-                        <View style={styles.emptyStateContent}>
-                            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
-                                Aucun lieu trouvé dans cette zone
-                            </Text>
-                            <Text style={[styles.emptyStateSubtitle, { color: colors.textMuted }]}>
-                                Essaye de changer de sport ou de zoomer en arrière.
-                            </Text>
-                        </View>
-                    </View>
+                    <EmptyState
+                        icon="search-off"
+                        title="Aucun lieu trouvé"
+                        description="Essaye de changer de sport ou de zoomer en arrière."
+                        style={[
+                            styles.emptyStateCard, 
+                            { 
+                                backgroundColor: colors.surfaceDark, 
+                                borderColor: colors.border,
+                                paddingVertical: 20,
+                                paddingHorizontal: 20,
+                            }
+                        ]}
+                    />
                 </View>
             )}
 

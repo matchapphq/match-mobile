@@ -9,8 +9,8 @@ import {
     StatusBar,
     Animated,
     ActivityIndicator,
-    Image,
 } from "react-native";
+import { Image } from "expo-image";
 import { MaterialIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { COLORS } from "../constants/colors";
@@ -20,6 +20,7 @@ import { usePostHog } from "posthog-react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import * as Location from "expo-location";
 import { VenueCardSkeleton, MatchCardSkeleton } from "../components/Skeleton";
+import EmptyState from "../components/EmptyState";
 
 type TabFilter = "all" | "matches" | "venues";
 
@@ -66,11 +67,13 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [matchResults, setMatchResults] = useState<SearchMatchResult[]>([]);
     const [venueResults, setVenueResults] = useState<SearchResult[]>([]);
+    const [totalMatches, setTotalMatches] = useState(0);
+    const [totalVenues, setTotalVenues] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showAllMatches, setShowAllMatches] = useState(false);
     const [activeTab, setActiveTab] = useState<TabFilter>("all");
-    const [selectedDateIndex, setSelectedDateIndex] = useState(1); // Default to second date (like "Mer 04")
+    const [selectedDateIndex, setSelectedDateIndex] = useState(0); // Default to today (index 0)
     const [selectedVenueFilter, setSelectedVenueFilter] = useState<"nearby" | "top_rated" | "open_now">("nearby");
     
     // Debounced search state
@@ -172,12 +175,17 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
         };
     }, [searchQuery]);
 
-    // Reset pagination when tab or selected date changes
+    // Reset pagination and results when tab or selected date changes
     useEffect(() => {
         setMatchPage(1);
         setVenuePage(1);
         setHasMoreMatches(true);
         setHasMoreVenues(true);
+        // Clear results immediately to show loading state for new filters
+        setMatchResults([]);
+        setVenueResults([]);
+        setTotalMatches(0);
+        setTotalVenues(0);
     }, [activeTab, selectedDateIndex]);
 
     // Fetch search results based on debounced query and active tab
@@ -186,18 +194,23 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
             if (!append) {
                 setError(null);
                 setIsLoading(true);
+                // Ensure results are cleared for a fresh search
+                setMatchResults([]);
+                setVenueResults([]);
             } else {
                 setIsLoadingMore(true);
             }
 
-            // When query is empty, use fetchSearchData to get all venues/matches
-            // The backend search endpoint may return nothing for empty queries
-            if (!debouncedQuery.trim()) {
+            // When query is empty and we are on the 'all' tab, use fetchSearchData to get trends/recent/all
+            // Otherwise, use searchPaginated to ensure filters (like date) are respected
+            if (!debouncedQuery.trim() && activeTab === "all") {
                 const initialData = await mobileApi.fetchSearchData();
                 setTrends(initialData.trends);
                 setRecentSearches(initialData.recentSearches);
                 setMatchResults(initialData.matchResults);
                 setVenueResults(initialData.results);
+                setTotalMatches(initialData.matchResults.length);
+                setTotalVenues(initialData.results.length);
                 setHasMoreMatches(false);
                 setHasMoreVenues(false);
             } else {
@@ -221,6 +234,8 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 } else {
                     setMatchResults(data.matches);
                     setVenueResults(data.venues);
+                    setTotalMatches(data.totalMatches);
+                    setTotalVenues(data.totalVenues);
                 }
 
                 setHasMoreMatches(data.hasMoreMatches);
@@ -511,7 +526,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                         <>
                                             <View style={styles.sectionHeaderRow}>
                                                 <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                                                    {activeTab === "matches" ? `${matchResults.length} Matchs trouvés` : "Prochains matchs"}
+                                                    {activeTab === "matches" ? `${totalMatches} Matchs trouvés` : "Prochains matchs"}
                                                 </Text>
                                                 {matchResults.length > 2 && activeTab === "all" && (
                                                     <TouchableOpacity onPress={() => setActiveTab("matches")}>
@@ -554,7 +569,11 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                 <View style={styles.teamsRow}>
                                                                     <View style={styles.teamColumn}>
                                                                         <View style={[styles.teamBadgeLarge, { backgroundColor: match.home.color, borderColor: themeMode === 'light' ? '#f1f5f9' : '#2a2a30' }]}>
-                                                                            <Text style={styles.teamBadgeTextLarge}>{match.home.badge}</Text>
+                                                                            {match.home.logo ? (
+                                                                                <Image source={{ uri: match.home.logo }} style={styles.teamLogoImageLarge} />
+                                                                            ) : (
+                                                                                <Text style={styles.teamBadgeTextLarge}>{match.home.badge}</Text>
+                                                                            )}
                                                                         </View>
                                                                         <Text style={[styles.teamName, { color: colors.text }]}>{match.home.name}</Text>
                                                                     </View>
@@ -567,7 +586,11 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                     </View>
                                                                     <View style={styles.teamColumn}>
                                                                         <View style={[styles.teamBadgeLarge, { backgroundColor: match.away.color, borderColor: themeMode === 'light' ? '#f1f5f9' : '#2a2a30' }]}>
-                                                                            <Text style={styles.teamBadgeTextLarge}>{match.away.badge}</Text>
+                                                                            {match.away.logo ? (
+                                                                                <Image source={{ uri: match.away.logo }} style={styles.teamLogoImageLarge} />
+                                                                            ) : (
+                                                                                <Text style={styles.teamBadgeTextLarge}>{match.away.badge}</Text>
+                                                                            )}
                                                                         </View>
                                                                         <Text style={[styles.teamName, { color: colors.text }]}>{match.away.name}</Text>
                                                                     </View>
@@ -576,7 +599,12 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                         ))}
                                                 </View>
                                             ) : (
-                                                <Text style={[styles.emptyText, { color: colors.textMuted }]}>Aucun match trouvé.</Text>
+                                                <EmptyState
+                                                    icon="event-busy"
+                                                    title="Aucun match trouvé"
+                                                    description="Essaie une autre recherche ou change de date."
+                                                    style={{ paddingVertical: 40 }}
+                                                />
                                             )}
                                         </>
                                     )}
@@ -592,6 +620,11 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                             <Text style={styles.sectionAction}>Voir tout</Text>
                                                         </TouchableOpacity>
                                                     )}
+                                                </View>
+                                            )}
+                                            {activeTab === "venues" && (
+                                                <View style={styles.sectionHeaderRow}>
+                                                    <Text style={[styles.sectionTitle, { color: colors.text }]}>{totalVenues} Lieux trouvés</Text>
                                                 </View>
                                             )}
 
@@ -656,7 +689,12 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                             </TouchableOpacity>
                                                         ))
                                                 ) : (
-                                                    <Text style={[styles.emptyText, { color: colors.textMuted }]}>Aucun bar disponible.</Text>
+                                                    <EmptyState
+                                                        icon="storefront"
+                                                        title="Aucun bar trouvé"
+                                                        description="Nous n'avons pas trouvé de bar correspondant à ta recherche."
+                                                        style={{ paddingVertical: 40 }}
+                                                    />
                                                 )}
                                             </View>
                                         </>
@@ -917,6 +955,11 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: "900",
         fontSize: 12,
+    },
+    teamLogoImageLarge: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 34,
     },
     vsColumnNew: {
         alignItems: "center",

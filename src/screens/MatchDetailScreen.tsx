@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ActivityIndicator,
-    Image,
     ImageBackground,
     ScrollView,
     StatusBar,
@@ -10,6 +9,7 @@ import {
     TouchableOpacity,
     View,
 } from "react-native";
+import { Image } from "expo-image";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -19,6 +19,7 @@ import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { SearchMatchResult, Venue, mobileApi } from "../services/mobileApi";
 import { MatchDetailSkeleton } from "../components/Skeleton";
+import { sharing } from "../utils/sharing";
 
 type MatchDetailRoute = {
     params?: {
@@ -112,6 +113,17 @@ const MatchDetailScreen = ({
         loadData();
     }, [loadData]);
 
+    const handleShare = () => {
+        if (match && matchId) {
+            sharing.shareMatch(match.home.name, match.away.name, matchId);
+            posthog.capture("match_shared", {
+                match_id: match.id,
+                home_team: match.home.name,
+                away_team: match.away.name,
+            });
+        }
+    };
+
     // Show up to 4 venues (already sorted by distance from API)
     const recommendedVenues = useMemo(() => venues.slice(0, 4), [venues]);
 
@@ -170,7 +182,11 @@ const MatchDetailScreen = ({
                                     <Text style={styles.leaguePillText}>{match.league}</Text>
                                 </View>
 
-                                <TouchableOpacity style={styles.circleButton} activeOpacity={0.85}>
+                                <TouchableOpacity 
+                                    style={styles.circleButton} 
+                                    activeOpacity={0.85}
+                                    onPress={handleShare}
+                                >
                                     <MaterialIcons name="share" size={20} color={colors.white} />
                                 </TouchableOpacity>
                             </View>
@@ -179,7 +195,11 @@ const MatchDetailScreen = ({
                                 <View style={styles.heroCard}>
                                     <View style={styles.teamColumn}>
                                         <View style={styles.teamBadge}>
-                                            <MaterialIcons name="shield" size={30} color={colors.white} />
+                                            {match.home.logo ? (
+                                                <Image source={{ uri: match.home.logo }} style={styles.teamLogoImage} />
+                                            ) : (
+                                                <MaterialIcons name="shield" size={30} color={colors.white} />
+                                            )}
                                         </View>
                                         <Text style={styles.teamLabel}>{match.home.name}</Text>
                                     </View>
@@ -191,7 +211,11 @@ const MatchDetailScreen = ({
 
                                     <View style={styles.teamColumn}>
                                         <View style={styles.teamBadge}>
-                                            <MaterialIcons name="shield" size={30} color={colors.white} />
+                                            {match.away.logo ? (
+                                                <Image source={{ uri: match.away.logo }} style={styles.teamLogoImage} />
+                                            ) : (
+                                                <MaterialIcons name="shield" size={30} color={colors.white} />
+                                            )}
                                         </View>
                                         <Text style={styles.teamLabel}>{match.away.name}</Text>
                                     </View>
@@ -395,6 +419,11 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 8,
+        overflow: "hidden",
+    },
+    teamLogoImage: {
+        width: "100%",
+        height: "100%",
     },
     teamLabel: {
         color: '#FFFFFF',

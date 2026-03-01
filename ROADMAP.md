@@ -9,16 +9,16 @@ Ce document définit les étapes clés pour faire évoluer l'application Match d
 
 ### 🎨 Expérience Utilisateur (UX)
 - [x] **Skeleton Screens** : Remplacer les indicateurs de chargement circulaires par des chargements fantômes sur la liste des bars et la recherche.
-- [ ] **Haptic Feedback** : Ajouter des micro-vibrations (Expo Haptics) sur les actions clés : validation de réservation, ajout aux favoris, et erreurs de formulaire.
-- [ ] **Empty States Illustrés** : Améliorer les écrans "Aucun résultat" avec des visuels plus engageants.
+- [x] **Haptic Feedback** : Ajouter des micro-vibrations (Expo Haptics) sur les actions clés : validation de réservation, ajout aux favoris, et erreurs de formulaire.
+- [x] **Empty States Illustrés** : Améliorer les écrans "Aucun résultat" avec des visuels plus engageants.
 
 ### 🛠️ Stabilité Technique
-- [ ] **Gestion du Mode Hors-ligne** : Afficher une bannière de déconnexion et permettre la consultation des bars mis en cache via `AsyncStorage`.
-- [ ] **Deep Linking** : Configurer les schémas d'URL (`matchapp://`) pour ouvrir l'app directement sur un bar ou un match spécifique.
-- [ ] **Optimisation Image** : Utiliser `expo-image` pour un meilleur cache et des transitions fluides sur les photos des bars.
+- [x] **Gestion du Mode Hors-ligne** : Afficher une bannière de déconnexion et permettre la consultation des bars mis en cache via `AsyncStorage`.
+- [x] **Deep Linking** : Configurer les schémas d'URL (`matchapp://`) pour ouvrir l'app directement sur un bar ou un match spécifique.
+- [x] **Optimisation Image** : Utiliser `expo-image` for a better cache and smooth transitions on venue photos.
 
 ### 📢 Partage
-- [ ] **Partage Social** : Bouton de partage sur les fiches bars/matchs générant un lien propre et un texte d'invitation.
+- [x] **Partage Social** : Bouton de partage sur les fiches bars/matchs générant un lien propre et un texte d'invitation.
 
 ---
 

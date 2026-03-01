@@ -8,16 +8,27 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useNavigation, CommonActions } from "@react-navigation/native";
+import { useNavigation, CommonActions, useRoute, RouteProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 
+type RouteParams = {
+    DeleteAccountSuccess: {
+        accountDeletionGraceDays?: number;
+    };
+};
+
+const formatGraceDaysLabel = (days: number | null | undefined) =>
+    typeof days === "number" && days > 0 ? `${days} jour${days > 1 ? "s" : ""}` : "le délai de réactivation";
+
 const DeleteAccountSuccessScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
+    const route = useRoute<RouteProp<RouteParams, "DeleteAccountSuccess">>();
     const { colors, computedTheme: themeMode } = useStore();
     const posthog = usePostHog();
+    const graceDaysLabel = formatGraceDaysLabel(route.params?.accountDeletionGraceDays);
 
     React.useEffect(() => {
         posthog?.capture("delete_account_success_screen_view");
@@ -58,10 +69,10 @@ const DeleteAccountSuccessScreen = () => {
                 {/* Message */}
                 <View style={styles.messageSection}>
                     <Text style={[styles.title, { color: colors.text }]}>
-                        Votre compte a été{"\n"}supprimé
+                        Compte désactivé
                     </Text>
                     <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                        Merci d'avoir fait partie de l'aventure Match.
+                        {`Vos données seront conservées pendant ${graceDaysLabel}. Reconnectez-vous avant son expiration pour réactiver votre compte.`}
                     </Text>
                 </View>
 

@@ -13,6 +13,7 @@ import Constants from "expo-constants";
 import { cacheService } from "./cache";
 import { tokenStorage } from "../utils/tokenStorage";
 import PostHog from 'posthog-react-native';
+import { useStore } from "../store/useStore";
 
 const getApiBaseUrl = () => {
     if (process.env.EXPO_PUBLIC_API_URL) {
@@ -35,6 +36,15 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
+type AuthFailureReason = "refresh_failed" | "missing_refresh_token";
+type AuthFailureHandler = (reason: AuthFailureReason) => void | Promise<void>;
+
+let authFailureHandler: AuthFailureHandler | null = null;
+
+export const setAuthFailureHandler = (handler: AuthFailureHandler | null) => {
+    authFailureHandler = handler;
+};
+
 const api = axios.create({
     baseURL: API_BASE_URL,
     timeout: 15000, // Increased to 15s to be more resilient
@@ -50,6 +60,14 @@ const posthog = new PostHog(process.env.EXPO_PUBLIC_POSTHOG_API_KEY || "", {
 
 // Add auth token to requests
 api.interceptors.request.use(async (config) => {
+    // Check if offline
+    if (useStore.getState().isOffline) {
+        // We use a custom error that can be caught as a network error
+        const error = new Error("Network Error");
+        (error as any).isOffline = true;
+        throw error;
+    }
+
     try {
         const token = await tokenStorage.getAccessToken();
         if (token) {
@@ -130,10 +148,17 @@ api.interceptors.response.use(
             } catch (err) {
                 processQueue(err, null);
                 await tokenStorage.clearTokens();
-                // We might want to trigger a logout action in the store here
-                // but avoiding circular dependencies is tricky. 
-                // The store should listen to isAuthenticated state which will be false next app load
-                // or we can emit an event.
+                delete api.defaults.headers.common["Authorization"];
+                if (originalRequest.headers) {
+                    delete originalRequest.headers["Authorization"];
+                }
+                if (authFailureHandler) {
+                    const reason =
+                        err instanceof Error && err.message === "No refresh token available"
+                            ? "missing_refresh_token"
+                            : "refresh_failed";
+                    await authFailureHandler(reason);
+                }
                 return Promise.reject(err);
             } finally {
                 isRefreshing = false;
@@ -150,6 +175,8 @@ const transformMatches = (rawMatches: any[]): Match[] =>
         id: m.id,
         homeTeam: m.homeTeam?.name || m.home_team?.name || m.homeTeam || "TBD",
         awayTeam: m.awayTeam?.name || m.away_team?.name || m.awayTeam || "TBD",
+        homeTeamLogo: m.homeTeam?.logo_url || m.home_team?.logo_url,
+        awayTeamLogo: m.awayTeam?.logo_url || m.away_team?.logo_url,
         sport: (m.league?.sport?.name || m.sport || "Football") as SportType,
         date: new Date(m.scheduled_at || m.date),
         time: m.scheduled_at
@@ -331,7 +358,8 @@ export const apiService = {
 
     logout: async () => {
         try {
-            await api.post("/auth/logout");
+            const refreshToken = await tokenStorage.getRefreshToken();
+            await api.post("/auth/logout", refreshToken ? { refresh_token: refreshToken } : undefined);
         } catch (error) {
             console.warn("Logout API call failed", error);
         }
@@ -345,6 +373,16 @@ export const apiService = {
     getMe: async (): Promise<User> => {
         const response = await api.get("/users/me");
         return response.data?.user || response.data?.data || response.data;
+    },
+
+    getPrivacyPreferences: async (): Promise<{
+        analytics_consent: boolean;
+        marketing_consent: boolean;
+        legal_updates_email: boolean;
+        account_deletion_grace_days: number;
+    }> => {
+        const response = await api.get("/users/me/privacy-preferences");
+        return response.data;
     },
 
     // Venues
@@ -657,10 +695,30 @@ export const apiService = {
     },
 
     /**
+     * Request user data export
+     */
+    requestDataExport: async (payload: { message: string }): Promise<{
+        success: boolean;
+        message?: string;
+        traceId?: string;
+    }> => {
+        const response = await api.post("/support/data-export-request", payload);
+        return response.data;
+    },
+
+    /**
      * Change user password
      */
-    changePassword: async (payload: { currentPassword: string; newPassword: string }): Promise<void> => {
-        await api.put("/users/me/password", payload);
+    changePassword: async (payload: {
+        currentPassword: string;
+        newPassword: string;
+        confirmPassword: string;
+    }): Promise<void> => {
+        await api.put("/users/me/password", {
+            current_password: payload.currentPassword,
+            new_password: payload.newPassword,
+            confirm_password: payload.confirmPassword,
+        });
     },
 
     /**
@@ -668,6 +726,25 @@ export const apiService = {
      */
     updatePushToken: async (token: string): Promise<void> => {
         await api.put("/users/me/push-token", { push_token: token });
+    },
+
+    /**
+     * Explicitly refresh session last activity timestamp.
+     */
+    sendSessionHeartbeat: async (payload?: {
+        location?: {
+            city?: string | null;
+            region?: string | null;
+            country?: string | null;
+        };
+    }): Promise<void> => {
+        const hasLocation = Boolean(
+            payload?.location?.city || payload?.location?.region || payload?.location?.country
+        );
+        await api.post(
+            "/users/me/session-heartbeat",
+            hasLocation ? { location: payload?.location } : undefined
+        );
     },
 
     /**

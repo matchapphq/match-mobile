@@ -2,36 +2,70 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
+import { apiService } from "../services/api";
 
-const LOSS_ITEMS = [
+type RouteParams = {
+    DeleteAccountWarning: {
+        accountDeletionGraceDays?: number;
+    };
+};
+
+const formatGraceDaysLabel = (days: number | null) =>
+    days === null ? "le délai prévu" : `${days} jour${days > 1 ? "s" : ""}`;
+
+const buildLossItems = (graceDaysLabel: string) => [
     {
-        icon: "history",
-        title: "Historique des matchs",
-        subtitle: "Vos statistiques et scores passés",
+        icon: "pause-circle-outline",
+        title: "Accès suspendu immédiatement",
+        subtitle: "Votre compte sera désactivé dès confirmation",
     },
     {
-        icon: "leaderboard",
-        title: "Points Social Sport",
-        subtitle: "Votre rang et progression",
+        icon: "autorenew",
+        title: "Réactivation possible",
+        subtitle: `Reconnectez-vous sous ${graceDaysLabel} pour restaurer le compte`,
     },
     {
-        icon: "emoji-events",
-        title: "Badges débloqués",
-        subtitle: "Toutes vos récompenses",
+        icon: "delete-forever",
+        title: `Suppression définitive après ${graceDaysLabel}`,
+        subtitle: "Passé ce délai, les données sont supprimées",
     },
 ];
 
 const DeleteAccountWarningScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
+    const route = useRoute<RouteProp<RouteParams, "DeleteAccountWarning">>();
     const { colors, computedTheme: themeMode } = useStore();
     const posthog = usePostHog();
+    const [accountDeletionGraceDays, setAccountDeletionGraceDays] = React.useState<number | null>(
+        typeof route.params?.accountDeletionGraceDays === "number" && route.params.accountDeletionGraceDays > 0
+            ? route.params.accountDeletionGraceDays
+            : null
+    );
+    const graceDaysLabel = formatGraceDaysLabel(accountDeletionGraceDays);
+    const lossItems = React.useMemo(() => buildLossItems(graceDaysLabel), [graceDaysLabel]);
 
     React.useEffect(() => {
         posthog?.capture("delete_account_started");
+
+        let isMounted = true;
+        apiService
+            .getPrivacyPreferences()
+            .then((preferences) => {
+                if (!isMounted) return;
+                const days = preferences?.account_deletion_grace_days;
+                setAccountDeletionGraceDays(
+                    Number.isFinite(days) && days > 0 ? days : null
+                );
+            })
+            .catch(() => undefined);
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     const handleClose = () => {
@@ -46,7 +80,9 @@ const DeleteAccountWarningScreen = () => {
 
     const handleContinue = () => {
         posthog?.capture("delete_account_step_1_continued");
-        navigation.navigate("DeleteAccountConfirm");
+        navigation.navigate("DeleteAccountConfirm", {
+            accountDeletionGraceDays: accountDeletionGraceDays ?? undefined,
+        });
     };
 
     return (
@@ -75,15 +111,15 @@ const DeleteAccountWarningScreen = () => {
                 </View>
 
                 <Text style={[styles.title, { color: colors.text }]}>
-                    Supprimer mon{"\n"}compte ?
+                    Désactiver mon{"\n"}compte ?
                 </Text>
                 <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                    Cette action est irréversible. Si vous continuez, vous perdrez définitivement l'accès aux éléments suivants :
+                    {`Votre compte sera désactivé immédiatement. Vous pourrez le réactiver en vous reconnectant pendant ${graceDaysLabel}.`}
                 </Text>
 
                 {/* Loss Cards */}
                 <View style={styles.cardsList}>
-                    {LOSS_ITEMS.map((item) => (
+                    {lossItems.map((item) => (
                         <View
                             key={item.title}
                             style={[styles.lossCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -110,7 +146,7 @@ const DeleteAccountWarningScreen = () => {
                     <Text style={styles.primaryButtonText}>Garder mon compte</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.secondaryButton} activeOpacity={0.7} onPress={handleContinue}>
-                    <Text style={styles.secondaryButtonText}>Continuer la suppression</Text>
+                    <Text style={styles.secondaryButtonText}>Continuer</Text>
                 </TouchableOpacity>
             </View>
         </View>
