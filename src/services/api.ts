@@ -175,6 +175,8 @@ const transformMatches = (rawMatches: any[]): Match[] =>
         id: m.id,
         homeTeam: m.homeTeam?.name || m.home_team?.name || m.homeTeam || "TBD",
         awayTeam: m.awayTeam?.name || m.away_team?.name || m.awayTeam || "TBD",
+        homeTeamLogo: m.homeTeam?.logo_url || m.home_team?.logo_url,
+        awayTeamLogo: m.awayTeam?.logo_url || m.away_team?.logo_url,
         sport: (m.league?.sport?.name || m.sport || "Football") as SportType,
         date: new Date(m.scheduled_at || m.date),
         time: m.scheduled_at

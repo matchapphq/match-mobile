@@ -38,6 +38,8 @@ export interface VenueMatch {
     time: string;
     team1Color: string;
     team2Color: string;
+    team1Logo?: string;
+    team2Logo?: string;
     bgImage?: string;
 }
 
@@ -74,11 +76,13 @@ export interface SearchMatchResult {
         badge: string;
         name: string;
         color: string;
+        logo?: string;
     };
     away: {
         badge: string;
         name: string;
         color: string;
+        logo?: string;
     };
 }
 
