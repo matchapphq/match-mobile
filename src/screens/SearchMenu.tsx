@@ -67,6 +67,8 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
     const [recentSearches, setRecentSearches] = useState<string[]>([]);
     const [matchResults, setMatchResults] = useState<SearchMatchResult[]>([]);
     const [venueResults, setVenueResults] = useState<SearchResult[]>([]);
+    const [totalMatches, setTotalMatches] = useState(0);
+    const [totalVenues, setTotalVenues] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [showAllMatches, setShowAllMatches] = useState(false);
@@ -182,6 +184,8 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
         // Clear results immediately to show loading state for new filters
         setMatchResults([]);
         setVenueResults([]);
+        setTotalMatches(0);
+        setTotalVenues(0);
     }, [activeTab, selectedDateIndex]);
 
     // Fetch search results based on debounced query and active tab
@@ -205,6 +209,8 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 setRecentSearches(initialData.recentSearches);
                 setMatchResults(initialData.matchResults);
                 setVenueResults(initialData.results);
+                setTotalMatches(initialData.matchResults.length);
+                setTotalVenues(initialData.results.length);
                 setHasMoreMatches(false);
                 setHasMoreVenues(false);
             } else {
@@ -228,6 +234,8 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 } else {
                     setMatchResults(data.matches);
                     setVenueResults(data.venues);
+                    setTotalMatches(data.totalMatches);
+                    setTotalVenues(data.totalVenues);
                 }
 
                 setHasMoreMatches(data.hasMoreMatches);
@@ -518,7 +526,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                         <>
                                             <View style={styles.sectionHeaderRow}>
                                                 <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                                                    {activeTab === "matches" ? `${matchResults.length} Matchs trouvés` : "Prochains matchs"}
+                                                    {activeTab === "matches" ? `${totalMatches} Matchs trouvés` : "Prochains matchs"}
                                                 </Text>
                                                 {matchResults.length > 2 && activeTab === "all" && (
                                                     <TouchableOpacity onPress={() => setActiveTab("matches")}>
@@ -604,6 +612,11 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                             <Text style={styles.sectionAction}>Voir tout</Text>
                                                         </TouchableOpacity>
                                                     )}
+                                                </View>
+                                            )}
+                                            {activeTab === "venues" && (
+                                                <View style={styles.sectionHeaderRow}>
+                                                    <Text style={[styles.sectionTitle, { color: colors.text }]}>{totalVenues} Lieux trouvés</Text>
                                                 </View>
                                             )}
 
