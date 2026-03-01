@@ -82,13 +82,13 @@ const transformToSearchMatch = (apiMatch: any): SearchMatchResult => {
             badge: homeTeam.slice(0, 3).toUpperCase(),
             name: homeTeam,
             color: "#1e3a8a",
-            logo: apiMatch.homeTeam?.logo_url || apiMatch.home_team?.logo_url,
+            logo: apiMatch.homeTeam?.logo_url || apiMatch.home_team?.logo_url || apiMatch.homeTeamLogo,
         },
         away: {
             badge: awayTeam.slice(0, 3).toUpperCase(),
             name: awayTeam,
             color: "#dc2626",
-            logo: apiMatch.awayTeam?.logo_url || apiMatch.away_team?.logo_url,
+            logo: apiMatch.awayTeam?.logo_url || apiMatch.away_team?.logo_url || apiMatch.awayTeamLogo,
         },
     };
 };
