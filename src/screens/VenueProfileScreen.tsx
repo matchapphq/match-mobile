@@ -89,11 +89,19 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
             <View style={styles.matchCardLeft}>
                 <View style={styles.matchTeams}>
                     <View style={[styles.teamLogo, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
-                        <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team1.slice(0, 3).toUpperCase()}</Text>
+                        {match.team1Logo ? (
+                            <Image source={{ uri: match.team1Logo }} style={styles.teamLogoImage} />
+                        ) : (
+                            <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team1.slice(0, 3).toUpperCase()}</Text>
+                        )}
                     </View>
                     <Text style={[styles.vsText, { color: colors.textSecondary }]}>VS</Text>
                     <View style={[styles.teamLogo, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
-                        <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team2.slice(0, 3).toUpperCase()}</Text>
+                        {match.team2Logo ? (
+                            <Image source={{ uri: match.team2Logo }} style={styles.teamLogoImage} />
+                        ) : (
+                            <Text style={[styles.teamLogoText, { color: colors.text }]}>{match.team2.slice(0, 3).toUpperCase()}</Text>
+                        )}
                     </View>
                 </View>
                 <View style={styles.matchDetails}>
@@ -554,6 +562,11 @@ const styles = StyleSheet.create({
         color: COLORS.white,
         fontSize: 10,
         fontWeight: 'bold',
+    },
+    teamLogoImage: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 18,
     },
     vsText: {
         color: COLORS.textSecondary,

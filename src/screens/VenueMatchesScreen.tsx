@@ -11,6 +11,7 @@ import {
     Dimensions,
     Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -200,10 +201,18 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                         <View style={styles.teamsRow}>
                             <View style={styles.teamBadges}>
                                 <View style={[styles.teamBadge, { backgroundColor: colors.surfaceAlt, borderColor: colors.surface }]}>
-                                    <Text style={[styles.teamBadgeText, { color: colors.text }]}>{match.team1.charAt(0)}</Text>
+                                    {match.team1Logo ? (
+                                        <Image source={{ uri: match.team1Logo }} style={styles.teamLogoImage} />
+                                    ) : (
+                                        <Text style={[styles.teamBadgeText, { color: colors.text }]}>{match.team1.charAt(0)}</Text>
+                                    )}
                                 </View>
                                 <View style={[styles.teamBadge, styles.teamBadgeOverlap, { backgroundColor: colors.surfaceAlt, borderColor: colors.surface }]}>
-                                    <Text style={[styles.teamBadgeText, { color: colors.text }]}>{match.team2.charAt(0)}</Text>
+                                    {match.team2Logo ? (
+                                        <Image source={{ uri: match.team2Logo }} style={styles.teamLogoImage} />
+                                    ) : (
+                                        <Text style={[styles.teamBadgeText, { color: colors.text }]}>{match.team2.charAt(0)}</Text>
+                                    )}
                                 </View>
                             </View>
                             <Text style={[styles.teamsText, { color: colors.text }]}>
@@ -682,6 +691,11 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 10,
         fontWeight: '700',
+    },
+    teamLogoImage: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 16,
     },
     teamsText: {
         fontSize: 14,

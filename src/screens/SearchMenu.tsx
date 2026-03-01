@@ -569,7 +569,11 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                 <View style={styles.teamsRow}>
                                                                     <View style={styles.teamColumn}>
                                                                         <View style={[styles.teamBadgeLarge, { backgroundColor: match.home.color, borderColor: themeMode === 'light' ? '#f1f5f9' : '#2a2a30' }]}>
-                                                                            <Text style={styles.teamBadgeTextLarge}>{match.home.badge}</Text>
+                                                                            {match.home.logo ? (
+                                                                                <Image source={{ uri: match.home.logo }} style={styles.teamLogoImageLarge} />
+                                                                            ) : (
+                                                                                <Text style={styles.teamBadgeTextLarge}>{match.home.badge}</Text>
+                                                                            )}
                                                                         </View>
                                                                         <Text style={[styles.teamName, { color: colors.text }]}>{match.home.name}</Text>
                                                                     </View>
@@ -582,7 +586,11 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                     </View>
                                                                     <View style={styles.teamColumn}>
                                                                         <View style={[styles.teamBadgeLarge, { backgroundColor: match.away.color, borderColor: themeMode === 'light' ? '#f1f5f9' : '#2a2a30' }]}>
-                                                                            <Text style={styles.teamBadgeTextLarge}>{match.away.badge}</Text>
+                                                                            {match.away.logo ? (
+                                                                                <Image source={{ uri: match.away.logo }} style={styles.teamLogoImageLarge} />
+                                                                            ) : (
+                                                                                <Text style={styles.teamBadgeTextLarge}>{match.away.badge}</Text>
+                                                                            )}
                                                                         </View>
                                                                         <Text style={[styles.teamName, { color: colors.text }]}>{match.away.name}</Text>
                                                                     </View>
@@ -947,6 +955,11 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: "900",
         fontSize: 12,
+    },
+    teamLogoImageLarge: {
+        width: "100%",
+        height: "100%",
+        borderRadius: 34,
     },
     vsColumnNew: {
         alignItems: "center",
