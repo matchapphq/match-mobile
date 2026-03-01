@@ -71,7 +71,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
     const [error, setError] = useState<string | null>(null);
     const [showAllMatches, setShowAllMatches] = useState(false);
     const [activeTab, setActiveTab] = useState<TabFilter>("all");
-    const [selectedDateIndex, setSelectedDateIndex] = useState(1); // Default to second date (like "Mer 04")
+    const [selectedDateIndex, setSelectedDateIndex] = useState(0); // Default to today (index 0)
     const [selectedVenueFilter, setSelectedVenueFilter] = useState<"nearby" | "top_rated" | "open_now">("nearby");
     
     // Debounced search state
@@ -173,12 +173,15 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
         };
     }, [searchQuery]);
 
-    // Reset pagination when tab or selected date changes
+    // Reset pagination and results when tab or selected date changes
     useEffect(() => {
         setMatchPage(1);
         setVenuePage(1);
         setHasMoreMatches(true);
         setHasMoreVenues(true);
+        // Clear results immediately to show loading state for new filters
+        setMatchResults([]);
+        setVenueResults([]);
     }, [activeTab, selectedDateIndex]);
 
     // Fetch search results based on debounced query and active tab
@@ -187,13 +190,16 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
             if (!append) {
                 setError(null);
                 setIsLoading(true);
+                // Ensure results are cleared for a fresh search
+                setMatchResults([]);
+                setVenueResults([]);
             } else {
                 setIsLoadingMore(true);
             }
 
-            // When query is empty, use fetchSearchData to get all venues/matches
-            // The backend search endpoint may return nothing for empty queries
-            if (!debouncedQuery.trim()) {
+            // When query is empty and we are on the 'all' tab, use fetchSearchData to get trends/recent/all
+            // Otherwise, use searchPaginated to ensure filters (like date) are respected
+            if (!debouncedQuery.trim() && activeTab === "all") {
                 const initialData = await mobileApi.fetchSearchData();
                 setTrends(initialData.trends);
                 setRecentSearches(initialData.recentSearches);
