@@ -256,7 +256,7 @@ export const mobileApi = {
     }> {
         try {
             // Call backend paginated search endpoint
-            const geoParams = (lat != null && lng != null) ? { lat, lng, radius_km: 50 } : {};
+            const geoParams = (lat != null && lng != null) ? { lat, lng, radius_km: 50000 } : {};
             const response = await apiService.searchPaginated({
                 q: query,
                 type,
