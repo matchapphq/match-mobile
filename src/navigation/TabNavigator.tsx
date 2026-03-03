@@ -2,7 +2,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import MapScreen from '../screens/MapScreen';
-import SearchMenu from '../screens/SearchMenu';
+// import SearchMenu from '../screens/SearchMenu';
+import TestSearchScreen from '../screens/TestSearchScreen';
 import UserBookedScreen from '../screens/UserBookedScreen';
 import BottomTabPill from '../components/BottomTabPill';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -25,7 +26,8 @@ const TabNavigator = () => {
             initialRouteName="Map"
         >
             <Tab.Screen name="Map" component={MapScreen} options={{ headerShown: false }} />
-            <Tab.Screen name="Search" component={SearchMenu} options={{ headerShown: false }} />
+            {/* <Tab.Screen name="Search" component={SearchMenu} options={{ headerShown: false }} /> */}
+            <Tab.Screen name="Search" component={TestSearchScreen} options={{ headerShown: false }} />
             <Tab.Screen name="Reservations" component={UserBookedScreen} options={{ headerShown: false }} />
             <Tab.Screen name="Profile" component={ProfileScreen} options={{ headerShown: false }} />
         </Tab.Navigator>

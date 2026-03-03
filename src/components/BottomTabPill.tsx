@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform, Dimensions } from "react-native";
 import { BlurView } from "expo-blur";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useStore } from "../store/useStore";
@@ -10,6 +10,8 @@ interface BottomTabPillProps {
     descriptors: any;
     navigation: any;
 }
+
+const NAV_BAR_WIDTH = Math.min(384, Dimensions.get("window").width - 24);
 
 const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) => {
     const { colors, computedTheme: themeMode } = useStore();
@@ -115,8 +117,9 @@ const styles = StyleSheet.create({
     navBar: {
         position: 'absolute',
         bottom: 32,
-        left: 16,
-        right: 16,
+        width: NAV_BAR_WIDTH,
+        left: '50%',
+        transform: [{ translateX: -NAV_BAR_WIDTH / 2 }],
         flexDirection: 'row',
         justifyContent: 'space-between',
         borderRadius: 32,
@@ -128,8 +131,6 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.15,
         shadowRadius: 12,
         zIndex: 50,
-        maxWidth: 384,
-        alignSelf: 'center',
         overflow: 'hidden', // Required for BlurView to clip correctly
     },
     navItem: {
