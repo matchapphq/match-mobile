@@ -23,7 +23,6 @@ import MapScreenFilter, {
     DEFAULT_FILTER_SELECTIONS,
     FilterSelections,
 } from "../components/MapScreenFilter";
-import EmptyState from "../components/EmptyState";
 import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
 import { mobileApi, Venue, VenueMatch } from "../services/mobileApi";
@@ -804,21 +803,28 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
 
             {/* Empty State - No venues found (auto-dismisses after 4 seconds) */}
             {noVenuesFound && !isSearchingArea && (
-                <View style={styles.emptyStateContainer}>
-                    <EmptyState
-                        icon="search-off"
-                        title="Aucun lieu trouvé"
-                        description="Essaye de changer de sport ou de zoomer en arrière."
+                <View style={styles.emptyStateContainer} pointerEvents="none">
+                    <View
                         style={[
-                            styles.emptyStateCard, 
-                            { 
-                                backgroundColor: colors.surfaceDark, 
+                            styles.emptyStateCard,
+                            {
+                                backgroundColor: colors.surfaceDark,
                                 borderColor: colors.border,
-                                paddingVertical: 20,
-                                paddingHorizontal: 20,
-                            }
+                            },
                         ]}
-                    />
+                    >
+                        <View style={[styles.emptyStateIcon, { backgroundColor: colors.surfaceAlt }]}>
+                            <MaterialIcons name="search-off" size={18} color={colors.primary} />
+                        </View>
+                        <View style={styles.emptyStateContent}>
+                            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>
+                                Aucun lieu trouvé
+                            </Text>
+                            <Text style={[styles.emptyStateSubtitle, { color: colors.textMuted }]}>
+                                Essaye de changer de sport ou de zoomer en arrière.
+                            </Text>
+                        </View>
+                    </View>
                 </View>
             )}
 
@@ -1593,11 +1599,15 @@ const styles = StyleSheet.create({
         left: 16,
         right: 16,
         zIndex: 20,
+        alignItems: 'center',
     },
     emptyStateCard: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        padding: 16,
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: 420,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
         borderRadius: 16,
         backgroundColor: 'rgba(30, 41, 59, 0.95)',
         borderWidth: 1,
@@ -1610,9 +1620,9 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     emptyStateIcon: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: 32,
+        height: 32,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1623,12 +1633,12 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: 'bold',
         color: COLORS.white,
-        marginBottom: 4,
+        marginBottom: 2,
     },
     emptyStateSubtitle: {
         fontSize: 12,
         color: COLORS.slate400,
-        lineHeight: 18,
+        lineHeight: 16,
     },
 });
 
