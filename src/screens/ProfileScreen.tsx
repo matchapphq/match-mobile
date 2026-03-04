@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: 'rgba(90, 3, 207,0.15)',
+    backgroundColor: COLORS.primary15,
   },
   badgeLabel: {
     color: COLORS.primary,

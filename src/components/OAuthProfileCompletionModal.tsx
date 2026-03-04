@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useStore } from "../store/useStore";
+import { COLORS } from "../constants/colors";
 import {
     BUDGET_OPTIONS,
     MOOD_OPTIONS,
@@ -152,7 +153,7 @@ const OAuthProfileCompletionModal = () => {
                                                 styles.chip,
                                                 {
                                                     borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? "rgba(90, 3, 207,0.15)" : colors.surface,
+                                                    backgroundColor: selected ? COLORS.primary15 : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setSports((prev) => toggleValue(prev, option.id))}
@@ -183,7 +184,7 @@ const OAuthProfileCompletionModal = () => {
                                                 styles.chip,
                                                 {
                                                     borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? "rgba(90, 3, 207,0.15)" : colors.surface,
+                                                    backgroundColor: selected ? COLORS.primary15 : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setAmbiances((prev) => toggleValue(prev, option.id))}
@@ -214,7 +215,7 @@ const OAuthProfileCompletionModal = () => {
                                                 styles.chip,
                                                 {
                                                     borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? "rgba(90, 3, 207,0.15)" : colors.surface,
+                                                    backgroundColor: selected ? COLORS.primary15 : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setVenueTypes((prev) => toggleValue(prev, option.id))}
@@ -245,7 +246,7 @@ const OAuthProfileCompletionModal = () => {
                                                 styles.budgetOption,
                                                 {
                                                     borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? "rgba(90, 3, 207,0.15)" : colors.surface,
+                                                    backgroundColor: selected ? COLORS.primary15 : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setBudget(option.id)}

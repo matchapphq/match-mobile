@@ -12,6 +12,7 @@ import { useNavigation, CommonActions, useRoute, RouteProp } from "@react-naviga
 import { LinearGradient } from "expo-linear-gradient";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
+import { COLORS } from "../constants/colors";
 
 type RouteParams = {
     DeleteAccountSuccess: {
@@ -56,7 +57,7 @@ const DeleteAccountSuccessScreen = () => {
                 {/* Logo Section */}
                 <View style={styles.logoSection}>
                     <LinearGradient
-                        colors={["#5a03cf", "#7a23ef"]}
+                        colors={[COLORS.primary, COLORS.primaryDark]}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.logoBox}
@@ -112,7 +113,7 @@ const styles = StyleSheet.create({
         marginLeft: -250,
         marginTop: -250,
         borderRadius: 250,
-        backgroundColor: "rgba(90,3,207,0.05)",
+        backgroundColor: COLORS.primary05,
         opacity: 0.8,
     },
     mainContent: {
@@ -133,7 +134,7 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         marginBottom: 24,
         transform: [{ rotate: "3deg" }],
-        shadowColor: "#5a03cf",
+        shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.3,
         shadowRadius: 20,
@@ -183,8 +184,8 @@ const styles = StyleSheet.create({
         gap: 8,
         paddingVertical: 16,
         borderRadius: 16,
-        backgroundColor: "#5a03cf",
-        shadowColor: "#5a03cf",
+        backgroundColor: COLORS.primary,
+        shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,

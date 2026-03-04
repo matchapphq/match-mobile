@@ -608,9 +608,9 @@ const styles = StyleSheet.create({
     },
     liveBadge: {
         marginTop: 4,
-        backgroundColor: 'rgba(90, 3, 207, 0.1)',
+        backgroundColor: COLORS.primary10,
         borderWidth: 1,
-        borderColor: 'rgba(90, 3, 207, 0.2)',
+        borderColor: COLORS.primary20,
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 99,

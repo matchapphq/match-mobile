@@ -15,6 +15,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
+import { COLORS } from "../constants/colors";
 
 const REASONS = [
     "Je reçois trop de notifications",
@@ -80,8 +81,8 @@ const DeleteAccountConfirmScreen = () => {
                     <View style={{ width: 44 }} />
                 </View>
                 <View style={styles.progressBarContainer}>
-                    <View style={[styles.progressBarSegment, { backgroundColor: "#5a03cf" }]} />
-                    <View style={[styles.progressBarSegment, { backgroundColor: "#5a03cf" }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
                     <View style={[styles.progressBarSegment, { backgroundColor: colors.border }]} />
                 </View>
             </View>
@@ -104,7 +105,7 @@ const DeleteAccountConfirmScreen = () => {
                                 style={[
                                     styles.reasonCard,
                                     { backgroundColor: colors.surface, borderColor: isSelected ? colors.primary : colors.border },
-                                    isSelected && { backgroundColor: "rgba(90, 3, 207,0.1)" },
+                                    isSelected && { backgroundColor: COLORS.primary10 },
                                 ]}
                                 activeOpacity={0.85}
                                 onPress={() => setSelectedReason(reason)}

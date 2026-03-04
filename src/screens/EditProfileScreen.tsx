@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { hapticFeedback } from "../utils/haptics";
+import { COLORS } from "../constants/colors";
 
 const MAX_BIO = 150;
 const AVATAR_PLACEHOLDER = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400";
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         borderRadius: 32,
         alignItems: "center",
-        shadowColor: "#5a03cf",
+        shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.35,
         shadowRadius: 20,

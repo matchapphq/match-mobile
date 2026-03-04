@@ -228,7 +228,7 @@ const MatchDetailScreen = ({
                 <View style={styles.contentWrapper}>
                     <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         <View style={styles.infoHeader}>
-                            <View style={[styles.infoIcon, { backgroundColor: 'rgba(90, 3, 207,0.12)', borderColor: 'rgba(90, 3, 207,0.3)' }]}>
+                            <View style={[styles.infoIcon, { backgroundColor: COLORS.primary12, borderColor: COLORS.primary30 }]}>
                                 <MaterialIcons name="stadium" size={20} color={colors.primary} />
                             </View>
                             <View style={{ flex: 1 }}>
@@ -326,7 +326,7 @@ const MatchDetailScreen = ({
                         </ScrollView>
                     ) : (
                         <View style={[styles.emptyVenuesContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <View style={[styles.emptyVenuesIcon, { backgroundColor: 'rgba(90, 3, 207,0.12)' }]}>
+                            <View style={[styles.emptyVenuesIcon, { backgroundColor: COLORS.primary12, }]}>
                                 <MaterialIcons name="tv-off" size={32} color={colors.primary} />
                             </View>
                             <Text style={[styles.emptyVenuesTitle, { color: colors.text }]}>
@@ -467,11 +467,11 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 14,
-        backgroundColor: "rgba(90, 3, 207,0.12)",
+        backgroundColor: COLORS.primary12,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: "rgba(90, 3, 207,0.3)",
+        borderColor: COLORS.primary30,
     },
     infoLabel: {
         color: COLORS.textMuted,
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 2,
-        backgroundColor: "rgba(90, 3, 207,0.12)",
+        backgroundColor: COLORS.primary12,
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 12,

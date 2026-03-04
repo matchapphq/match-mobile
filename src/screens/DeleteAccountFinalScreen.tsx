@@ -16,6 +16,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 import { apiService } from "../services/api";
 import { usePostHog } from "posthog-react-native";
+import { COLORS } from "../constants/colors";
 
 type RouteParams = {
     DeleteAccountFinal: {
@@ -125,9 +126,9 @@ const DeleteAccountFinalScreen = () => {
                     <View style={{ width: 44 }} />
                 </View>
                 <View style={styles.progressBarContainer}>
-                    <View style={[styles.progressBarSegment, { backgroundColor: "#5a03cf" }]} />
-                    <View style={[styles.progressBarSegment, { backgroundColor: "#5a03cf" }]} />
-                    <View style={[styles.progressBarSegment, { backgroundColor: "#5a03cf" }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
                 </View>
             </View>
 

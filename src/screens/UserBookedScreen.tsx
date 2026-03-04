@@ -285,7 +285,7 @@ const UserBookedScreen = () => {
           </TouchableOpacity>
           {isConfirmed ? (
             <TouchableOpacity
-              style={[styles.upcomingTicketButton, { backgroundColor: 'rgba(90, 3, 207,0.1)' }]}
+              style={[styles.upcomingTicketButton, { backgroundColor: colors.primary20 }]}
               onPress={() => handleOpenQrModal(booking)}
             >
               <MaterialIcons name="qr-code" size={14} color={colors.primary} />
@@ -1203,7 +1203,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    shadowColor: '#5a03cf',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
@@ -1476,7 +1476,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
-    shadowColor: '#5a03cf',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 18,
