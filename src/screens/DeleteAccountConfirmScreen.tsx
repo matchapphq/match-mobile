@@ -80,8 +80,8 @@ const DeleteAccountConfirmScreen = () => {
                     <View style={{ width: 44 }} />
                 </View>
                 <View style={styles.progressBarContainer}>
-                    <View style={[styles.progressBarSegment, { backgroundColor: "#f47b25" }]} />
-                    <View style={[styles.progressBarSegment, { backgroundColor: "#f47b25" }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: "#5a03cf" }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: "#5a03cf" }]} />
                     <View style={[styles.progressBarSegment, { backgroundColor: colors.border }]} />
                 </View>
             </View>
@@ -104,7 +104,7 @@ const DeleteAccountConfirmScreen = () => {
                                 style={[
                                     styles.reasonCard,
                                     { backgroundColor: colors.surface, borderColor: isSelected ? colors.primary : colors.border },
-                                    isSelected && { backgroundColor: "rgba(244,123,37,0.1)" },
+                                    isSelected && { backgroundColor: "rgba(90, 3, 207,0.1)" },
                                 ]}
                                 activeOpacity={0.85}
                                 onPress={() => setSelectedReason(reason)}

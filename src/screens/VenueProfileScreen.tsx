@@ -368,7 +368,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
 
 const InfoRow = ({ icon, title, subtitle, iconColor, highlighted, colors }: any) => (
     <View style={styles.infoRow}>
-        <View style={[styles.iconBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }, highlighted && { backgroundColor: 'rgba(244, 123, 37, 0.1)', borderColor: 'rgba(244, 123, 37, 0.2)' }]}>
+        <View style={[styles.iconBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }, highlighted && { backgroundColor: COLORS.primary10, borderColor: COLORS.primary20 }]}>
             <MaterialIcons name={icon} size={20} color={iconColor || colors.textSecondary} />
         </View>
         <View style={styles.infoTextContainer}>
@@ -608,9 +608,9 @@ const styles = StyleSheet.create({
     },
     liveBadge: {
         marginTop: 4,
-        backgroundColor: 'rgba(244, 123, 37, 0.1)',
+        backgroundColor: 'rgba(90, 3, 207, 0.1)',
         borderWidth: 1,
-        borderColor: 'rgba(244, 123, 37, 0.2)',
+        borderColor: 'rgba(90, 3, 207, 0.2)',
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 99,

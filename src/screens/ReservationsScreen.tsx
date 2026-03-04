@@ -525,7 +525,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                                             </View>
                                         </ImageBackground>
 
-                                        <View style={[styles.matchFooter, isSelected ? { backgroundColor: 'rgba(244, 123, 37, 0.12)' } : { backgroundColor: 'transparent' }]}>
+                                        <View style={[styles.matchFooter, isSelected ? { backgroundColor: COLORS.primary12 } : { backgroundColor: 'transparent' }]}>
                                             <View style={styles.matchStatusRow}>
                                                 <MaterialIcons
                                                     name={isSelected ? "check-circle" : "sports-soccer"}
@@ -546,7 +546,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
 
                 {/* Arrival Time */}
                 <View style={styles.section}>
-                    <View style={[styles.arrivalCard, { backgroundColor: colors.surface, borderColor: 'rgba(244, 123, 37, 0.3)' }]}>
+                    <View style={[styles.arrivalCard, { backgroundColor: colors.surface, borderColor: COLORS.primary30 }]}>
                         <View style={styles.arrivalInfo}>
                             <View style={styles.arrivalIconBox}>
                                 <MaterialIcons name="access-time" size={20} color={colors.primary} />
@@ -581,7 +581,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                 </View>
 
                 {/* Info Note */}
-                <View style={[styles.infoNote, { backgroundColor: 'rgba(244,123,37,0.1)', padding: 12, borderRadius: 12, flexDirection: 'row', gap: 10 }]}>
+                <View style={[styles.infoNote, { backgroundColor: COLORS.primary10, padding: 12, borderRadius: 12, flexDirection: 'row', gap: 10 }]}>
                     <MaterialIcons name="info" size={20} color={colors.primary} style={{ marginTop: 2 }} />
                     <Text style={[styles.infoNoteText, { color: colors.textSecondary, flex: 1, fontSize: 13, lineHeight: 18 }]}>
                         <Text style={{ fontWeight: 'bold', color: colors.primary }}>Note: </Text>
@@ -839,7 +839,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     matchFooterSelected: {
-        backgroundColor: 'rgba(244, 123, 37, 0.12)',
+        backgroundColor: COLORS.primary12,
     },
     matchFooterUnselected: {
         backgroundColor: 'transparent',
@@ -872,7 +872,7 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: 'rgba(244, 123, 37, 0.1)',
+        backgroundColor: COLORS.primary10,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -943,7 +943,7 @@ const styles = StyleSheet.create({
         gap: 12,
         backgroundColor: COLORS.surfaceAlt,
         borderWidth: 1,
-        borderColor: 'rgba(244, 123, 37, 0.25)',
+        borderColor: COLORS.primary25,
         padding: 16,
         borderRadius: 16,
         marginBottom: 24,

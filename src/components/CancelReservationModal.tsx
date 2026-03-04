@@ -154,7 +154,7 @@ const CancelReservationModal: React.FC<CancelReservationModalProps> = ({
 
               {/* Cancel Conditions */}
               <View style={styles.conditionsCard}>
-                <MaterialIcons name="info" size={20} color="#fb923c" style={{ marginTop: 2 }} />
+                <MaterialIcons name="info" size={20} color={COLORS.primary} style={{ marginTop: 2 }} />
                 <View style={styles.conditionsContent}>
                   <Text style={styles.conditionsTitle}>Conditions d'annulation</Text>
                   <Text style={styles.conditionsText}>
@@ -286,11 +286,11 @@ const styles = StyleSheet.create({
   conditionsCard: {
     flexDirection: 'row',
     gap: 12,
-    backgroundColor: 'rgba(249, 115, 22, 0.05)',
+    backgroundColor: COLORS.primary05,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(249, 115, 22, 0.1)',
+    borderColor: COLORS.primary10,
   },
   conditionsContent: {
     flex: 1,
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#f97316',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

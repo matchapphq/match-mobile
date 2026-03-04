@@ -579,7 +579,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                     </View>
                                                                     <View style={styles.vsColumnNew}>
                                                                         <Text style={[styles.vsLabel, { color: themeMode === 'light' ? '#e2e8f0' : 'rgba(255,255,255,0.1)' }]}>VS</Text>
-                                                                        <View style={[styles.broadcastPill, { backgroundColor: 'rgba(244,123,37,0.1)', borderColor: 'rgba(244,123,37,0.2)' }]}>
+                                                                        <View style={[styles.broadcastPill, { backgroundColor: COLORS.primary10, borderColor: COLORS.primary20 }]}>
                                                                             <View style={styles.broadcastDotAnimated} />
                                                                             <Text style={styles.broadcastPillText}>Diffusé</Text>
                                                                         </View>
@@ -1125,7 +1125,7 @@ const styles = StyleSheet.create({
         color: COLORS.text,
         fontSize: 11,
         fontWeight: "700",
-        backgroundColor: "rgba(244,123,37,0.15)",
+        backgroundColor: COLORS.primary15,
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 999,
@@ -1248,7 +1248,7 @@ const styles = StyleSheet.create({
     broadcastBadge: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "rgba(244,123,37,0.1)",
+        backgroundColor: COLORS.primary10,
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 999,

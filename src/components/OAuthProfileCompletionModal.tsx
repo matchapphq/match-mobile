@@ -152,7 +152,7 @@ const OAuthProfileCompletionModal = () => {
                                                 styles.chip,
                                                 {
                                                     borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? "rgba(244,123,37,0.15)" : colors.surface,
+                                                    backgroundColor: selected ? "rgba(90, 3, 207,0.15)" : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setSports((prev) => toggleValue(prev, option.id))}
@@ -183,7 +183,7 @@ const OAuthProfileCompletionModal = () => {
                                                 styles.chip,
                                                 {
                                                     borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? "rgba(244,123,37,0.15)" : colors.surface,
+                                                    backgroundColor: selected ? "rgba(90, 3, 207,0.15)" : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setAmbiances((prev) => toggleValue(prev, option.id))}
@@ -214,7 +214,7 @@ const OAuthProfileCompletionModal = () => {
                                                 styles.chip,
                                                 {
                                                     borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? "rgba(244,123,37,0.15)" : colors.surface,
+                                                    backgroundColor: selected ? "rgba(90, 3, 207,0.15)" : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setVenueTypes((prev) => toggleValue(prev, option.id))}
@@ -245,7 +245,7 @@ const OAuthProfileCompletionModal = () => {
                                                 styles.budgetOption,
                                                 {
                                                     borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? "rgba(244,123,37,0.15)" : colors.surface,
+                                                    backgroundColor: selected ? "rgba(90, 3, 207,0.15)" : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setBudget(option.id)}

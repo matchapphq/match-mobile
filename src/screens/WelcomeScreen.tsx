@@ -64,7 +64,8 @@ const LOOP_SLIDES: HeroSlide[] = [
 ];
 
 const AUTO_SCROLL_INTERVAL_MS = 10000;
-const BRAND_PRIMARY = "#f47b25";
+import { COLORS } from "../constants/colors";
+const BRAND_PRIMARY = COLORS.primary;
 const { height, width } = Dimensions.get("window");
 
 const WelcomeScreen = () => {

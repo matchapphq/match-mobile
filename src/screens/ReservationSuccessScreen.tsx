@@ -54,7 +54,7 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                 {/* Header Section */}
                 <View style={styles.header}>
                     <Animated.View style={[styles.iconWrapper, { transform: [{ scale: scaleAnim }] }]}>
-                        <View style={[styles.iconGlow, { backgroundColor: 'rgba(244, 123, 37, 0.2)', shadowColor: colors.primary }]} />
+                        <View style={[styles.iconGlow, { backgroundColor: 'rgba(90, 3, 207, 0.2)', shadowColor: colors.primary }]} />
                         <View style={[styles.iconCircle, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
                             <MaterialIcons name="check" size={48} color={colors.white} />
                         </View>
@@ -87,7 +87,7 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                         {/* Date & Time Row */}
                         <View style={styles.detailsRow}>
                             <View style={styles.detailItem}>
-                                <View style={[styles.detailIconContainer, { backgroundColor: 'rgba(244, 123, 37, 0.1)' }]}>
+                                <View style={[styles.detailIconContainer, { backgroundColor: 'rgba(90, 3, 207, 0.1)' }]}>
                                     <MaterialIcons name="calendar-month" size={20} color={colors.primary} />
                                 </View>
                                 <View>
@@ -97,7 +97,7 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                             </View>
 
                             <View style={[styles.detailItem, { flexDirection: "row-reverse" }]}>
-                                <View style={[styles.detailIconContainer, { backgroundColor: 'rgba(244, 123, 37, 0.1)' }]}>
+                                <View style={[styles.detailIconContainer, { backgroundColor: 'rgba(90, 3, 207, 0.1)' }]}>
                                     <MaterialIcons name="schedule" size={20} color={colors.primary} />
                                 </View>
                                 <View style={{ alignItems: "flex-end" }}>
@@ -112,7 +112,7 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                         {/* Guests Row - Explicitly requested to be fixed */}
                         <View style={styles.detailsRow}>
                             <View style={styles.detailItem}>
-                                <View style={[styles.detailIconContainer, { backgroundColor: 'rgba(244, 123, 37, 0.1)' }]}>
+                                <View style={[styles.detailIconContainer, { backgroundColor: 'rgba(90, 3, 207, 0.1)' }]}>
                                     <MaterialIcons name="group" size={20} color={colors.primary} />
                                 </View>
                                 <View>

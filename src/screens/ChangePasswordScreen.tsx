@@ -392,11 +392,11 @@ const styles = StyleSheet.create({
         marginTop: 40,
     },
     submitButton: {
-        backgroundColor: "#f47b25",
+        backgroundColor: "#5a03cf",
         paddingVertical: 16,
         borderRadius: 9999,
         alignItems: "center",
-        shadowColor: "#f47b25",
+        shadowColor: "#5a03cf",
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,

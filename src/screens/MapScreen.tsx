@@ -1230,12 +1230,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(244, 123, 37, 0.1)',
+        backgroundColor: 'rgba(90, 3, 207, 0.1)',
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 4,
         borderWidth: 1,
-        borderColor: 'rgba(244, 123, 37, 0.2)',
+        borderColor: 'rgba(90, 3, 207, 0.2)',
     },
     broadcastText: {
         color: COLORS.primary,
@@ -1487,8 +1487,8 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
     },
     chipHighlighted: {
-        backgroundColor: 'rgba(244,123,37,0.15)',
-        borderColor: 'rgba(244,123,37,0.4)',
+        backgroundColor: 'rgba(90, 3, 207,0.15)',
+        borderColor: 'rgba(90, 3, 207,0.4)',
     },
     chipLabel: {
         color: COLORS.textMuted,

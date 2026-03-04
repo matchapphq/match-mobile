@@ -16,10 +16,11 @@ import { useNavigation } from "@react-navigation/native";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { useAppleAuth } from "../hooks/useAppleAuth";
 import { PRIVACY_URL, TERMS_URL } from "../constants/legalUrls";
+import { COLORS } from "../constants/colors";
 
 const HERO_IMAGE =
     "https://images.unsplash.com/photo-1572116469696-958721b7d6ca?q=80&w=2574&auto=format&fit=crop";
-const BRAND_PRIMARY = "#f47b25";
+const BRAND_PRIMARY = COLORS.primary;
 const { width } = Dimensions.get("window");
 
 const AuthEntryScreen = () => {

@@ -216,8 +216,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   accordionActive: {
-    borderColor: 'rgba(244,123,37,0.4)',
-    backgroundColor: 'rgba(244,123,37,0.08)',
+    borderColor: 'rgba(90, 3, 207,0.4)',
+    backgroundColor: 'rgba(90, 3, 207,0.08)',
   },
   accordionHeader: {
     flexDirection: 'row',
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   liveChatCard: {
-    backgroundColor: '#F47B25',
+    backgroundColor: '#5a03cf',
   },
   helpCardLeft: {
     flexDirection: 'row',
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   helpCardSubtitle: {
-    color: 'rgba(255,255,255,0.7)', // default for liveChatCard (orange bg)
+    color: 'rgba(255,255,255,0.7)', // default for liveChatCard (purple bg)
     fontSize: 12,
     marginTop: 2,
   },

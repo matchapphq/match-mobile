@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         borderRadius: 32,
         alignItems: "center",
-        shadowColor: "#f47b25",
+        shadowColor: "#5a03cf",
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.35,
         shadowRadius: 20,
