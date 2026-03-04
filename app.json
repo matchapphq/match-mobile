@@ -35,7 +35,7 @@
       "package": "com.matchapps.match",
       "notification": {
         "icon": "./assets/logo_app.png",
-        "color": "#f47b25"
+        "color": "#5a03cf"
       }
     },
     "web": {

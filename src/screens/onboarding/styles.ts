@@ -1,6 +1,6 @@
 import { Dimensions, StyleSheet } from "react-native";
+import { COLORS } from "../../constants/colors";
 
-export const BRAND_PRIMARY = "#f47b25";
 export const SURFACE_DARK = "#1c1c21";
 export const BG_DARK = "#0b0b0f";
 export const SUCCESS = "#34d399";
@@ -81,9 +81,9 @@ export const sharedStyles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 16,
-        backgroundColor: `${BRAND_PRIMARY}20`,
+        backgroundColor: COLORS.primary20,
         borderWidth: 1,
-        borderColor: `${BRAND_PRIMARY}30`,
+        borderColor: COLORS.primary30,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 8,
@@ -94,7 +94,7 @@ export const sharedStyles = StyleSheet.create({
         backgroundColor: SURFACE_DARK,
         borderRadius: 16,
         borderWidth: 2,
-        borderColor: `${BRAND_PRIMARY}50`,
+        borderColor: COLORS.primary50,
         paddingHorizontal: 16,
         height: 64,
         marginTop: 16,
@@ -102,7 +102,7 @@ export const sharedStyles = StyleSheet.create({
     atSymbol: {
         fontSize: 24,
         fontWeight: "600",
-        color: BRAND_PRIMARY,
+        color: COLORS.primary,
         marginRight: 4,
     },
     usernameInput: {
@@ -162,7 +162,7 @@ export const sharedStyles = StyleSheet.create({
         borderColor: "transparent",
     },
     sportOptionSelected: {
-        backgroundColor: BRAND_PRIMARY,
+        backgroundColor: COLORS.primary,
     },
     sportLeft: {
         flexDirection: "row",
@@ -211,7 +211,7 @@ export const sharedStyles = StyleSheet.create({
         gap: 12,
     },
     moodCardSelected: {
-        borderColor: BRAND_PRIMARY,
+        borderColor: COLORS.primary,
         backgroundColor: "#232329",
     },
     moodLabel: {
@@ -238,7 +238,7 @@ export const sharedStyles = StyleSheet.create({
     },
     venueOptionSelected: {
         backgroundColor: SURFACE_DARK,
-        borderColor: BRAND_PRIMARY,
+        borderColor: COLORS.primary,
     },
     venueLeft: {
         flexDirection: "row",
@@ -255,7 +255,7 @@ export const sharedStyles = StyleSheet.create({
         justifyContent: "center",
     },
     venueIconSelected: {
-        backgroundColor: BRAND_PRIMARY,
+        backgroundColor: COLORS.primary,
     },
     venueTexts: {
         flex: 1,
@@ -283,8 +283,8 @@ export const sharedStyles = StyleSheet.create({
         justifyContent: "center",
     },
     radioCircleSelected: {
-        borderColor: BRAND_PRIMARY,
-        backgroundColor: BRAND_PRIMARY,
+        borderColor: COLORS.primary,
+        backgroundColor: COLORS.primary,
     },
     budgetList: {
         gap: 16,
@@ -302,7 +302,7 @@ export const sharedStyles = StyleSheet.create({
         position: "relative",
     },
     budgetOptionSelected: {
-        borderColor: BRAND_PRIMARY,
+        borderColor: COLORS.primary,
     },
     budgetCenter: {
         alignItems: "center",

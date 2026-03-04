@@ -1,6 +1,19 @@
 export const BASE_COLORS = {
-    primary: "#f47b25",
-    primaryDark: "#d6661a",
+    primary: "#5a03cf",
+    primaryDark: "#4a02af",
+    
+    // Primary with Opacity variants (Purple #5a03cf / RGB 90, 3, 207)
+    primary05: "rgba(90, 3, 207, 0.05)",
+    primary08: "rgba(90, 3, 207, 0.08)",
+    primary10: "rgba(90, 3, 207, 0.1)",
+    primary12: "rgba(90, 3, 207, 0.12)",
+    primary15: "rgba(90, 3, 207, 0.15)",
+    primary20: "rgba(90, 3, 207, 0.2)",
+    primary25: "rgba(90, 3, 207, 0.25)",
+    primary30: "rgba(90, 3, 207, 0.3)",
+    primary40: "rgba(90, 3, 207, 0.4)",
+    primary50: "rgba(90, 3, 207, 0.5)",
+    primary80: "rgba(90, 3, 207, 0.8)",
 
     sky400: "#38bdf8",
     red400: "#f87171",
