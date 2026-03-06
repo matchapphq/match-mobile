@@ -125,7 +125,7 @@ const EditProfileScreen = () => {
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity onPress={handlePickImage}>
-                        <Text style={[styles.changePhotoText, { color: colors.primary }]}>Changer la photo de profil</Text>
+                        <Text style={[styles.changePhotoText, { color: colors.accent }]}>Changer la photo de profil</Text>
                     </TouchableOpacity>
                 </View>
 

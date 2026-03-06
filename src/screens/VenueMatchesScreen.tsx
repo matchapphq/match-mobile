@@ -174,8 +174,8 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                     <View style={styles.timeColumn}>
                         <Text style={[styles.matchTime, { color: colors.text }]}>{match.time}</Text>
                         {live ? (
-                            <View style={styles.liveBadge}>
-                                <Text style={styles.liveBadgeText}>En direct</Text>
+                            <View style={[styles.liveBadge, { backgroundColor: colors.accent10 }]}>
+                                <Text style={[styles.liveBadgeText, { color: colors.accent }]}>En direct</Text>
                             </View>
                         ) : soon ? (
                             <View style={[styles.soonBadge, { backgroundColor: colors.surfaceAlt }]}>
@@ -339,7 +339,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                             </View>
                             <Text style={styles.venueTitle}>{venueName || venue.name}</Text>
                             <View style={styles.addressRow}>
-                                <MaterialIcons name="location-on" size={18} color={colors.primary} />
+                                <MaterialIcons name="location-on" size={18} color={colors.accent} />
                                 <Text style={styles.addressText}>{venueAddress || venue.address}</Text>
                             </View>
                         </View>
@@ -361,7 +361,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                                 style={[
                                     styles.filterPill,
                                     activeFilter === filter.key 
-                                        ? { backgroundColor: colors.primary }
+                                        ? { backgroundColor: colors.accent }
                                         : { backgroundColor: themeMode === 'light' ? '#f1f5f9' : '#1c1c21', borderColor: colors.border }
                                 ]}
                                 onPress={() => setActiveFilter(filter.key)}

@@ -315,14 +315,14 @@ const ProfileScreen = () => {
             <Text style={[styles.bioText, { color: colors.textSecondary }]}>{profile.bio}</Text>
           )}
           <TouchableOpacity
-            style={styles.badge}
+            style={[styles.badge, { backgroundColor: colors.accent10 }]}
             activeOpacity={0.85}
             onPress={() =>
               Alert.alert(`Avantages Membre ${profile.tier}`, "Accédez à vos avantages exclusifs prochainement.")
             }
           >
-            <MaterialIcons name="emoji-events" size={16} color={colors.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.badgeLabel, { color: colors.primary }]}>{profile.badgeLabel}</Text>
+            <MaterialIcons name="emoji-events" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+            <Text style={[styles.badgeLabel, { color: colors.accent }]}>{profile.badgeLabel}</Text>
           </TouchableOpacity>
         </View>
 
@@ -360,7 +360,7 @@ const ProfileScreen = () => {
                             }
                           }}
                         >
-                          <View style={[styles.toggleTrack, isEnabled && styles.toggleTrackActive]}>
+                          <View style={[styles.toggleTrack, isEnabled && [styles.toggleTrackActive, { backgroundColor: colors.accent }]]}>
                             <View
                               style={[
                                 styles.toggleThumb,
@@ -457,7 +457,7 @@ const ProfileScreen = () => {
                         </View>
                       ) : row.badge ? (
                         <View style={styles.metaContainer}>
-                          <View style={[styles.badgeContainer, { backgroundColor: colors.primary }]}>
+                          <View style={[styles.badgeContainer, { backgroundColor: colors.accent }]}>
                             <Text style={styles.badgeText}>{row.badge}</Text>
                           </View>
                           <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />

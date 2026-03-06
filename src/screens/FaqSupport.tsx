@@ -86,7 +86,7 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
               value={search}
               onChangeText={setSearch}
               style={[styles.searchInput, { color: colors.text }]}
-              selectionColor={colors.primary}
+              selectionColor={colors.accent}
             />
           </View>
         </View>
@@ -96,13 +96,13 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
           {filteredFaq.map((item) => {
             const isOpen = openId === item.id;
             return (
-              <View key={item.id} style={[styles.accordion, { backgroundColor: colors.surface }, isOpen && styles.accordionActive]}>
+              <View key={item.id} style={[styles.accordion, { backgroundColor: colors.surface }, isOpen && [styles.accordionActive, { borderColor: colors.accent + '66', backgroundColor: colors.accent + '14' }]]}>
                 <TouchableOpacity style={styles.accordionHeader} onPress={() => toggleFaq(item.id)}>
-                  <Text style={[styles.accordionTitle, { color: colors.text }, isOpen && { color: colors.primary }]}>{item.question}</Text>
+                  <Text style={[styles.accordionTitle, { color: colors.text }, isOpen && { color: colors.accent }]}>{item.question}</Text>
                   <MaterialIcons
                     name="expand-more"
                     size={22}
-                    color={isOpen ? colors.primary : colors.textMuted}
+                    color={isOpen ? colors.accent : colors.textMuted}
                     style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
                   />
                 </TouchableOpacity>

@@ -112,12 +112,12 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
         
         for (let i = 0; i < fullStars; i++) {
             stars.push(
-                <MaterialIcons key={`full-${i}`} name="star" size={14} color={colors.primary} />
+                <MaterialIcons key={`full-${i}`} name="star" size={14} color={colors.accent} />
             );
         }
         if (hasHalfStar) {
             stars.push(
-                <MaterialIcons key="half" name="star-half" size={14} color={colors.primary} />
+                <MaterialIcons key="half" name="star-half" size={14} color={colors.accent} />
             );
         }
         return stars;
@@ -132,7 +132,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                         styles.ratingBarFill, 
                         { 
                             width: `${item.percentage}%`,
-                            backgroundColor: item.percentage > 0 ? colors.primary : colors.textMuted,
+                            backgroundColor: item.percentage > 0 ? colors.accent : colors.textMuted,
                         }
                     ]} 
                 />
@@ -168,7 +168,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                 </View>
                 <View style={[styles.ratingBadge, { backgroundColor: colors.surfaceAlt }]}>
                     <Text style={[styles.ratingBadgeText, { color: colors.text }]}>{(typeof review.rating === 'number' ? review.rating : (Number(review.rating) || 0)).toFixed(1)}</Text>
-                    <MaterialIcons name="star" size={10} color={colors.primary} />
+                    <MaterialIcons name="star" size={10} color={colors.accent} />
                 </View>
             </View>
 
@@ -197,12 +197,12 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                     <MaterialIcons 
                         name={review.isHelpful ? "thumb-up" : "thumb-up-off-alt"} 
                         size={18} 
-                        color={review.isHelpful ? colors.primary : colors.textMuted} 
+                        color={review.isHelpful ? colors.accent : colors.textMuted} 
                     />
                     <Text style={[
                         styles.helpfulText, 
                         { 
-                            color: review.isHelpful ? colors.primary : colors.textMuted,
+                            color: review.isHelpful ? colors.accent : colors.textMuted,
                             fontWeight: review.isHelpful ? '700' : '500',
                         }
                     ]}>

@@ -19,7 +19,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
   const { colors } = useStore();
   return (
     <View style={styles.container}>
-      <View style={styles.pill}>
+      <View style={[styles.pill, { borderColor: colors.accent15 }]}>
         <TouchableOpacity
           style={styles.iconButton}
           onPress={onListPress}
@@ -27,7 +27,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
           <MaterialCommunityIcons
             name="format-list-bulleted"
             size={28}
-            color={activeTab === 'list' ? colors.sky400 : colors.primary}
+            color={activeTab === 'list' ? colors.accent : colors.primary}
           />
         </TouchableOpacity>
 
@@ -38,7 +38,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
           <Ionicons
             name="search"
             size={28}
-            color={activeTab === 'search' ? colors.sky400 : colors.primary}
+            color={activeTab === 'search' ? colors.accent : colors.primary}
           />
         </TouchableOpacity>
 
@@ -49,7 +49,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
           <MaterialCommunityIcons
             name="tune-variant"
             size={28}
-            color={activeTab === 'filter' ? colors.sky400 : colors.primary}
+            color={activeTab === 'filter' ? colors.accent : colors.primary}
           />
         </TouchableOpacity>
       </View>
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 10,
     borderWidth: 1,
-    borderColor: 'rgba(123, 47, 254, 0.15)',
+    borderColor: 'rgba(0, 0, 0, 0.08)',
   },
   iconButton: {
     padding: 6,

@@ -206,7 +206,7 @@ const MatchDetailScreen = ({
 
                                     <View style={styles.heroCenter}>
                                         <Text style={styles.heroTime}>{match.kickoffTime}</Text>
-                                        <Text style={[styles.heroStatus, { color: colors.primary }]}>{match.statusLabel}</Text>
+                                        <Text style={[styles.heroStatus, { color: colors.accent }]}>{match.statusLabel}</Text>
                                     </View>
 
                                     <View style={styles.teamColumn}>
@@ -228,8 +228,8 @@ const MatchDetailScreen = ({
                 <View style={styles.contentWrapper}>
                     <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         <View style={styles.infoHeader}>
-                            <View style={[styles.infoIcon, { backgroundColor: COLORS.primary12, borderColor: COLORS.primary30 }]}>
-                                <MaterialIcons name="stadium" size={20} color={colors.primary} />
+                            <View style={[styles.infoIcon, { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
+                                <MaterialIcons name="stadium" size={20} color={colors.accent} />
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Lieu du match</Text>
@@ -264,7 +264,7 @@ const MatchDetailScreen = ({
                             <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Lieux diffusant le match en direct</Text>
                         </View>
                         <TouchableOpacity activeOpacity={0.7}>
-                            <Text style={[styles.sectionAction, { color: colors.primary }]}>Voir tout</Text>
+                            <Text style={[styles.sectionAction, { color: colors.accent }]}>Voir tout</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -283,7 +283,7 @@ const MatchDetailScreen = ({
                                             <MaterialIcons
                                                 name="star"
                                                 size={12}
-                                                color={colors.primary}
+                                                color={colors.accent}
                                                 style={{ marginRight: 4 }}
                                             />
                                             <Text style={[styles.ratingChipText, { color: colors.white }]}>{typeof venue.rating === 'number' ? venue.rating.toFixed(1) : (Number(venue.rating) || 0).toFixed(1)}</Text>
@@ -299,9 +299,9 @@ const MatchDetailScreen = ({
                                             <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>
                                                 {venue.name}
                                             </Text>
-                                            <View style={styles.distanceBadge}>
-                                                <MaterialIcons name="place" size={14} color={colors.primary} />
-                                                <Text style={[styles.venueDistance, { color: colors.primary }]}>{venue.distance}</Text>
+                                            <View style={[styles.distanceBadge, { backgroundColor: colors.accent10 }]}>
+                                                <MaterialIcons name="place" size={14} color={colors.accent} />
+                                                <Text style={[styles.venueDistance, { color: colors.accent }]}>{venue.distance}</Text>
                                             </View>
                                         </View>
                                         <Text style={[styles.venueMeta, { color: colors.textSecondary }]} numberOfLines={2}>
@@ -326,8 +326,8 @@ const MatchDetailScreen = ({
                         </ScrollView>
                     ) : (
                         <View style={[styles.emptyVenuesContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <View style={[styles.emptyVenuesIcon, { backgroundColor: COLORS.primary12, }]}>
-                                <MaterialIcons name="tv-off" size={32} color={colors.primary} />
+                            <View style={[styles.emptyVenuesIcon, { backgroundColor: colors.accent10, }]}>
+                                <MaterialIcons name="tv-off" size={32} color={colors.accent} />
                             </View>
                             <Text style={[styles.emptyVenuesTitle, { color: colors.text }]}>
                                 Aucun bar ne diffuse ce match
@@ -467,11 +467,9 @@ const styles = StyleSheet.create({
         width: 44,
         height: 44,
         borderRadius: 14,
-        backgroundColor: COLORS.primary12,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1,
-        borderColor: COLORS.primary30,
     },
     infoLabel: {
         color: COLORS.textMuted,
@@ -640,7 +638,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 2,
-        backgroundColor: COLORS.primary12,
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 12,

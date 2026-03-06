@@ -119,7 +119,7 @@ const FavouritesScreen = () => {
                 style={[
                     styles.filterPill,
                     activeFilter === 'all'
-                        ? [styles.filterPillActive, { backgroundColor: colors.primary }]
+                        ? [styles.filterPillActive, { backgroundColor: colors.accent, shadowColor: colors.accent }]
                         : { backgroundColor: themeMode === 'light' ? '#fff' : colors.surface, borderColor: colors.border },
                 ]}
                 onPress={() => setActiveFilter('all')}
@@ -140,7 +140,7 @@ const FavouritesScreen = () => {
                 style={[
                     styles.filterPill,
                     activeFilter === 'bars'
-                        ? [styles.filterPillActive, { backgroundColor: colors.primary }]
+                        ? [styles.filterPillActive, { backgroundColor: colors.accent, shadowColor: colors.accent }]
                         : { backgroundColor: themeMode === 'light' ? '#fff' : colors.surface, borderColor: colors.border },
                 ]}
                 onPress={() => setActiveFilter('bars')}
@@ -161,7 +161,7 @@ const FavouritesScreen = () => {
                 style={[
                     styles.filterPill,
                     activeFilter === 'restaurants'
-                        ? [styles.filterPillActive, { backgroundColor: colors.primary }]
+                        ? [styles.filterPillActive, { backgroundColor: colors.accent, shadowColor: colors.accent }]
                         : { backgroundColor: themeMode === 'light' ? '#fff' : colors.surface, borderColor: colors.border },
                 ]}
                 onPress={() => setActiveFilter('restaurants')}

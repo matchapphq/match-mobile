@@ -120,7 +120,7 @@ const LoginScreen = () => {
                             <Ionicons
                                 name="beer"
                                 size={28}
-                                color={colors.primary}
+                                color={colors.accent}
                             />
                         </View>
                         <Text style={[styles.logoText, { color: colors.text }]}>MATCH</Text>

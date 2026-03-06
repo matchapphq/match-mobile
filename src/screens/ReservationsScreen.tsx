@@ -412,8 +412,8 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                     <View style={styles.sectionHeaderRow}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Date</Text>
                         <TouchableOpacity style={styles.seeMoreButton} onPress={handleRetryDates}>
-                            <Text style={[styles.seeMoreText, { color: colors.primary }]}>Rafraîchir</Text>
-                            <MaterialIcons name="refresh" size={14} color={colors.primary} />
+                            <Text style={[styles.seeMoreText, { color: colors.accent }]}>Rafraîchir</Text>
+                            <MaterialIcons name="refresh" size={14} color={colors.accent} />
                         </TouchableOpacity>
                     </View>
 
@@ -440,7 +440,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                                         style={[
                                             styles.dateCard,
                                             isSelected
-                                                ? { backgroundColor: colors.primary, shadowColor: colors.primary, ...styles.dateCardSelected }
+                                                ? { backgroundColor: colors.accent, shadowColor: colors.accent, ...styles.dateCardSelected }
                                                 : { backgroundColor: colors.surface, borderColor: colors.border }
                                         ]}
                                         onPress={() => setSelectedDateIso(date.isoDate)}
@@ -462,7 +462,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                                 style={[
                                     styles.filterChip,
                                     filter.selected
-                                        ? { backgroundColor: colors.primary, borderColor: colors.primary, borderWidth: 0 }
+                                        ? { backgroundColor: colors.accent, borderColor: colors.accent, borderWidth: 0 }
                                         : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }
                                 ]}
                             >
@@ -505,7 +505,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                                         style={[
                                             styles.matchCard,
                                             { backgroundColor: colors.surface },
-                                            isSelected ? { borderColor: colors.primary, borderWidth: 2 } : { borderColor: colors.border, borderWidth: 1, opacity: 0.9 }
+                                            isSelected ? { borderColor: colors.accent, borderWidth: 2 } : { borderColor: colors.border, borderWidth: 1, opacity: 0.9 }
                                         ]}
                                         onPress={() => toggleMatchSelection(match.id)}
                                     >
@@ -525,14 +525,14 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                                             </View>
                                         </ImageBackground>
 
-                                        <View style={[styles.matchFooter, isSelected ? { backgroundColor: COLORS.primary12 } : { backgroundColor: 'transparent' }]}>
+                                        <View style={[styles.matchFooter, isSelected ? { backgroundColor: colors.accent10 } : { backgroundColor: 'transparent' }]}>
                                             <View style={styles.matchStatusRow}>
                                                 <MaterialIcons
                                                     name={isSelected ? "check-circle" : "sports-soccer"}
                                                     size={18}
-                                                    color={isSelected ? colors.primary : colors.textSecondary}
+                                                    color={isSelected ? colors.accent : colors.textSecondary}
                                                 />
-                                                <Text style={[styles.matchStatusText, isSelected ? { color: colors.primary } : { color: colors.textSecondary }]}>
+                                                <Text style={[styles.matchStatusText, isSelected ? { color: colors.accent } : { color: colors.textSecondary }]}>
                                                     {isSelected ? "Sélectionné" : "Réserver"}
                                                 </Text>
                                             </View>
@@ -546,17 +546,17 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
 
                 {/* Arrival Time */}
                 <View style={styles.section}>
-                    <View style={[styles.arrivalCard, { backgroundColor: colors.surface, borderColor: COLORS.primary30 }]}>
+                    <View style={[styles.arrivalCard, { backgroundColor: colors.surface, borderColor: colors.accent20 }]}>
                         <View style={styles.arrivalInfo}>
-                            <View style={styles.arrivalIconBox}>
-                                <MaterialIcons name="access-time" size={20} color={colors.primary} />
+                            <View style={[styles.arrivalIconBox, { backgroundColor: colors.accent10 }]}>
+                                <MaterialIcons name="access-time" size={20} color={colors.accent} />
                             </View>
                             <View>
                                 <Text style={[styles.arrivalLabel, { color: colors.text }]}>Heure d'arrivée</Text>
                                 <Text style={[styles.arrivalSubLabel, { color: colors.textSecondary }]}>30 min avant le match</Text>
                             </View>
                         </View>
-                        <Text style={[styles.arrivalTime, { color: colors.primary }]}>{arrivalTime}</Text>
+                        <Text style={[styles.arrivalTime, { color: colors.accent }]}>{arrivalTime}</Text>
                     </View>
                 </View>
 
@@ -581,10 +581,10 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                 </View>
 
                 {/* Info Note */}
-                <View style={[styles.infoNote, { backgroundColor: COLORS.primary10, padding: 12, borderRadius: 12, flexDirection: 'row', gap: 10 }]}>
-                    <MaterialIcons name="info" size={20} color={colors.primary} style={{ marginTop: 2 }} />
+                <View style={[styles.infoNote, { backgroundColor: colors.accent10, padding: 12, borderRadius: 12, flexDirection: 'row', gap: 10 }]}>
+                    <MaterialIcons name="info" size={20} color={colors.accent} style={{ marginTop: 2 }} />
                     <Text style={[styles.infoNoteText, { color: colors.textSecondary, flex: 1, fontSize: 13, lineHeight: 18 }]}>
-                        <Text style={{ fontWeight: 'bold', color: colors.primary }}>Note: </Text>
+                        <Text style={{ fontWeight: 'bold', color: colors.accent }}>Note: </Text>
                         Pour les groupes de plus de 8 personnes, un dépôt de garantie de 10€ par personne est requis.
                     </Text>
                 </View>

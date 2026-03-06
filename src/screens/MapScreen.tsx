@@ -728,7 +728,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                     <MaterialIcons
                                         name="location-on"
                                         size={isSelected ? 60 : 45}
-                                        color={colors.primary}
+                                        color={colors.accent}
                                     />
                                     {isSelected && <View style={[styles.activePinDot, { backgroundColor: colors.white }]} />}
                                 </View>
@@ -806,7 +806,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                 <View style={styles.emptyStateContainer}>
                     <View style={[styles.emptyStateCard, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
                         <View style={[styles.emptyStateIcon, { backgroundColor: colors.surfaceAlt || 'rgba(255,255,255,0.1)' }]}>
-                            <MaterialIcons name="search-off" size={20} color={colors.primary} />
+                            <MaterialIcons name="search-off" size={20} color={colors.accent} />
                         </View>
                         <View style={styles.emptyStateContent}>
                             <Text style={[styles.emptyStateTitle, { color: colors.text }]}>Aucun lieu trouvé</Text>
@@ -851,9 +851,9 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                 </View>
                             </View>
                             <View style={styles.broadcastRow}>
-                                <View style={styles.broadcastBadge}>
-                                    <MaterialIcons name="live-tv" size={14} color={colors.primary} />
-                                    <Text style={[styles.broadcastText, { color: colors.primary }]}>Diffusé ici</Text>
+                                <View style={[styles.broadcastBadge, { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
+                                    <MaterialIcons name="live-tv" size={14} color={colors.accent} />
+                                    <Text style={[styles.broadcastText, { color: colors.accent }]}>Diffusé ici</Text>
                                 </View>
                             </View>
                         </View>
