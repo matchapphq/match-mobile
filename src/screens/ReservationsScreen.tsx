@@ -520,7 +520,7 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                                                 </View>
                                                 <Text style={styles.matchTeams}>{match.team1} vs {match.team2}</Text>
                                             </View>
-                                            <View style={[styles.matchTimeBadge, { backgroundColor: colors.primary }]}>
+                                            <View style={[styles.matchTimeBadge, { backgroundColor: colors.accent }]}>
                                                 <Text style={styles.matchTimeText}>{match.time}</Text>
                                             </View>
                                         </ImageBackground>
@@ -544,9 +544,8 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
                     )}
                 </View>
 
-                {/* Arrival Time */}
                 <View style={styles.section}>
-                    <View style={[styles.arrivalCard, { backgroundColor: colors.surface, borderColor: colors.accent20 }]}>
+                    <View style={[styles.arrivalCard, { backgroundColor: colors.surface, borderColor: colors.accent20, borderWidth: 1, padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
                         <View style={styles.arrivalInfo}>
                             <View style={[styles.arrivalIconBox, { backgroundColor: colors.accent10 }]}>
                                 <MaterialIcons name="access-time" size={20} color={colors.accent} />
@@ -777,8 +776,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     matchCardSelected: {
-        borderWidth: 2,
-        borderColor: COLORS.primary,
+        // borderColor handled dynamically
     },
     matchCardUnselected: {
         borderWidth: 1,
@@ -839,7 +837,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     matchFooterSelected: {
-        backgroundColor: COLORS.primary12,
+        // backgroundColor handled dynamically
     },
     matchFooterUnselected: {
         backgroundColor: 'transparent',

@@ -668,7 +668,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                             <MaterialIcons
                                                                                 name={favouriteVenueIds.has(venue.id) ? "favorite" : "favorite-border"}
                                                                                 size={20}
-                                                                                color={colors.primary}
+                                                                                color={colors.accent}
                                                                             />
                                                                         </TouchableOpacity>
                                                                     </View>

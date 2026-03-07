@@ -27,7 +27,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
           <MaterialCommunityIcons
             name="format-list-bulleted"
             size={28}
-            color={activeTab === 'list' ? colors.accent : colors.primary}
+            color={activeTab === 'list' ? colors.accent : colors.slate400}
           />
         </TouchableOpacity>
 
@@ -38,7 +38,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
           <Ionicons
             name="search"
             size={28}
-            color={activeTab === 'search' ? colors.accent : colors.primary}
+            color={activeTab === 'search' ? colors.accent : colors.slate400}
           />
         </TouchableOpacity>
 
@@ -49,7 +49,7 @@ const FloatingNavBar: React.FC<FloatingNavBarProps> = ({
           <MaterialCommunityIcons
             name="tune-variant"
             size={28}
-            color={activeTab === 'filter' ? colors.accent : colors.primary}
+            color={activeTab === 'filter' ? colors.accent : colors.slate400}
           />
         </TouchableOpacity>
       </View>

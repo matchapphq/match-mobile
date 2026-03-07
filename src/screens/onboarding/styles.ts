@@ -1,5 +1,5 @@
 import { Dimensions, StyleSheet } from "react-native";
-import { COLORS } from "../../constants/colors";
+import { ThemeColors } from "../../constants/colors";
 
 export const SURFACE_DARK = "#1c1c21";
 export const BG_DARK = "#0b0b0f";
@@ -7,7 +7,7 @@ export const SUCCESS = "#34d399";
 
 export const { width, height } = Dimensions.get("window");
 
-export const sharedStyles = StyleSheet.create({
+export const getOnboardingStyles = (colors: ThemeColors) => StyleSheet.create({
     formGroup: {
         gap: 8,
         marginTop: 8,
@@ -15,14 +15,14 @@ export const sharedStyles = StyleSheet.create({
     label: {
         fontSize: 14,
         fontWeight: "600",
-        color: "#fff",
+        color: colors.text,
         marginLeft: 4,
     },
     inputWrapper: {
-        backgroundColor: SURFACE_DARK,
+        backgroundColor: colors.surface,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.border,
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 16,
@@ -31,7 +31,7 @@ export const sharedStyles = StyleSheet.create({
         flex: 1,
         height: 56,
         fontSize: 16,
-        color: "#fff",
+        color: colors.text,
     },
     inputWithLeftIcon: {
         paddingLeft: 8,
@@ -47,7 +47,7 @@ export const sharedStyles = StyleSheet.create({
     },
     hint: {
         fontSize: 12,
-        color: "rgba(255,255,255,0.3)",
+        color: colors.textMuted,
         marginLeft: 4,
         marginTop: 4,
     },
@@ -59,10 +59,10 @@ export const sharedStyles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
-        backgroundColor: SURFACE_DARK,
+        backgroundColor: colors.surface,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
+        borderColor: colors.border,
         paddingHorizontal: 12,
         height: 56,
     },
@@ -72,7 +72,7 @@ export const sharedStyles = StyleSheet.create({
     countryCodeText: {
         fontSize: 14,
         fontWeight: "500",
-        color: "#fff",
+        color: colors.text,
     },
     phoneInput: {
         flex: 1,
@@ -81,9 +81,9 @@ export const sharedStyles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 16,
-        backgroundColor: COLORS.primary20,
+        backgroundColor: colors.accent20,
         borderWidth: 1,
-        borderColor: COLORS.primary30,
+        borderColor: colors.accent + '33',
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 8,
@@ -91,10 +91,10 @@ export const sharedStyles = StyleSheet.create({
     usernameInputWrapper: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: SURFACE_DARK,
+        backgroundColor: colors.surface,
         borderRadius: 16,
         borderWidth: 2,
-        borderColor: COLORS.primary50,
+        borderColor: colors.accent20,
         paddingHorizontal: 16,
         height: 64,
         marginTop: 16,
@@ -102,14 +102,14 @@ export const sharedStyles = StyleSheet.create({
     atSymbol: {
         fontSize: 24,
         fontWeight: "600",
-        color: COLORS.primary,
+        color: colors.accent,
         marginRight: 4,
     },
     usernameInput: {
         flex: 1,
         fontSize: 22,
         fontWeight: "500",
-        color: "#fff",
+        color: colors.text,
     },
     availableText: {
         fontSize: 14,
@@ -124,7 +124,7 @@ export const sharedStyles = StyleSheet.create({
     suggestionsLabel: {
         fontSize: 12,
         fontWeight: "600",
-        color: "rgba(255,255,255,0.4)",
+        color: colors.textMuted,
         letterSpacing: 2,
         marginBottom: 12,
         marginLeft: 4,
@@ -138,13 +138,13 @@ export const sharedStyles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 12,
-        backgroundColor: SURFACE_DARK,
+        backgroundColor: colors.surface,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.05)",
+        borderColor: colors.border,
     },
     suggestionText: {
         fontSize: 14,
-        color: "rgba(255,255,255,0.7)",
+        color: colors.textSecondary,
     },
     optionsList: {
         gap: 12,
@@ -153,7 +153,7 @@ export const sharedStyles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        backgroundColor: SURFACE_DARK,
+        backgroundColor: colors.surface,
         borderRadius: 28,
         paddingVertical: 4,
         paddingHorizontal: 4,
@@ -162,7 +162,7 @@ export const sharedStyles = StyleSheet.create({
         borderColor: "transparent",
     },
     sportOptionSelected: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.accent,
     },
     sportLeft: {
         flexDirection: "row",
@@ -173,7 +173,7 @@ export const sharedStyles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: "#2a2a30",
+        backgroundColor: colors.surfaceAlt,
         alignItems: "center",
         justifyContent: "center",
     },
@@ -183,7 +183,7 @@ export const sharedStyles = StyleSheet.create({
     sportLabel: {
         fontSize: 18,
         fontWeight: "600",
-        color: "rgba(255,255,255,0.7)",
+        color: colors.textSecondary,
     },
     sportLabelSelected: {
         color: "#fff",
@@ -202,7 +202,7 @@ export const sharedStyles = StyleSheet.create({
     },
     moodCard: {
         height: 160,
-        backgroundColor: SURFACE_DARK,
+        backgroundColor: colors.surface,
         borderRadius: 16,
         borderWidth: 2,
         borderColor: "transparent",
@@ -211,34 +211,34 @@ export const sharedStyles = StyleSheet.create({
         gap: 12,
     },
     moodCardSelected: {
-        borderColor: COLORS.primary,
-        backgroundColor: "#232329",
+        borderColor: colors.accent,
+        backgroundColor: colors.accent10,
     },
     moodLabel: {
         fontSize: 18,
         fontWeight: "700",
-        color: "#fff",
+        color: colors.text,
     },
     moodLabelSelected: {
-        color: "#fff",
+        color: colors.accent,
     },
     moodSubtitle: {
         fontSize: 14,
-        color: "rgba(255,255,255,0.5)",
+        color: colors.textMuted,
     },
     venueOption: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         padding: 20,
-        backgroundColor: "transparent",
+        backgroundColor: colors.backgroundLight,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: "#27272a",
+        borderColor: colors.border,
     },
     venueOptionSelected: {
-        backgroundColor: SURFACE_DARK,
-        borderColor: COLORS.primary,
+        backgroundColor: colors.surface,
+        borderColor: colors.accent,
     },
     venueLeft: {
         flexDirection: "row",
@@ -250,12 +250,12 @@ export const sharedStyles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 12,
-        backgroundColor: "#18181b",
+        backgroundColor: colors.surfaceAlt,
         alignItems: "center",
         justifyContent: "center",
     },
     venueIconSelected: {
-        backgroundColor: COLORS.primary,
+        backgroundColor: colors.accent,
     },
     venueTexts: {
         flex: 1,
@@ -263,28 +263,28 @@ export const sharedStyles = StyleSheet.create({
     venueLabel: {
         fontSize: 18,
         fontWeight: "600",
-        color: "#fff",
+        color: colors.text,
         marginBottom: 4,
     },
     venueLabelSelected: {
-        color: "#fff",
+        color: colors.text,
     },
     venueSubtitle: {
         fontSize: 14,
-        color: "rgba(255,255,255,0.5)",
+        color: colors.textMuted,
     },
     radioCircle: {
         width: 24,
         height: 24,
         borderRadius: 12,
         borderWidth: 2,
-        borderColor: "#27272a",
+        borderColor: colors.border,
         alignItems: "center",
         justifyContent: "center",
     },
     radioCircleSelected: {
-        borderColor: COLORS.primary,
-        backgroundColor: COLORS.primary,
+        borderColor: colors.accent,
+        backgroundColor: colors.accent,
     },
     budgetList: {
         gap: 16,
@@ -292,7 +292,7 @@ export const sharedStyles = StyleSheet.create({
     },
     budgetOption: {
         height: 72,
-        backgroundColor: SURFACE_DARK,
+        backgroundColor: colors.surface,
         borderRadius: 36,
         borderWidth: 2,
         borderColor: "transparent",
@@ -302,7 +302,7 @@ export const sharedStyles = StyleSheet.create({
         position: "relative",
     },
     budgetOptionSelected: {
-        borderColor: COLORS.primary,
+        borderColor: colors.accent,
     },
     budgetCenter: {
         alignItems: "center",
@@ -310,13 +310,13 @@ export const sharedStyles = StyleSheet.create({
     budgetAmount: {
         fontSize: 20,
         fontWeight: "700",
-        color: "#fff",
+        color: colors.text,
     },
     budgetTier: {
         fontSize: 11,
         fontWeight: "700",
         letterSpacing: 2,
-        color: "rgba(255,255,255,0.5)",
+        color: colors.textMuted,
         marginTop: 2,
     },
     budgetCheck: {

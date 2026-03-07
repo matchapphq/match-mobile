@@ -634,7 +634,7 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     liveBadgeText: {
-        color: COLORS.primary,
+        color: COLORS.accent,
         fontSize: 10,
         fontWeight: '700',
         textTransform: 'uppercase',

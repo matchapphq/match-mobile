@@ -170,11 +170,11 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                         <TouchableOpacity style={[styles.favouriteButton, { top: insets.top + 16 }]} onPress={handleToggleFavourite} activeOpacity={0.7}>
                             {Platform.OS === 'ios' ? (
                                 <BlurView intensity={30} tint="dark" style={styles.backButtonBlur}>
-                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.primary : COLORS.white} />
+                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.accent : COLORS.white} />
                                 </BlurView>
                             ) : (
                                 <View style={[styles.backButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.primary : COLORS.white} />
+                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.accent : COLORS.white} />
                                 </View>
                             )}
                         </TouchableOpacity>

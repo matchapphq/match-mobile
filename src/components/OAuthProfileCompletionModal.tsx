@@ -152,8 +152,8 @@ const OAuthProfileCompletionModal = () => {
                                             style={[
                                                 styles.chip,
                                                 {
-                                                    borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? COLORS.primary15 : colors.surface,
+                                                    borderColor: selected ? colors.accent : colors.border,
+                                                    backgroundColor: selected ? colors.accent15 : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setSports((prev) => toggleValue(prev, option.id))}
@@ -161,9 +161,9 @@ const OAuthProfileCompletionModal = () => {
                                             <MaterialIcons
                                                 name={option.icon}
                                                 size={16}
-                                                color={selected ? colors.primary : colors.textSecondary}
+                                                color={selected ? colors.accent : colors.textSecondary}
                                             />
-                                            <Text style={[styles.chipText, { color: selected ? colors.primary : colors.text }]}>
+                                            <Text style={[styles.chipText, { color: selected ? colors.accent : colors.text }]}>
                                                 {option.label}
                                             </Text>
                                         </TouchableOpacity>
@@ -183,8 +183,8 @@ const OAuthProfileCompletionModal = () => {
                                             style={[
                                                 styles.chip,
                                                 {
-                                                    borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? COLORS.primary15 : colors.surface,
+                                                    borderColor: selected ? colors.accent : colors.border,
+                                                    backgroundColor: selected ? colors.accent15 : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setAmbiances((prev) => toggleValue(prev, option.id))}
@@ -192,9 +192,9 @@ const OAuthProfileCompletionModal = () => {
                                             <MaterialIcons
                                                 name={option.icon}
                                                 size={16}
-                                                color={selected ? colors.primary : colors.textSecondary}
+                                                color={selected ? colors.accent : colors.textSecondary}
                                             />
-                                            <Text style={[styles.chipText, { color: selected ? colors.primary : colors.text }]}>
+                                            <Text style={[styles.chipText, { color: selected ? colors.accent : colors.text }]}>
                                                 {option.label}
                                             </Text>
                                         </TouchableOpacity>
@@ -214,8 +214,8 @@ const OAuthProfileCompletionModal = () => {
                                             style={[
                                                 styles.chip,
                                                 {
-                                                    borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? COLORS.primary15 : colors.surface,
+                                                    borderColor: selected ? colors.accent : colors.border,
+                                                    backgroundColor: selected ? colors.accent15 : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setVenueTypes((prev) => toggleValue(prev, option.id))}
@@ -223,9 +223,9 @@ const OAuthProfileCompletionModal = () => {
                                             <MaterialIcons
                                                 name={option.icon}
                                                 size={16}
-                                                color={selected ? colors.primary : colors.textSecondary}
+                                                color={selected ? colors.accent : colors.textSecondary}
                                             />
-                                            <Text style={[styles.chipText, { color: selected ? colors.primary : colors.text }]}>
+                                            <Text style={[styles.chipText, { color: selected ? colors.accent : colors.text }]}>
                                                 {option.label}
                                             </Text>
                                         </TouchableOpacity>
@@ -245,13 +245,13 @@ const OAuthProfileCompletionModal = () => {
                                             style={[
                                                 styles.budgetOption,
                                                 {
-                                                    borderColor: selected ? colors.primary : colors.border,
-                                                    backgroundColor: selected ? COLORS.primary15 : colors.surface,
+                                                    borderColor: selected ? colors.accent : colors.border,
+                                                    backgroundColor: selected ? colors.accent15 : colors.surface,
                                                 },
                                             ]}
                                             onPress={() => setBudget(option.id)}
                                         >
-                                            <Text style={[styles.budgetLabel, { color: selected ? colors.primary : colors.text }]}>
+                                            <Text style={[styles.budgetLabel, { color: selected ? colors.accent : colors.text }]}>
                                                 {option.subtitle}
                                             </Text>
                                         </TouchableOpacity>

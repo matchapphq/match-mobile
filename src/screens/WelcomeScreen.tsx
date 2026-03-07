@@ -16,6 +16,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { usePostHog } from "posthog-react-native";
+import { useStore } from "../store/useStore";
 
 type HeroSlide = {
     id: string;
@@ -65,10 +66,10 @@ const LOOP_SLIDES: HeroSlide[] = [
 
 const AUTO_SCROLL_INTERVAL_MS = 10000;
 import { COLORS } from "../constants/colors";
-const BRAND_PRIMARY = COLORS.primary;
 const { height, width } = Dimensions.get("window");
 
 const WelcomeScreen = () => {
+    const { colors } = useStore();
     const contentOpacity = useRef(new Animated.Value(0)).current;
     const contentTranslate = useRef(new Animated.Value(40)).current;
     const carouselRef = useRef<FlatList<HeroSlide>>(null);
@@ -260,14 +261,14 @@ const WelcomeScreen = () => {
                                 style={[
                                     styles.paginationDot,
                                     index === currentIndex &&
-                                        styles.paginationDotActive,
+                                        [styles.paginationDotActive, { backgroundColor: colors.accent }],
                                 ]}
                             />
                         ))}
                     </View>
 
                     <TouchableOpacity
-                        style={styles.cta}
+                        style={[styles.cta, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
                         activeOpacity={0.85}
                         onPress={handleStart}
                     >
@@ -353,19 +354,19 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(255,255,255,0.3)",
     },
     paginationDotActive: {
-        backgroundColor: BRAND_PRIMARY,
+        // backgroundColor handled dynamically
     },
     cta: {
         marginTop: 16,
         width: "100%",
         height: 56,
         borderRadius: 16,
-        backgroundColor: BRAND_PRIMARY,
+        // backgroundColor handled dynamically
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
-        shadowColor: BRAND_PRIMARY,
+        // shadowColor handled dynamically
         shadowOpacity: 0.4,
         shadowRadius: 12,
         shadowOffset: { width: 0, height: 8 },

@@ -231,7 +231,7 @@ const FavouritesScreen = () => {
                             <MaterialIcons
                                 name={(favouriteVenueIds.has(venue.id) || (venue as any).venue_id && favouriteVenueIds.has((venue as any).venue_id)) ? 'favorite' : 'favorite-border'}
                                 size={22}
-                                color={colors.primary}
+                                color={colors.accent}
                             />
                         </TouchableOpacity>
                     </View>
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
         borderColor: 'transparent',
     },
     filterPillActive: {
-        shadowColor: COLORS.primary,
+        // shadowColor handled dynamically
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,
@@ -521,7 +521,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 14,
         paddingVertical: 7,
         borderRadius: 8,
-        shadowColor: COLORS.primary,
+        // shadowColor handled dynamically
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 4,

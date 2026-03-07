@@ -117,11 +117,11 @@ const EditProfileScreen = () => {
                     <View style={styles.avatarWrapper}>
                         <ImageBackground source={{ uri: avatar }} style={styles.avatar} imageStyle={styles.avatarImage} />
                         <TouchableOpacity
-                            style={[styles.avatarBadge, { backgroundColor: colors.primary, borderColor: colors.background }]}
+                            style={[styles.avatarBadge, { backgroundColor: colors.accent, borderColor: colors.background }]}
                             activeOpacity={0.9}
                             onPress={handlePickImage}
                         >
-                            <MaterialIcons name="photo-camera" size={20} color={colors.text} />
+                            <MaterialIcons name="photo-camera" size={20} color={colors.white} />
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity onPress={handlePickImage}>

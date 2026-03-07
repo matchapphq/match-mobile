@@ -300,11 +300,11 @@ const ProfileScreen = () => {
               imageStyle={{ borderRadius: 64 }}
             />
             <TouchableOpacity 
-              style={[styles.avatarEditBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} 
+              style={[styles.avatarEditBadge, { backgroundColor: colors.accent, borderColor: colors.background }]} 
               activeOpacity={0.9}
               onPress={handlePickImage}
             >
-              <MaterialIcons name="edit" size={22} color={colors.text} />
+              <MaterialIcons name="edit" size={22} color={colors.white} />
             </TouchableOpacity>
           </View>
           <Text style={[styles.name, { color: colors.text }]}>
@@ -625,10 +625,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: COLORS.primary15,
+    // backgroundColor handled dynamically
   },
   badgeLabel: {
-    color: COLORS.primary,
+    // color handled dynamically
     fontWeight: '600',
     fontSize: 12,
   },
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleTrackActive: {
-    backgroundColor: COLORS.primary,
+    // backgroundColor handled dynamically
   },
   toggleThumb: {
     width: 20,
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   badgeContainer: {
-    backgroundColor: COLORS.primary,
+    // backgroundColor handled dynamically
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,

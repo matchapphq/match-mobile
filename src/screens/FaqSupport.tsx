@@ -144,7 +144,7 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
           >
             <View style={styles.helpCardLeft}>
               <View style={[styles.helpIcon, { backgroundColor: colors.surfaceAlt }]}>
-                <MaterialIcons name="mail" size={22} color={colors.primary} />
+                <MaterialIcons name="mail" size={22} color={colors.accent} />
               </View>
               <View>
                 <Text style={[styles.helpCardTitle, { color: colors.text }]}>Envoyer un mail</Text>
