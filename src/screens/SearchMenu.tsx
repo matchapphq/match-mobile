@@ -338,7 +338,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
 
             <View style={[styles.header, { backgroundColor: themeMode === 'light' ? 'rgba(248,247,245,0.95)' : 'rgba(8,8,10,0.95)', borderBottomColor: colors.divider }]}>
                 <View style={styles.searchRow}>
-                    <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: hasQuery ? colors.primary + '80' : 'transparent' }]}>
+                    <View style={[styles.searchInputContainer, { backgroundColor: colors.surface, borderColor: hasQuery ? colors.accent + '80' : 'transparent' }]}>
                         <TouchableOpacity onPress={() => navigation.goBack?.()} activeOpacity={0.7}>
                             <MaterialIcons name="arrow-back" size={24} color={colors.text} />
                         </TouchableOpacity>
@@ -348,7 +348,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                             placeholderTextColor={colors.textMuted}
                             value={searchQuery}
                             onChangeText={setSearchQuery}
-                            selectionColor={colors.primary}
+                            selectionColor={colors.accent}
                             autoFocus={false}
                         />
                         {hasQuery && (
@@ -420,8 +420,8 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                 style={[
                                     styles.datePill,
                                     { 
-                                        backgroundColor: selectedDateIndex === index ? colors.primary : (themeMode === 'light' ? '#fff' : colors.surfaceAlt),
-                                        borderColor: selectedDateIndex === index ? colors.primary : colors.divider,
+                                        backgroundColor: selectedDateIndex === index ? colors.accent : (themeMode === 'light' ? '#fff' : colors.surfaceAlt),
+                                        borderColor: selectedDateIndex === index ? colors.accent : colors.divider,
                                     }
                                 ]}
                                 onPress={() => {
@@ -461,8 +461,8 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                 style={[
                                     styles.venueFilterPill,
                                     { 
-                                        backgroundColor: selectedVenueFilter === filter.key ? colors.primary : (themeMode === 'light' ? '#fff' : colors.surfaceAlt),
-                                        borderColor: selectedVenueFilter === filter.key ? colors.primary : colors.divider,
+                                        backgroundColor: selectedVenueFilter === filter.key ? colors.accent : (themeMode === 'light' ? '#fff' : colors.surfaceAlt),
+                                        borderColor: selectedVenueFilter === filter.key ? colors.accent : colors.divider,
                                     }
                                 ]}
                                 onPress={() => setSelectedVenueFilter(filter.key)}
@@ -530,7 +530,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                 </Text>
                                                 {matchResults.length > 2 && activeTab === "all" && (
                                                     <TouchableOpacity onPress={() => setActiveTab("matches")}>
-                                                        <Text style={styles.sectionAction}>Voir tout</Text>
+                                                        <Text style={[styles.sectionAction, { color: colors.accent }]}>Voir tout</Text>
                                                     </TouchableOpacity>
                                                 )}
                                             </View>
@@ -550,7 +550,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                 {/* Header: League + Date */}
                                                                 <View style={styles.matchHeader}>
                                                                     <View style={styles.matchLeagueInfo}>
-                                                                        <Text style={[styles.leagueName, { color: colors.primary }]}>
+                                                                        <Text style={[styles.leagueName, { color: colors.accent }]}>
                                                                             {match.league}
                                                                         </Text>
                                                                         <Text style={[styles.leagueSubtitle, { color: colors.textMuted }]}>
@@ -579,9 +579,9 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                     </View>
                                                                     <View style={styles.vsColumnNew}>
                                                                         <Text style={[styles.vsLabel, { color: themeMode === 'light' ? '#e2e8f0' : 'rgba(255,255,255,0.1)' }]}>VS</Text>
-                                                                        <View style={[styles.broadcastPill, { backgroundColor: 'rgba(244,123,37,0.1)', borderColor: 'rgba(244,123,37,0.2)' }]}>
-                                                                            <View style={styles.broadcastDotAnimated} />
-                                                                            <Text style={styles.broadcastPillText}>Diffusé</Text>
+                                                                        <View style={[styles.broadcastPill, { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
+                                                                            <View style={[styles.broadcastDotAnimated, { backgroundColor: colors.accent }]} />
+                                                                            <Text style={[styles.broadcastPillText, { color: colors.accent }]}>Diffusé</Text>
                                                                         </View>
                                                                     </View>
                                                                     <View style={styles.teamColumn}>
@@ -617,7 +617,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Lieux & Bars</Text>
                                                     {venueResults.length > 2 && (
                                                         <TouchableOpacity onPress={() => setActiveTab("venues")}>
-                                                            <Text style={styles.sectionAction}>Voir tout</Text>
+                                                            <Text style={[styles.sectionAction, { color: colors.accent }]}>Voir tout</Text>
                                                         </TouchableOpacity>
                                                     )}
                                                 </View>
@@ -668,7 +668,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                             <MaterialIcons
                                                                                 name={favouriteVenueIds.has(venue.id) ? "favorite" : "favorite-border"}
                                                                                 size={20}
-                                                                                color={colors.primary}
+                                                                                color={colors.accent}
                                                                             />
                                                                         </TouchableOpacity>
                                                                     </View>
@@ -1125,7 +1125,7 @@ const styles = StyleSheet.create({
         color: COLORS.text,
         fontSize: 11,
         fontWeight: "700",
-        backgroundColor: "rgba(244,123,37,0.15)",
+        backgroundColor: COLORS.primary15,
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 999,
@@ -1248,7 +1248,7 @@ const styles = StyleSheet.create({
     broadcastBadge: {
         flexDirection: "row",
         alignItems: "center",
-        backgroundColor: "rgba(244,123,37,0.1)",
+        backgroundColor: COLORS.primary10,
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 999,

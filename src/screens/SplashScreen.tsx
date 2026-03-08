@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, Animated, Dimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
 import { theme } from "../constants/theme";
+import { COLORS } from "../constants/colors";
 
 const { width, height } = Dimensions.get("window");
-const BRAND_PRIMARY = "#f47b25";
+const BRAND_PRIMARY = COLORS.primary;
 const DOT_COUNT = 3;
 const PATTERN_COLUMNS = 6;
 const PATTERN_ROWS = 14;

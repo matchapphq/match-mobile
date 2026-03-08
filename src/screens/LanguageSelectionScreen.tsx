@@ -44,8 +44,8 @@ const LanguageSelectionScreen = () => {
         <View
             style={[
                 styles.radioCircle,
-                { borderColor: selected ? colors.primary : colors.subtext },
-                selected && { backgroundColor: colors.primary },
+                { borderColor: selected ? colors.accent : colors.subtext },
+                selected && { backgroundColor: colors.accent },
             ]}
         >
             {selected && <View style={styles.radioInnerCircle} />}

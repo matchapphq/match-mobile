@@ -5,6 +5,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 
 // Define strict colors from the HTML/Tailwind config
 import { useStore } from "../store/useStore";
+import { COLORS } from "../constants/colors";
 
 // Removed local THEME constant in favor of useStore
 // const THEME = ...
@@ -54,8 +55,8 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                 {/* Header Section */}
                 <View style={styles.header}>
                     <Animated.View style={[styles.iconWrapper, { transform: [{ scale: scaleAnim }] }]}>
-                        <View style={[styles.iconGlow, { backgroundColor: 'rgba(244, 123, 37, 0.2)', shadowColor: colors.primary }]} />
-                        <View style={[styles.iconCircle, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
+                        <View style={[styles.iconGlow, { backgroundColor: colors.accent20, shadowColor: colors.accent }]} />
+                        <View style={[styles.iconCircle, { backgroundColor: colors.accent, shadowColor: colors.accent }]}>
                             <MaterialIcons name="check" size={48} color={colors.white} />
                         </View>
                     </Animated.View>
@@ -71,11 +72,11 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                         <View style={[styles.cardHeader, { borderBottomColor: colors.border }]}>
                             <ImageBackground source={{ uri: image }} style={styles.venueImage} imageStyle={{ borderRadius: 8 }} />
                             <View style={styles.venueInfo}>
-                                <Text style={[styles.venueLabel, { color: colors.primary }]}>VENUE</Text>
+                                <Text style={[styles.venueLabel, { color: colors.accent }]}>VENUE</Text>
                                 <Text style={[styles.venueName, { color: colors.text }]}>{venueName}</Text>
                                 <View style={styles.matchRow}>
-                                    <MaterialIcons name="live-tv" size={16} color={colors.primary} />
-                                    <Text style={[styles.matchText, { color: colors.primary }]}>{matchTitle}</Text>
+                                    <MaterialIcons name="live-tv" size={16} color={colors.accent} />
+                                    <Text style={[styles.matchText, { color: colors.accent }]}>{matchTitle}</Text>
                                 </View>
                                 <View style={styles.addressRow}>
                                     <MaterialIcons name="location-on" size={16} color={colors.textSecondary} />
@@ -87,8 +88,8 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                         {/* Date & Time Row */}
                         <View style={styles.detailsRow}>
                             <View style={styles.detailItem}>
-                                <View style={[styles.detailIconContainer, { backgroundColor: 'rgba(244, 123, 37, 0.1)' }]}>
-                                    <MaterialIcons name="calendar-month" size={20} color={colors.primary} />
+                                <View style={[styles.detailIconContainer, { backgroundColor: colors.accent10 }]}>
+                                    <MaterialIcons name="calendar-month" size={20} color={colors.accent} />
                                 </View>
                                 <View>
                                     <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>DATE</Text>
@@ -97,8 +98,8 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                             </View>
 
                             <View style={[styles.detailItem, { flexDirection: "row-reverse" }]}>
-                                <View style={[styles.detailIconContainer, { backgroundColor: 'rgba(244, 123, 37, 0.1)' }]}>
-                                    <MaterialIcons name="schedule" size={20} color={colors.primary} />
+                                <View style={[styles.detailIconContainer, { backgroundColor: colors.accent10 }]}>
+                                    <MaterialIcons name="schedule" size={20} color={colors.accent} />
                                 </View>
                                 <View style={{ alignItems: "flex-end" }}>
                                     <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>HEURE</Text>
@@ -112,8 +113,8 @@ const ReservationSuccessScreen = ({ navigation, route }: { navigation: any; rout
                         {/* Guests Row - Explicitly requested to be fixed */}
                         <View style={styles.detailsRow}>
                             <View style={styles.detailItem}>
-                                <View style={[styles.detailIconContainer, { backgroundColor: 'rgba(244, 123, 37, 0.1)' }]}>
-                                    <MaterialIcons name="group" size={20} color={colors.primary} />
+                                <View style={[styles.detailIconContainer, { backgroundColor: colors.accent10 }]}>
+                                    <MaterialIcons name="group" size={20} color={colors.accent} />
                                 </View>
                                 <View>
                                     <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>INVITÉS</Text>

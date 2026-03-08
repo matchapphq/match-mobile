@@ -96,7 +96,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
   {
     title: 'Actions',
     rows: [
-      { icon: 'logout', color: COLORS.primary, label: 'Déconnexion', accent: COLORS.primary },
+      { icon: 'logout', color: '#96DB1F', label: 'Déconnexion', accent: 'dynamic' },
       { icon: 'delete', color: '#f87171', label: 'Supprimer le compte', accent: '#f87171' },
     ],
   },
@@ -300,11 +300,11 @@ const ProfileScreen = () => {
               imageStyle={{ borderRadius: 64 }}
             />
             <TouchableOpacity 
-              style={[styles.avatarEditBadge, { backgroundColor: colors.primary, borderColor: colors.background }]} 
+              style={[styles.avatarEditBadge, { backgroundColor: colors.accent, borderColor: colors.background }]} 
               activeOpacity={0.9}
               onPress={handlePickImage}
             >
-              <MaterialIcons name="edit" size={22} color={colors.text} />
+              <MaterialIcons name="edit" size={22} color={colors.white} />
             </TouchableOpacity>
           </View>
           <Text style={[styles.name, { color: colors.text }]}>
@@ -315,14 +315,14 @@ const ProfileScreen = () => {
             <Text style={[styles.bioText, { color: colors.textSecondary }]}>{profile.bio}</Text>
           )}
           <TouchableOpacity
-            style={styles.badge}
+            style={[styles.badge, { backgroundColor: colors.accent10 }]}
             activeOpacity={0.85}
             onPress={() =>
               Alert.alert(`Avantages Membre ${profile.tier}`, "Accédez à vos avantages exclusifs prochainement.")
             }
           >
-            <MaterialIcons name="emoji-events" size={16} color={colors.primary} style={{ marginRight: 6 }} />
-            <Text style={[styles.badgeLabel, { color: colors.primary }]}>{profile.badgeLabel}</Text>
+            <MaterialIcons name="emoji-events" size={16} color={colors.accent} style={{ marginRight: 6 }} />
+            <Text style={[styles.badgeLabel, { color: colors.accent }]}>{profile.badgeLabel}</Text>
           </TouchableOpacity>
         </View>
 
@@ -360,7 +360,7 @@ const ProfileScreen = () => {
                             }
                           }}
                         >
-                          <View style={[styles.toggleTrack, isEnabled && styles.toggleTrackActive]}>
+                          <View style={[styles.toggleTrack, isEnabled && [styles.toggleTrackActive, { backgroundColor: colors.accent }]]}>
                             <View
                               style={[
                                 styles.toggleThumb,
@@ -435,14 +435,14 @@ const ProfileScreen = () => {
                       onPress={isLanguageRow ? undefined : handlePress}
                     >
                       <View style={styles.rowLeft}>
-                        <View style={[styles.rowIcon, { backgroundColor: `${row.color}1A` }]}>
-                          <MaterialIcons name={row.icon as any} size={20} color={row.color} />
+                        <View style={[styles.rowIcon, { backgroundColor: row.accent ? (row.accent === 'dynamic' ? colors.accent10 : `${row.accent}1A`) : `${row.color}1A` }]}>
+                          <MaterialIcons name={row.icon as any} size={20} color={row.accent ? (row.accent === 'dynamic' ? colors.accent : row.accent) : row.color} />
                         </View>
                         <Text
                           style={[
                             styles.rowLabel,
                             { color: colors.text },
-                            row.accent && { color: row.accent, fontWeight: '600' },
+                            row.accent && { color: row.accent === 'dynamic' ? colors.accent : row.accent, fontWeight: '600' },
                           ]}
                         >
                           {row.label}
@@ -457,7 +457,7 @@ const ProfileScreen = () => {
                         </View>
                       ) : row.badge ? (
                         <View style={styles.metaContainer}>
-                          <View style={[styles.badgeContainer, { backgroundColor: colors.primary }]}>
+                          <View style={[styles.badgeContainer, { backgroundColor: colors.accent }]}>
                             <Text style={styles.badgeText}>{row.badge}</Text>
                           </View>
                           <MaterialIcons name="chevron-right" size={20} color={colors.subtext} />
@@ -625,10 +625,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: 'rgba(244,123,37,0.15)',
+    // backgroundColor handled dynamically
   },
   badgeLabel: {
-    color: COLORS.primary,
+    // color handled dynamically
     fontWeight: '600',
     fontSize: 12,
   },
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleTrackActive: {
-    backgroundColor: COLORS.primary,
+    // backgroundColor handled dynamically
   },
   toggleThumb: {
     width: 20,
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   badgeContainer: {
-    backgroundColor: COLORS.primary,
+    // backgroundColor handled dynamically
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 10,

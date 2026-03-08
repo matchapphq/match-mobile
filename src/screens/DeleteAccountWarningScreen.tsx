@@ -6,6 +6,7 @@ import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { apiService } from "../services/api";
+import { COLORS } from "../constants/colors";
 
 type RouteParams = {
     DeleteAccountWarning: {
@@ -249,8 +250,8 @@ const styles = StyleSheet.create({
         paddingVertical: 16,
         borderRadius: 16,
         alignItems: "center",
-        backgroundColor: "#f47b25",
-        shadowColor: "#f47b25",
+        backgroundColor: COLORS.primary,
+        shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,

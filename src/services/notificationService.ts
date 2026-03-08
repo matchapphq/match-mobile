@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform, Alert, Linking } from 'react-native';
 import Constants from 'expo-constants';
+import { COLORS } from '../constants/colors';
 
 export const notificationService = {
   /**
@@ -39,7 +40,7 @@ export const notificationService = {
         name: 'default',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        lightColor: '#f47b25',
+        lightColor: COLORS.primary,
       });
     }
 

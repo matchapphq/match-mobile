@@ -255,7 +255,7 @@ const UserBookedScreen = () => {
             {/* Venue */}
             <Text style={[styles.upcomingVenueName, { color: colors.text }]}>{booking.venue}</Text>
             {/* Match */}
-            <Text style={[styles.upcomingMatchText, { color: colors.primary }]}>{booking.match}</Text>
+            <Text style={[styles.upcomingMatchText, { color: colors.accent }]}>{booking.match}</Text>
             {/* Date */}
             <View style={styles.upcomingDateRow}>
               <MaterialIcons name="calendar-today" size={14} color={colors.textMuted} />
@@ -285,11 +285,11 @@ const UserBookedScreen = () => {
           </TouchableOpacity>
           {isConfirmed ? (
             <TouchableOpacity
-              style={[styles.upcomingTicketButton, { backgroundColor: 'rgba(244,123,37,0.1)' }]}
+              style={[styles.upcomingTicketButton, { backgroundColor: colors.accent10 }]}
               onPress={() => handleOpenQrModal(booking)}
             >
-              <MaterialIcons name="qr-code" size={14} color={colors.primary} />
-              <Text style={[styles.upcomingTicketText, { color: colors.primary }]}>Ticket</Text>
+              <MaterialIcons name="qr-code" size={14} color={colors.accent} />
+              <Text style={[styles.upcomingTicketText, { color: colors.accent }]}>Ticket</Text>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={[styles.upcomingModifyButton, { backgroundColor: colors.surfaceAlt }]}>
@@ -417,7 +417,7 @@ const UserBookedScreen = () => {
               style={[
                 styles.filterTab,
                 selectedFilter === filter.value
-                  ? { backgroundColor: colors.primary }
+                  ? { backgroundColor: colors.accent }
                   : { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }
               ]}
               onPress={() => setSelectedFilter(filter.value)}
@@ -488,7 +488,7 @@ const UserBookedScreen = () => {
             {/* Featured Next Event - only show when filter is "all" and no search */}
             {nextReservation && selectedFilter === 'all' && !searchQuery.trim() && (
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: colors.primary }]}>Prochain Événement</Text>
+                <Text style={[styles.sectionTitle, { color: colors.accent }]}>Prochain Événement</Text>
                 <View style={[styles.featuredCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
                   {/* Featured Image */}
                   <View style={styles.featuredImageContainer}>
@@ -515,8 +515,8 @@ const UserBookedScreen = () => {
                       <View style={styles.featuredContentOverlay}>
                         <Text style={styles.featuredVenueName}>{nextReservation.venue.toUpperCase()}</Text>
                         <View style={styles.featuredMatchRow}>
-                          <MaterialIcons name="live-tv" size={16} color={colors.primary} />
-                          <Text style={[styles.featuredMatchText, { color: colors.primary }]}>{nextReservation.match}</Text>
+                          <MaterialIcons name="live-tv" size={16} color={colors.accent} />
+                          <Text style={[styles.featuredMatchText, { color: colors.accent }]}>{nextReservation.match}</Text>
                         </View>
                       </View>
                     </ImageBackground>
@@ -526,7 +526,7 @@ const UserBookedScreen = () => {
                   <View style={styles.featuredDetails}>
                     <View style={[styles.featuredInfoRow, { borderBottomColor: colors.border }]}>
                       <View style={styles.featuredInfoItem}>
-                        <MaterialIcons name="calendar-month" size={18} color={colors.primary} />
+                        <MaterialIcons name="calendar-month" size={18} color={colors.accent} />
                         <Text style={[styles.featuredInfoText, { color: colors.text }]}>{nextReservation.dateFormatted}</Text>
                       </View>
                       <View style={styles.featuredInfoItem}>
@@ -583,7 +583,7 @@ const UserBookedScreen = () => {
           style={[styles.findButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
           onPress={() => navigation.navigate('Map' as never)}
         >
-          <MaterialIcons name="add-circle" size={20} color={colors.primary} />
+          <MaterialIcons name="add-circle" size={20} color={colors.accent} />
           <Text style={[styles.findButtonText, { color: colors.textMuted }]}>Trouver un autre bar</Text>
         </TouchableOpacity>
 
@@ -612,7 +612,7 @@ const UserBookedScreen = () => {
                   </View>
                   <View style={styles.qrPreview}>
                     {isQrLoading ? (
-                      <ActivityIndicator color={COLORS.primary} style={{ flex: 1 }} />
+                      <ActivityIndicator color={colors.accent} style={{ flex: 1 }} />
                     ) : qrCode ? (
                       <Image source={{ uri: qrCode }} style={styles.qrImage} resizeMode="contain" />
                     ) : (
@@ -630,23 +630,23 @@ const UserBookedScreen = () => {
                 <View style={[styles.ticketLower, { backgroundColor: themeMode === 'light' ? '#f1f5f9' : '#18181b' }]}>
                   <View style={styles.ticketStat}>
                     <Text style={[styles.ticketStatLabel, { color: colors.subtext }]}>Date</Text>
-                    <MaterialIcons name="calendar-today" size={20} color={colors.primary} />
+                    <MaterialIcons name="calendar-today" size={20} color={colors.accent} />
                     <Text style={[styles.ticketStatValue, { color: colors.text }]}>{activeQrBooking.dateShort}</Text>
                   </View>
                   <View style={styles.ticketStat}>
                     <Text style={[styles.ticketStatLabel, { color: colors.subtext }]}>Heure</Text>
-                    <MaterialIcons name="schedule" size={20} color={colors.primary} />
+                    <MaterialIcons name="schedule" size={20} color={colors.accent} />
                     <Text style={[styles.ticketStatValue, { color: colors.text }]}>{activeQrBooking.time}</Text>
                   </View>
                   <View style={styles.ticketStat}>
                     <Text style={[styles.ticketStatLabel, { color: colors.subtext }]}>Personnes</Text>
-                    <MaterialIcons name="group" size={20} color={colors.primary} />
+                    <MaterialIcons name="group" size={20} color={colors.accent} />
                     <Text style={[styles.ticketStatValue, { color: colors.text }]}>{activeQrBooking.peopleCount}</Text>
                   </View>
                 </View>
 
                 <View style={[styles.ticketTip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                  <MaterialIcons name="brightness-high" size={18} color={colors.primary} />
+                  <MaterialIcons name="brightness-high" size={18} color={colors.accent} />
                   <Text style={[styles.ticketTipText, { color: colors.subtext }]}>Luminosité max recommandée</Text>
                 </View>
               </View>
@@ -1203,7 +1203,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    shadowColor: '#f97316',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.25,
     shadowRadius: 12,
@@ -1476,7 +1476,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 14,
     alignItems: 'center',
-    shadowColor: '#f97316',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 18,

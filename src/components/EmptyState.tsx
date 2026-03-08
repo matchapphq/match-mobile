@@ -25,7 +25,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({
   return (
     <View style={[styles.container, style]}>
       <View style={[styles.iconCircle, { backgroundColor: colors.surfaceAlt }]}>
-        <MaterialIcons name={icon} size={48} color={colors.primary} />
+        <MaterialIcons name={icon} size={48} color={colors.accent} />
       </View>
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       <Text style={[styles.description, { color: colors.textMuted }]}>{description}</Text>

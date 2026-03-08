@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { hapticFeedback } from "../utils/haptics";
+import { COLORS } from "../constants/colors";
 
 const MAX_BIO = 150;
 const AVATAR_PLACEHOLDER = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400";
@@ -116,15 +117,15 @@ const EditProfileScreen = () => {
                     <View style={styles.avatarWrapper}>
                         <ImageBackground source={{ uri: avatar }} style={styles.avatar} imageStyle={styles.avatarImage} />
                         <TouchableOpacity
-                            style={[styles.avatarBadge, { backgroundColor: colors.primary, borderColor: colors.background }]}
+                            style={[styles.avatarBadge, { backgroundColor: colors.accent, borderColor: colors.background }]}
                             activeOpacity={0.9}
                             onPress={handlePickImage}
                         >
-                            <MaterialIcons name="photo-camera" size={20} color={colors.text} />
+                            <MaterialIcons name="photo-camera" size={20} color={colors.white} />
                         </TouchableOpacity>
                     </View>
                     <TouchableOpacity onPress={handlePickImage}>
-                        <Text style={[styles.changePhotoText, { color: colors.primary }]}>Changer la photo de profil</Text>
+                        <Text style={[styles.changePhotoText, { color: colors.accent }]}>Changer la photo de profil</Text>
                     </TouchableOpacity>
                 </View>
 
@@ -342,7 +343,7 @@ const styles = StyleSheet.create({
         paddingVertical: 18,
         borderRadius: 32,
         alignItems: "center",
-        shadowColor: "#f47b25",
+        shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 12 },
         shadowOpacity: 0.35,
         shadowRadius: 20,

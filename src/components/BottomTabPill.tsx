@@ -104,8 +104,8 @@ const NavBarItem = ({ icon, label, active, onPress, colors }: any) => {
     return (
         <TouchableOpacity style={styles.navItem} onPress={onPress} activeOpacity={0.7}>
             <Animated.View style={{ alignItems: 'center', gap: 4, transform: [{ scale: scaleAnim }] }}>
-                <MaterialIcons name={icon} size={26} color={active ? colors.primary : colors.slate400} />
-                <Text style={[styles.navItemLabel, { color: colors.slate400 }, active && { color: colors.primary, fontWeight: 'bold' }]}>{label}</Text>
+                <MaterialIcons name={icon} size={26} color={active ? colors.accent : colors.slate400} />
+                <Text style={[styles.navItemLabel, { color: colors.slate400 }, active && { color: colors.accent, fontWeight: 'bold' }]}>{label}</Text>
             </Animated.View>
         </TouchableOpacity>
     );
