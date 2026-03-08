@@ -269,8 +269,8 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
                         style={[
                             styles.applyButton,
                             {
-                                backgroundColor: colors.primary,
-                                shadowColor: colors.primary
+                                backgroundColor: colors.accent,
+                                shadowColor: colors.accent
                             }
                         ]}
                         activeOpacity={0.9}

@@ -81,8 +81,8 @@ const DeleteAccountConfirmScreen = () => {
                     <View style={{ width: 44 }} />
                 </View>
                 <View style={styles.progressBarContainer}>
-                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
-                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: colors.accent }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: colors.accent }]} />
                     <View style={[styles.progressBarSegment, { backgroundColor: colors.border }]} />
                 </View>
             </View>
@@ -104,8 +104,8 @@ const DeleteAccountConfirmScreen = () => {
                                 key={reason}
                                 style={[
                                     styles.reasonCard,
-                                    { backgroundColor: colors.surface, borderColor: isSelected ? colors.primary : colors.border },
-                                    isSelected && { backgroundColor: COLORS.primary10 },
+                                    { backgroundColor: colors.surface, borderColor: isSelected ? colors.accent : colors.border },
+                                    isSelected && { backgroundColor: colors.accent10 },
                                 ]}
                                 activeOpacity={0.85}
                                 onPress={() => setSelectedReason(reason)}
@@ -114,8 +114,8 @@ const DeleteAccountConfirmScreen = () => {
                                 <View
                                     style={[
                                         styles.radioCircle,
-                                        { borderColor: isSelected ? colors.primary : colors.textMuted },
-                                        isSelected && { backgroundColor: colors.primary },
+                                        { borderColor: isSelected ? colors.accent : colors.textMuted },
+                                        isSelected && { backgroundColor: colors.accent },
                                     ]}
                                 >
                                     {isSelected && <View style={styles.radioInner} />}

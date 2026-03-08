@@ -96,7 +96,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
   {
     title: 'Actions',
     rows: [
-      { icon: 'logout', color: COLORS.primary, label: 'Déconnexion', accent: COLORS.primary },
+      { icon: 'logout', color: '#96DB1F', label: 'Déconnexion', accent: 'dynamic' },
       { icon: 'delete', color: '#f87171', label: 'Supprimer le compte', accent: '#f87171' },
     ],
   },
@@ -435,14 +435,14 @@ const ProfileScreen = () => {
                       onPress={isLanguageRow ? undefined : handlePress}
                     >
                       <View style={styles.rowLeft}>
-                        <View style={[styles.rowIcon, { backgroundColor: `${row.color}1A` }]}>
-                          <MaterialIcons name={row.icon as any} size={20} color={row.color} />
+                        <View style={[styles.rowIcon, { backgroundColor: row.accent ? (row.accent === 'dynamic' ? colors.accent10 : `${row.accent}1A`) : `${row.color}1A` }]}>
+                          <MaterialIcons name={row.icon as any} size={20} color={row.accent ? (row.accent === 'dynamic' ? colors.accent : row.accent) : row.color} />
                         </View>
                         <Text
                           style={[
                             styles.rowLabel,
                             { color: colors.text },
-                            row.accent && { color: row.accent, fontWeight: '600' },
+                            row.accent && { color: row.accent === 'dynamic' ? colors.accent : row.accent, fontWeight: '600' },
                           ]}
                         >
                           {row.label}

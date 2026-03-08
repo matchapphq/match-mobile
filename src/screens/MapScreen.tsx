@@ -821,7 +821,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
             {/* Loading */}
             {isLoading && (
                 <View style={styles.loadingOverlay}>
-                    <ActivityIndicator color={COLORS.primary} size="large" />
+                    <ActivityIndicator color={colors.accent} size="large" />
                     <Text style={styles.loadingText}>Chargement des bars...</Text>
                 </View>
             )}

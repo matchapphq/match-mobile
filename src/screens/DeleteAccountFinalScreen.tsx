@@ -126,9 +126,9 @@ const DeleteAccountFinalScreen = () => {
                     <View style={{ width: 44 }} />
                 </View>
                 <View style={styles.progressBarContainer}>
-                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
-                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
-                    <View style={[styles.progressBarSegment, { backgroundColor: COLORS.primary }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: colors.accent }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: colors.accent }]} />
+                    <View style={[styles.progressBarSegment, { backgroundColor: colors.accent }]} />
                 </View>
             </View>
 

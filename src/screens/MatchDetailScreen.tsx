@@ -206,7 +206,7 @@ const MatchDetailScreen = ({
 
                                     <View style={styles.heroCenter}>
                                         <Text style={styles.heroTime}>{match.kickoffTime}</Text>
-                                        <Text style={[styles.heroStatus, { color: colors.accent }]}>{match.statusLabel}</Text>
+                                        <Text style={[styles.heroStatus, { color: colors.primary }]}>{match.statusLabel}</Text>
                                     </View>
 
                                     <View style={styles.teamColumn}>
@@ -326,8 +326,8 @@ const MatchDetailScreen = ({
                         </ScrollView>
                     ) : (
                         <View style={[styles.emptyVenuesContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <View style={[styles.emptyVenuesIcon, { backgroundColor: colors.accent10, }]}>
-                                <MaterialIcons name="tv-off" size={32} color={colors.accent} />
+                            <View style={[styles.emptyVenuesIcon, { backgroundColor: colors.surfaceAlt }]}>
+                                <MaterialIcons name="tv-off" size={32} color={colors.textMuted} />
                             </View>
                             <Text style={[styles.emptyVenuesTitle, { color: colors.text }]}>
                                 Aucun bar ne diffuse ce match

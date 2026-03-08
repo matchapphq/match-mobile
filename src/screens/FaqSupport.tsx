@@ -119,7 +119,7 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
         <View style={styles.sectionBlock}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Besoin d'aide supplémentaire ?</Text>
           <TouchableOpacity
-            style={[styles.helpCard, styles.liveChatCard, { borderColor: colors.primary }]}
+            style={[styles.helpCard, styles.liveChatCard, { borderColor: colors.accent, backgroundColor: colors.accent }]}
             activeOpacity={0.85}
             onPress={() => openLiveChatFallback(supportEmail)}
           >
