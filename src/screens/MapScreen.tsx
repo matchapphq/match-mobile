@@ -754,7 +754,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                     <View style={styles.headerTop}>
                         <View style={{ width: 40 }} />
                         <Text style={[styles.headerTitle, { color: colors.text, textShadowColor: themeMode === 'light' ? 'transparent' : 'rgba(0,0,0,0.5)' }]}>AUTOUR DE MOI</Text>
-                        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.primary }]} onPress={openFilterSheet}>
+                        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.accent, shadowColor: colors.accent }]} onPress={openFilterSheet}>
                             <MaterialIcons name="tune" size={24} color={colors.white} />
                         </TouchableOpacity>
                     </View>
@@ -791,7 +791,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
 
                         {isSearchingArea && (
                             <View style={[styles.searchAreaButton, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
-                                <ActivityIndicator color={colors.primary} size="small" />
+                                <ActivityIndicator color={colors.accent} size="small" />
                                 <Text style={[styles.searchAreaButtonText, { color: colors.textMuted }]}>
                                     Recherche en cours...
                                 </Text>
