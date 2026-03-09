@@ -1,6 +1,24 @@
 export const BASE_COLORS = {
-    primary: "#f47b25",
-    primaryDark: "#d6661a",
+    primary: "#96DB1F",
+    primaryDark: "#74AA18",
+    
+    // Primary with Opacity variants (Lime #96DB1F / RGB 150, 219, 31)
+    primary05: "rgba(150, 219, 31, 0.05)",
+    primary08: "rgba(150, 219, 31, 0.08)",
+    primary10: "rgba(150, 219, 31, 0.1)",
+    primary12: "rgba(150, 219, 31, 0.12)",
+    primary15: "rgba(150, 219, 31, 0.15)",
+    primary20: "rgba(150, 219, 31, 0.2)",
+    primary25: "rgba(150, 219, 31, 0.25)",
+    primary30: "rgba(150, 219, 31, 0.3)",
+    primary40: "rgba(150, 219, 31, 0.4)",
+    primary50: "rgba(150, 219, 31, 0.5)",
+    primary80: "rgba(150, 219, 31, 0.8)",
+
+    // Brand Purple (CharteGraphique / match-frontend)
+    brandPurple: "#5a03cf",
+    brandPurpleLight: "#7a23ef",
+    brandPurpleDark: "#4a02af",
 
     sky400: "#38bdf8",
     red400: "#f87171",
@@ -46,6 +64,14 @@ export const DARK_THEME = {
     inputBackground: "rgba(255,255,255,0.05)",
 
     surfaceGlass: "rgba(255,255,255,0.10)",
+
+    // Accent — maps to primary (green) in dark theme
+    accent: "#96DB1F",
+    accentLight: "#96DB1F",
+    accentDark: "#74AA18",
+    accent10: "rgba(150, 219, 31, 0.10)",
+    accent15: "rgba(150, 219, 31, 0.15)",
+    accent20: "rgba(150, 219, 31, 0.20)",
 };
 
 export const LIGHT_THEME = {
@@ -75,6 +101,14 @@ export const LIGHT_THEME = {
     inputBackground: "rgba(0,0,0,0.04)",
 
     surfaceGlass: "rgba(0,0,0,0.05)",
+
+    // Accent — maps to brand purple in light theme
+    accent: "#5a03cf",
+    accentLight: "#7a23ef",
+    accentDark: "#4a02af",
+    accent10: "rgba(90, 3, 207, 0.10)",
+    accent15: "rgba(90, 3, 207, 0.15)",
+    accent20: "rgba(90, 3, 207, 0.20)",
 };
 
 // Default export for backward compatibility during refactor

@@ -26,7 +26,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/logo_app.png",
         "backgroundColor": "#ffffff"
       },
       "privacy": "https://matchapphq.github.io/match-privacy/",
@@ -35,7 +35,7 @@
       "package": "com.matchapps.match",
       "notification": {
         "icon": "./assets/logo_app.png",
-        "color": "#f47b25"
+        "color": "#96DB1F"
       }
     },
     "web": {
@@ -49,7 +49,11 @@
     },
     "plugins": [
       "expo-localization",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "expo-font",
+      "expo-image",
+      "expo-secure-store",
+      "expo-web-browser"
     ]
   }
 }

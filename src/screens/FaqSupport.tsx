@@ -14,6 +14,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useStore } from '../store/useStore';
+import { COLORS } from '../constants/colors';
 import { openLiveChatFallback, openSupportEmail } from '../utils/supportEmail';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -85,7 +86,7 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
               value={search}
               onChangeText={setSearch}
               style={[styles.searchInput, { color: colors.text }]}
-              selectionColor={colors.primary}
+              selectionColor={colors.accent}
             />
           </View>
         </View>
@@ -95,13 +96,13 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
           {filteredFaq.map((item) => {
             const isOpen = openId === item.id;
             return (
-              <View key={item.id} style={[styles.accordion, { backgroundColor: colors.surface }, isOpen && styles.accordionActive]}>
+              <View key={item.id} style={[styles.accordion, { backgroundColor: colors.surface }, isOpen && [styles.accordionActive, { borderColor: colors.accent + '66', backgroundColor: colors.accent + '14' }]]}>
                 <TouchableOpacity style={styles.accordionHeader} onPress={() => toggleFaq(item.id)}>
-                  <Text style={[styles.accordionTitle, { color: colors.text }, isOpen && { color: colors.primary }]}>{item.question}</Text>
+                  <Text style={[styles.accordionTitle, { color: colors.text }, isOpen && { color: colors.accent }]}>{item.question}</Text>
                   <MaterialIcons
                     name="expand-more"
                     size={22}
-                    color={isOpen ? colors.primary : colors.textMuted}
+                    color={isOpen ? colors.accent : colors.textMuted}
                     style={{ transform: [{ rotate: isOpen ? '180deg' : '0deg' }] }}
                   />
                 </TouchableOpacity>
@@ -118,7 +119,7 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
         <View style={styles.sectionBlock}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Besoin d'aide supplémentaire ?</Text>
           <TouchableOpacity
-            style={[styles.helpCard, styles.liveChatCard, { borderColor: colors.primary }]}
+            style={[styles.helpCard, styles.liveChatCard, { borderColor: colors.accent, backgroundColor: colors.accent }]}
             activeOpacity={0.85}
             onPress={() => openLiveChatFallback(supportEmail)}
           >
@@ -143,7 +144,7 @@ const FaqSupport = ({ navigation }: { navigation: any }) => {
           >
             <View style={styles.helpCardLeft}>
               <View style={[styles.helpIcon, { backgroundColor: colors.surfaceAlt }]}>
-                <MaterialIcons name="mail" size={22} color={colors.primary} />
+                <MaterialIcons name="mail" size={22} color={colors.accent} />
               </View>
               <View>
                 <Text style={[styles.helpCardTitle, { color: colors.text }]}>Envoyer un mail</Text>
@@ -216,8 +217,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   accordionActive: {
-    borderColor: 'rgba(244,123,37,0.4)',
-    backgroundColor: 'rgba(244,123,37,0.08)',
+    borderColor: COLORS.primary40,
+    backgroundColor: COLORS.primary08,
   },
   accordionHeader: {
     flexDirection: 'row',
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   liveChatCard: {
-    backgroundColor: '#F47B25',
+    backgroundColor: COLORS.primary,
   },
   helpCardLeft: {
     flexDirection: 'row',
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   helpCardSubtitle: {
-    color: 'rgba(255,255,255,0.7)', // default for liveChatCard (orange bg)
+    color: 'rgba(255,255,255,0.7)', // default for liveChatCard (purple bg)
     fontSize: 12,
     marginTop: 2,
   },

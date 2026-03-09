@@ -23,7 +23,6 @@ import MapScreenFilter, {
     DEFAULT_FILTER_SELECTIONS,
     FilterSelections,
 } from "../components/MapScreenFilter";
-import EmptyState from "../components/EmptyState";
 import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
 import { mobileApi, Venue, VenueMatch } from "../services/mobileApi";
@@ -729,7 +728,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                     <MaterialIcons
                                         name="location-on"
                                         size={isSelected ? 60 : 45}
-                                        color={colors.primary}
+                                        color={colors.accent}
                                     />
                                     {isSelected && <View style={[styles.activePinDot, { backgroundColor: colors.white }]} />}
                                 </View>
@@ -755,7 +754,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                     <View style={styles.headerTop}>
                         <View style={{ width: 40 }} />
                         <Text style={[styles.headerTitle, { color: colors.text, textShadowColor: themeMode === 'light' ? 'transparent' : 'rgba(0,0,0,0.5)' }]}>AUTOUR DE MOI</Text>
-                        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.primary }]} onPress={openFilterSheet}>
+                        <TouchableOpacity style={[styles.filterButton, { backgroundColor: colors.accent, shadowColor: colors.accent }]} onPress={openFilterSheet}>
                             <MaterialIcons name="tune" size={24} color={colors.white} />
                         </TouchableOpacity>
                     </View>
@@ -792,7 +791,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
 
                         {isSearchingArea && (
                             <View style={[styles.searchAreaButton, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
-                                <ActivityIndicator color={colors.primary} size="small" />
+                                <ActivityIndicator color={colors.accent} size="small" />
                                 <Text style={[styles.searchAreaButtonText, { color: colors.textMuted }]}>
                                     Recherche en cours...
                                 </Text>
@@ -805,27 +804,24 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
             {/* Empty State - No venues found (auto-dismisses after 4 seconds) */}
             {noVenuesFound && !isSearchingArea && (
                 <View style={styles.emptyStateContainer}>
-                    <EmptyState
-                        icon="search-off"
-                        title="Aucun lieu trouvé"
-                        description="Essaye de changer de sport ou de zoomer en arrière."
-                        style={[
-                            styles.emptyStateCard, 
-                            { 
-                                backgroundColor: colors.surfaceDark, 
-                                borderColor: colors.border,
-                                paddingVertical: 20,
-                                paddingHorizontal: 20,
-                            }
-                        ]}
-                    />
+                    <View style={[styles.emptyStateCard, { backgroundColor: colors.surfaceDark, borderColor: colors.border }]}>
+                        <View style={[styles.emptyStateIcon, { backgroundColor: colors.surfaceAlt || 'rgba(255,255,255,0.1)' }]}>
+                            <MaterialIcons name="search-off" size={20} color={colors.accent} />
+                        </View>
+                        <View style={styles.emptyStateContent}>
+                            <Text style={[styles.emptyStateTitle, { color: colors.text }]}>Aucun lieu trouvé</Text>
+                            <Text style={[styles.emptyStateSubtitle, { color: colors.textMuted }]}>
+                                Essaye de changer de sport ou de zoomer en arrière.
+                            </Text>
+                        </View>
+                    </View>
                 </View>
             )}
 
             {/* Loading */}
             {isLoading && (
                 <View style={styles.loadingOverlay}>
-                    <ActivityIndicator color={COLORS.primary} size="large" />
+                    <ActivityIndicator color={colors.accent} size="large" />
                     <Text style={styles.loadingText}>Chargement des bars...</Text>
                 </View>
             )}
@@ -855,9 +851,9 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                 </View>
                             </View>
                             <View style={styles.broadcastRow}>
-                                <View style={styles.broadcastBadge}>
-                                    <MaterialIcons name="live-tv" size={14} color={colors.primary} />
-                                    <Text style={[styles.broadcastText, { color: colors.primary }]}>Diffusé ici</Text>
+                                <View style={[styles.broadcastBadge, { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
+                                    <MaterialIcons name="live-tv" size={14} color={colors.accent} />
+                                    <Text style={[styles.broadcastText, { color: colors.accent }]}>Diffusé ici</Text>
                                 </View>
                             </View>
                         </View>
@@ -1234,12 +1230,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: 'rgba(244, 123, 37, 0.1)',
+        backgroundColor: COLORS.primary10,
         paddingHorizontal: 8,
         paddingVertical: 4,
         borderRadius: 4,
         borderWidth: 1,
-        borderColor: 'rgba(244, 123, 37, 0.2)',
+        borderColor: COLORS.primary20,
     },
     broadcastText: {
         color: COLORS.primary,
@@ -1491,8 +1487,8 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 6 },
     },
     chipHighlighted: {
-        backgroundColor: 'rgba(244,123,37,0.15)',
-        borderColor: 'rgba(244,123,37,0.4)',
+        backgroundColor: COLORS.primary15,
+        borderColor: COLORS.primary40,
     },
     chipLabel: {
         color: COLORS.textMuted,

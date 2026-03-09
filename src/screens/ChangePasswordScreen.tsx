@@ -18,6 +18,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useStore } from "../store/useStore";
 import { apiService } from "../services/api";
 import { usePostHog } from "posthog-react-native";
+import { COLORS } from "../constants/colors";
 
 const ChangePasswordScreen = () => {
     const insets = useSafeAreaInsets();
@@ -392,11 +393,11 @@ const styles = StyleSheet.create({
         marginTop: 40,
     },
     submitButton: {
-        backgroundColor: "#f47b25",
+        backgroundColor: COLORS.primary,
         paddingVertical: 16,
         borderRadius: 9999,
         alignItems: "center",
-        shadowColor: "#f47b25",
+        shadowColor: COLORS.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,

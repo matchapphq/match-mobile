@@ -153,10 +153,10 @@ const CancelReservationModal: React.FC<CancelReservationModalProps> = ({
               </View>
 
               {/* Cancel Conditions */}
-              <View style={styles.conditionsCard}>
-                <MaterialIcons name="info" size={20} color="#fb923c" style={{ marginTop: 2 }} />
+              <View style={[styles.conditionsCard, { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
+                <MaterialIcons name="info" size={20} color={colors.accent} style={{ marginTop: 2 }} />
                 <View style={styles.conditionsContent}>
-                  <Text style={styles.conditionsTitle}>Conditions d'annulation</Text>
+                  <Text style={[styles.conditionsTitle, { color: colors.text }]}>Conditions d'annulation</Text>
                   <Text style={styles.conditionsText}>
                     Toute annulation moins de 2h avant le début du match peut entraîner des frais
                     de non-présentation selon la politique de l'établissement.
@@ -286,11 +286,9 @@ const styles = StyleSheet.create({
   conditionsCard: {
     flexDirection: 'row',
     gap: 12,
-    backgroundColor: 'rgba(249, 115, 22, 0.05)',
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(249, 115, 22, 0.1)',
   },
   conditionsContent: {
     flex: 1,
@@ -299,7 +297,6 @@ const styles = StyleSheet.create({
   conditionsTitle: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#fed7aa',
   },
   conditionsText: {
     fontSize: 12,
@@ -317,7 +314,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#f97316',
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,

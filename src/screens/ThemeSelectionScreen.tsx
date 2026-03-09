@@ -43,7 +43,7 @@ const ThemeSelectionScreen = () => {
                 <View
                     style={[
                         styles.previewContainer,
-                        isSelected && styles.previewContainerSelected,
+                        isSelected && [styles.previewContainerSelected, { borderColor: colors.accent, shadowColor: colors.accent }],
                     ]}
                 >
                     {/* Card Content based on type */}
@@ -120,13 +120,13 @@ const ThemeSelectionScreen = () => {
 
                     {/* Checkmark Badge */}
                     {isSelected && (
-                        <View style={styles.checkBadge}>
+                        <View style={[styles.checkBadge, { backgroundColor: colors.accent }]}>
                             <MaterialIcons name="check" size={16} color="white" style={{ fontWeight: 'bold' }} />
                         </View>
                     )}
                 </View>
 
-                <Text style={[styles.label, { color: colors.subtext }, isSelected && { color: colors.primary }]}>
+                <Text style={[styles.label, { color: colors.subtext }, isSelected && { color: colors.accent }]}>
                     {label}
                 </Text>
             </TouchableOpacity>

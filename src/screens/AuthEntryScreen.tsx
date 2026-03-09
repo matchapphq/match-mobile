@@ -13,16 +13,18 @@ import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as WebBrowser from "expo-web-browser";
 import { useNavigation } from "@react-navigation/native";
+import { useStore } from "../store/useStore";
 import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { useAppleAuth } from "../hooks/useAppleAuth";
 import { PRIVACY_URL, TERMS_URL } from "../constants/legalUrls";
+import { COLORS } from "../constants/colors";
 
 const HERO_IMAGE =
     "https://images.unsplash.com/photo-1572116469696-958721b7d6ca?q=80&w=2574&auto=format&fit=crop";
-const BRAND_PRIMARY = "#f47b25";
 const { width } = Dimensions.get("window");
 
 const AuthEntryScreen = () => {
+    const { colors } = useStore();
     const navigation = useNavigation<any>();
     const { signInWithGoogle, isGoogleLoading, isGoogleConfigured } = useGoogleAuth();
     const { signInWithApple, isAppleLoading, isAppleAvailable } = useAppleAuth();
@@ -77,14 +79,14 @@ const AuthEntryScreen = () => {
                 />
                 <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
                     <View style={styles.header}>
-                        <MaterialIcons name="sports-bar" size={30} color={BRAND_PRIMARY} />
+                        <MaterialIcons name="sports-bar" size={30} color={colors.accent} />
                         <Text style={styles.brand}>MATCH</Text>
                     </View>
                     <Text style={styles.tagline}>Trouve ton spot, vis le match.</Text>
 
                     <View style={styles.card}>
                         <View style={styles.buttonGroup}>
-                            <TouchableOpacity style={[styles.primaryButton]} onPress={handleRegister} activeOpacity={0.9}>
+                            <TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary, shadowColor: colors.primary }]} onPress={handleRegister} activeOpacity={0.9}>
                                 <Text style={styles.primaryButtonText}>Créer un compte</Text>
                                 <MaterialIcons name="arrow-forward" size={20} color="#fff" />
                             </TouchableOpacity>
@@ -210,14 +212,14 @@ const styles = StyleSheet.create({
         gap: 16,
     },
     primaryButton: {
-        backgroundColor: BRAND_PRIMARY,
+        // backgroundColor handled dynamically
         borderRadius: 20,
         height: 60,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "center",
         gap: 10,
-        shadowColor: BRAND_PRIMARY,
+        // shadowColor handled dynamically
         shadowOpacity: 0.4,
         shadowRadius: 20,
         shadowOffset: { width: 0, height: 10 },

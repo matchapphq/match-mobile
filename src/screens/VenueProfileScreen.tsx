@@ -105,7 +105,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                     </View>
                 </View>
                 <View style={styles.matchDetails}>
-                    <Text style={[styles.leagueText, { color: colors.primary }]}>{match.league.toUpperCase()}</Text>
+                    <Text style={[styles.leagueText, { color: colors.accent }]}>{match.league.toUpperCase()}</Text>
                     <Text style={[styles.matchName, { color: colors.text }]}>{match.team1} vs {match.team2}</Text>
                     <Text style={[styles.stadiumText, { color: colors.textSecondary }]}>{venue?.name}</Text>
                 </View>
@@ -170,11 +170,11 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                         <TouchableOpacity style={[styles.favouriteButton, { top: insets.top + 16 }]} onPress={handleToggleFavourite} activeOpacity={0.7}>
                             {Platform.OS === 'ios' ? (
                                 <BlurView intensity={30} tint="dark" style={styles.backButtonBlur}>
-                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.primary : COLORS.white} />
+                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.accent : COLORS.white} />
                                 </BlurView>
                             ) : (
                                 <View style={[styles.backButtonBlur, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.primary : COLORS.white} />
+                                    <MaterialIcons name={isFavourite ? 'favorite' : 'favorite-border'} size={22} color={isFavourite ? colors.accent : COLORS.white} />
                                 </View>
                             )}
                         </TouchableOpacity>
@@ -198,7 +198,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                     <View style={styles.headerInfo}>
                         <Text style={styles.venueTitle}>{venue.name}</Text>
                         <View style={styles.venueAddressRow}>
-                            <MaterialIcons name="location-on" size={16} color={colors.primary} />
+                            <MaterialIcons name="location-on" size={16} color={colors.accent} />
                             <Text style={styles.venueAddress}>{venue.address}</Text>
                         </View>
                     </View>
@@ -210,12 +210,12 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                         </View>
                         {venue.tags.slice(0, 2).map((tag) => (
                             <View key={tag} style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                <MaterialIcons name="local-fire-department" size={16} color={colors.primary} />
+                                <MaterialIcons name="local-fire-department" size={16} color={colors.accent} />
                                 <Text style={[styles.chipText, { color: colors.text }]}>{tag}</Text>
                             </View>
                         ))}
                         <View style={[styles.chip, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <MaterialIcons name="star" size={16} color={colors.primary} />
+                            <MaterialIcons name="star" size={16} color={colors.accent} />
                             <Text style={[styles.chipText, { color: colors.text }]}>{renderRatingLabel}</Text>
                         </View>
                     </ScrollView>
@@ -261,8 +261,8 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             if (url) Linking.openURL(url);
                         }}
                     >
-                        <MaterialIcons name="directions" size={20} color={colors.primary} />
-                        <Text style={[styles.actionButtonText, { color: colors.primary }]}>Itinéraire</Text>
+                        <MaterialIcons name="directions" size={20} color={colors.accent} />
+                        <Text style={[styles.actionButtonText, { color: colors.accent }]}>Itinéraire</Text>
                     </TouchableOpacity>
 
                     <View style={[styles.divider, { backgroundColor: colors.divider }]} />
@@ -278,7 +278,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                                 venueImage: venue.image,
                             })}
                         >
-                            <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
+                            <Text style={[styles.seeAllText, { color: colors.accent }]}>Voir tout</Text>
                         </TouchableOpacity>
                     </View>
 
@@ -295,7 +295,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                     <View style={[styles.infoContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         <InfoRow icon="schedule" title="Heures d'ouverture" subtitle="17:00 - 02:00 (Tous les jours)" colors={colors} />
                         <InfoRow icon="train" title="Transports" subtitle="Métro Parmentier (Ligne 3)" colors={colors} />
-                        <InfoRow icon="local-drink" title="Happy Hour" subtitle="17h - 20h sur toutes les pintes" iconColor={colors.primary} highlighted colors={colors} />
+                        <InfoRow icon="local-drink" title="Happy Hour" subtitle="17h - 20h sur toutes les pintes" iconColor={colors.accent} highlighted colors={colors} />
                         <InfoRow icon="wifi" title="Équipements" subtitle="Wi-Fi gratuit, Climatisation" colors={colors} />
                     </View>
 
@@ -340,22 +340,22 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                     {/* Contact Venue Owner */}
                     <View style={[styles.contactContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                         <View style={styles.contactHeader}>
-                            <MaterialIcons name="support-agent" size={22} color={colors.primary} />
+                            <MaterialIcons name="support-agent" size={22} color={colors.accent} />
                             <Text style={[styles.contactTitle, { color: colors.text }]}>Besoin d’aide ?</Text>
                         </View>
                         <Text style={[styles.contactSubtitle, { color: colors.textSecondary }]}>
                             Contactez directement l’établissement pour toute question sur votre réservation.
                         </Text>
                         <TouchableOpacity
-                            style={[styles.contactButton, { borderColor: colors.primary }]}
+                            style={[styles.contactButton, { borderColor: colors.accent }]}
                             onPress={() => {
                                 posthog?.capture('venue_contact_pressed', { venue_id: venue.id, venue_name: venue.name });
                                 // TODO: Replace with real venue phone/email when available
                                 Linking.openURL('tel:+33000000000');
                             }}
                         >
-                            <MaterialIcons name="phone" size={18} color={colors.primary} />
-                            <Text style={[styles.contactButtonText, { color: colors.primary }]}>Appeler l’établissement</Text>
+                            <MaterialIcons name="phone" size={18} color={colors.accent} />
+                            <Text style={[styles.contactButtonText, { color: colors.accent }]}>Appeler l'établissement</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -368,12 +368,12 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
 
 const InfoRow = ({ icon, title, subtitle, iconColor, highlighted, colors }: any) => (
     <View style={styles.infoRow}>
-        <View style={[styles.iconBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }, highlighted && { backgroundColor: 'rgba(244, 123, 37, 0.1)', borderColor: 'rgba(244, 123, 37, 0.2)' }]}>
+        <View style={[styles.iconBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }, highlighted && { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
             <MaterialIcons name={icon} size={20} color={iconColor || colors.textSecondary} />
         </View>
         <View style={styles.infoTextContainer}>
             <Text style={[styles.infoTitle, { color: colors.text }]}>{title}</Text>
-            <Text style={[styles.infoSubtitle, { color: colors.textSecondary }, highlighted && { color: colors.primary }]}>{subtitle}</Text>
+            <Text style={[styles.infoSubtitle, { color: colors.textSecondary }, highlighted && { color: colors.accent }]}>{subtitle}</Text>
         </View>
     </View>
 );
@@ -608,9 +608,9 @@ const styles = StyleSheet.create({
     },
     liveBadge: {
         marginTop: 4,
-        backgroundColor: 'rgba(244, 123, 37, 0.1)',
+        backgroundColor: COLORS.primary10,
         borderWidth: 1,
-        borderColor: 'rgba(244, 123, 37, 0.2)',
+        borderColor: COLORS.primary20,
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: 99,

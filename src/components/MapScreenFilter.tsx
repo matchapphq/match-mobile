@@ -191,11 +191,11 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
                                             style={[
                                                 styles.chip,
                                                 {
-                                                    backgroundColor: active ? colors.primary : colors.surfaceAlt,
-                                                    borderColor: active ? colors.primary : colors.border
+                                                    backgroundColor: active ? colors.accent : colors.surfaceAlt,
+                                                    borderColor: active ? colors.accent : colors.border
                                                 },
                                                 active && {
-                                                    shadowColor: colors.primary,
+                                                    shadowColor: colors.accent,
                                                     shadowOpacity: 0.3,
                                                     shadowRadius: 10,
                                                     shadowOffset: { width: 0, height: 6 },
@@ -231,11 +231,11 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
                                         style={[
                                             styles.budgetButton,
                                             {
-                                                backgroundColor: active ? colors.primary : colors.surfaceAlt,
-                                                borderColor: active ? colors.primary : colors.border
+                                                backgroundColor: active ? colors.accent : colors.surfaceAlt,
+                                                borderColor: active ? colors.accent : colors.border
                                             },
                                             active && {
-                                                shadowColor: colors.primary,
+                                                shadowColor: colors.accent,
                                                 shadowOpacity: 0.3,
                                                 shadowRadius: 12,
                                                 shadowOffset: { width: 0, height: 6 },
@@ -269,8 +269,8 @@ const MapScreenFilter = ({ visible, initialSelections, onClose, onApply }: Props
                         style={[
                             styles.applyButton,
                             {
-                                backgroundColor: colors.primary,
-                                shadowColor: colors.primary
+                                backgroundColor: colors.accent,
+                                shadowColor: colors.accent
                             }
                         ]}
                         activeOpacity={0.9}
