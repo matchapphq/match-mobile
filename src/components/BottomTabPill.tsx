@@ -1,7 +1,8 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Platform } from "react-native";
 import { BlurView } from "expo-blur";
 import { MaterialIcons } from "@expo/vector-icons";
+import { GlassView, GlassContainer } from "expo-glass-effect";
 import { useStore } from "../store/useStore";
 import { hapticFeedback } from "../utils/haptics";
 
@@ -13,15 +14,50 @@ interface BottomTabPillProps {
 
 const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) => {
     const { colors, computedTheme: themeMode } = useStore();
-
-    const TabBarWrapper = Platform.OS === 'ios' ? BlurView : View;
+    const [visible, setVisible] = useState<boolean>(true);
+    
+    const { NewTabWrapper, NewWrapperProps } = useMemo(() => {
+        const version = parseInt(String(Platform.Version), 10);
+        
+        if (Platform.OS === "ios" && version >= 26) {
+            return {
+                NewTabWrapper: GlassView,
+                NewWrapperProps: {
+                    glassEffectStyle: {
+                        style: visible ? 'clear' : 'none',
+                        animate: true,
+                        animationDuration: 0.5
+                    },
+                    // tintColors: {
+                    //     light: colors.background,
+                    //     dark: colors.background,
+                    // }
+                }
+            }
+        }
+        if (Platform.OS === "ios" && version < 26) {
+            return {
+                NewTabWrapper: BlurView,
+                NewWrapperProps: {
+                    intensity: 80,
+                    tint: themeMode === 'light' ? 'light' : 'dark'
+                }
+            }
+        }
+        return {
+            NewTabWrapper: View,
+            NewWrapperProps: {}
+        } 
+    }, [])
+    
+    const TabBarWrapper = Platform.OS === 'ios' ? (parseInt(String(Platform.Version), 10) >= 26 ? GlassView: BlurView): View;
     const wrapperProps = Platform.OS === 'ios'
         ? { intensity: 80, tint: themeMode === 'light' ? 'light' : 'dark' }
         : {};
 
     return (
-        <TabBarWrapper
-            {...wrapperProps as any}
+        <NewTabWrapper
+            {...NewWrapperProps as any}
             style={[
                 styles.navBar,
                 { borderColor: colors.border },
@@ -65,6 +101,9 @@ const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) =
                 } else if (route.name === "Search") {
                     iconName = "search";
                     displayText = "Rechercher";
+                } else if (route.name === "Discover") {
+                    iconName = "discord";
+                    displayText = "Discover"r
                 } else if (route.name === "Reservations") {
                     iconName = "confirmation-number";
                     displayText = "Réservations";
@@ -84,7 +123,7 @@ const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) =
                     />
                 );
             })}
-        </TabBarWrapper>
+        </NewTabWrapper>
     );
 };
 
