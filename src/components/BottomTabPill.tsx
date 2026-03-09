@@ -24,7 +24,7 @@ const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) =
                 NewTabWrapper: GlassView,
                 NewWrapperProps: {
                     glassEffectStyle: {
-                        style: visible ? 'clear' : 'none',
+                        // style: themeMode === 'light' ? 'regular' : 'regular',
                         animate: true,
                         animationDuration: 0.5
                     },
@@ -40,7 +40,7 @@ const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) =
                 NewTabWrapper: BlurView,
                 NewWrapperProps: {
                     intensity: 80,
-                    tint: themeMode === 'light' ? 'light' : 'dark'
+                    tint: themeMode === 'light' ? 'light' : 'dark' as any
                 }
             }
         }
@@ -48,12 +48,7 @@ const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) =
             NewTabWrapper: View,
             NewWrapperProps: {}
         } 
-    }, [])
-    
-    const TabBarWrapper = Platform.OS === 'ios' ? (parseInt(String(Platform.Version), 10) >= 26 ? GlassView: BlurView): View;
-    const wrapperProps = Platform.OS === 'ios'
-        ? { intensity: 80, tint: themeMode === 'light' ? 'light' : 'dark' }
-        : {};
+    }, [visible, themeMode])
 
     return (
         <NewTabWrapper
@@ -103,7 +98,7 @@ const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) =
                     displayText = "Rechercher";
                 } else if (route.name === "Discover") {
                     iconName = "discord";
-                    displayText = "Discover"r
+                    displayText = "Discover";
                 } else if (route.name === "Reservations") {
                     iconName = "confirmation-number";
                     displayText = "Réservations";
