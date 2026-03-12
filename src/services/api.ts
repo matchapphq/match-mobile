@@ -632,6 +632,25 @@ export const apiService = {
     },
 
     // Discovery
+    getHomeDiscovery: async (): Promise<{
+        banners: any[];
+        followedTeams: any[];
+        popularCompetitions: any[];
+        recents: any[];
+        upcomingMatches: any[];
+    }> => {
+        const response = await api.get("/discovery/home");
+        return response.data;
+    },
+
+    clearHistory: async (): Promise<void> => {
+        await api.post("/discovery/history/clear");
+    },
+
+    trackVenueView: async (venueId: string): Promise<void> => {
+        await api.post(`/venues/${venueId}/view`);
+    },
+
     discoverNearby: async (
         lat: number,
         lng: number,

@@ -99,6 +99,15 @@ interface AppState {
         sortDirection: "asc" | "desc";
     };
 
+    // Discovery
+    discoveryHome: {
+        banners: any[];
+        followedTeams: any[];
+        popularCompetitions: any[];
+        recents: any[];
+        upcomingMatches: any[];
+    };
+
     // Actions
     setUser: (user: User | null) => void;
     setOnboardingCompleted: (completed: boolean) => void;
@@ -113,6 +122,8 @@ interface AppState {
     }) => Promise<boolean>;
     fetchUserProfile: () => Promise<void>;
     refreshUserProfile: () => Promise<void>;
+    fetchDiscoveryHome: () => Promise<void>;
+    clearDiscoveryHistory: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
     updateComputedTheme: () => void;
     setPushNotificationsEnabled: (enabled: boolean) => void;
@@ -224,9 +235,43 @@ export const useStore = create<AppState>((set, get) => ({
     isLoading: false,
     error: null,
 
+    discoveryHome: {
+        banners: [],
+        followedTeams: [],
+        popularCompetitions: [],
+        recents: [],
+        upcomingMatches: [],
+    },
+
     // Loading state actions
     setLoading: (loading) => set({ isLoading: loading }),
     setError: (error) => set({ error }),
+
+    // Discovery Actions
+    fetchDiscoveryHome: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const data = await apiService.getHomeDiscovery();
+            set({ discoveryHome: data, isLoading: false });
+        } catch (error) {
+            console.error("Error fetching discovery home:", error);
+            set({ isLoading: false });
+        }
+    },
+
+    clearDiscoveryHistory: async () => {
+        try {
+            await apiService.clearHistory();
+            set((state) => ({
+                discoveryHome: {
+                    ...state.discoveryHome,
+                    recents: [],
+                },
+            }));
+        } catch (error) {
+            console.error("Error clearing discovery history:", error);
+        }
+    },
 
     // Favourites
     toggleFavourite: async (venueIdOrObj: string | { id: string, venue_id?: string }) => {
