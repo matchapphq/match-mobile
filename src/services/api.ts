@@ -643,6 +643,11 @@ export const apiService = {
         return response.data;
     },
 
+    getCompetitionDetails: async (competitionId: string): Promise<any> => {
+        const response = await api.get(`/discovery/competition/${competitionId}`);
+        return response.data;
+    },
+
     clearHistory: async (): Promise<void> => {
         await api.post("/discovery/history/clear");
     },

@@ -169,7 +169,14 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.competitionsContent}>
                 {discoveryHome.popular_competitions?.map((comp: any, idx: number) => (
-                    <TouchableOpacity key={comp.id || idx} style={styles.compContainer} onPress={() => navigation.navigate("Search", { leagueId: comp.id })}>
+                    <TouchableOpacity 
+                        key={comp.id || idx} 
+                        style={styles.compContainer} 
+                        onPress={() => navigation.navigate("CompetitionDetails", { 
+                            competitionId: comp.id,
+                            competitionName: comp.name 
+                        })}
+                    >
                         <View style={[styles.compIconCircle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                             {comp.logo_url ? <Image source={{ uri: comp.logo_url }} style={styles.compLogo} /> : <MaterialIcons name="emoji-events" size={20} color={colors.accent} />}
                         </View>
