@@ -634,10 +634,10 @@ export const apiService = {
     // Discovery
     getHomeDiscovery: async (): Promise<{
         banners: any[];
-        followedTeams: any[];
-        popularCompetitions: any[];
-        recents: any[];
-        upcomingMatches: any[];
+        followed_teams: any[];
+        popular_competitions: any[];
+        recently_viewed: any[];
+        upcoming_matches: any[];
     }> => {
         const response = await api.get("/discovery/home");
         return response.data;

@@ -17,8 +17,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import Animated, { 
     useSharedValue, 
     useAnimatedStyle, 
-    withSpring, 
-    withTiming,
     interpolate,
     useAnimatedScrollHandler
 } from "react-native-reanimated";

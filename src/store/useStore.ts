@@ -102,10 +102,10 @@ interface AppState {
     // Discovery
     discoveryHome: {
         banners: any[];
-        followedTeams: any[];
-        popularCompetitions: any[];
-        recents: any[];
-        upcomingMatches: any[];
+        followed_teams: any[];
+        popular_competitions: any[];
+        recently_viewed: any[];
+        upcoming_matches: any[];
     };
 
     // Actions
@@ -237,10 +237,10 @@ export const useStore = create<AppState>((set, get) => ({
 
     discoveryHome: {
         banners: [],
-        followedTeams: [],
-        popularCompetitions: [],
-        recents: [],
-        upcomingMatches: [],
+        followed_teams: [],
+        popular_competitions: [],
+        recently_viewed: [],
+        upcoming_matches: [],
     },
 
     // Loading state actions
@@ -265,7 +265,7 @@ export const useStore = create<AppState>((set, get) => ({
             set((state) => ({
                 discoveryHome: {
                     ...state.discoveryHome,
-                    recents: [],
+                    recently_viewed: [],
                 },
             }));
         } catch (error) {
