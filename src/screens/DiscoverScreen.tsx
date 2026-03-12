@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
     View,
     Text,
@@ -9,54 +9,60 @@ import {
     Dimensions,
     TextInput,
     StatusBar,
-    Platform,
+    RefreshControl,
+    ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import { useStore } from "../store/useStore";
 
 const { width } = Dimensions.get("window");
 
 const DiscoverScreen = ({ navigation }: { navigation: any }) => {
-    const { colors, computedTheme: themeMode, user } = useStore();
-    const isLightTheme = themeMode === "light";
+    const { 
+        colors, 
+        computedTheme: themeMode, 
+        user, 
+        discoveryHome, 
+        fetchDiscoveryHome,
+        clearDiscoveryHistory,
+        isLoading 
+    } = useStore();
     
-    // Extract user preferences for dynamic filtering
-    const userData = user?.user ?? user ?? null;
-    const favSports = userData?.preferences?.sports || [];
-    const followedTeamIds = userData?.preferences?.fav_team_ids || [];
+    const isLightTheme = themeMode === "light";
+    const [refreshing, setRefreshing] = useState(false);
 
-    // State detection for new users
-    const hasHistory = false; // In production, check if recent history exists in state/API
-    const hasTeams = followedTeamIds.length > 0;
-    const hasMatches = true; // In production, check if upcoming matches list is empty
+    useEffect(() => {
+        fetchDiscoveryHome();
+    }, []);
 
-    // Mock dynamic banners
-    const allBanners = [
-        {
-            id: "onboarding",
-            sport: "generic",
-            title: "BIENVENUE SUR MATCH",
-            subtitle: "Ton nouveau QG sportif",
-            dateLabel: "Prêt pour le coup d'envoi ?",
-            image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=2000&auto=format&fit=crop",
-            isGeneric: true
-        },
-        {
-            id: "world-cup",
-            sport: "football",
-            title: "FIFA WORLD CUP",
-            subtitle: "Qatar 2022",
-            dateLabel: "Du 20 Nov au 18 Dec",
-            image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=2070&auto=format&fit=crop"
-        }
-    ];
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchDiscoveryHome();
+        setRefreshing(false);
+    }, []);
 
-    // Banner logic: show generic if it's a new arrival or follow specific interests
-    const relevantBanners = allBanners.filter(b => b.isGeneric || favSports.includes(b.sport));
-    const activeBanner = relevantBanners[0];
+    // Helper to get initials for placeholders
+    const getInitials = (name: string) => {
+        return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    };
+
+    const hasTeams = discoveryHome.followed_teams?.length > 0;
+    const hasHistory = discoveryHome.recently_viewed?.length > 0;
+    const hasMatches = discoveryHome.upcoming_matches?.length > 0;
+    const activeBanner = discoveryHome.banners?.[0];
+
+    // Default welcome banner if no dynamic banners exist
+    const defaultBanner = {
+        title: "BIENVENUE SUR MATCH",
+        subtitle: "Ton nouveau QG sportif",
+        date_range_label: "Prêt pour le coup d'envoi ?",
+        image_url: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=2000&auto=format&fit=crop",
+        isGeneric: true
+    };
+
+    const bannerToDisplay = activeBanner || defaultBanner;
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -65,6 +71,14 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 <ScrollView 
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={styles.scrollContent}
+                    refreshControl={
+                        <RefreshControl 
+                            refreshing={refreshing} 
+                            onRefresh={onRefresh} 
+                            tintColor={colors.primary}
+                            colors={[colors.primary]}
+                        />
+                    }
                 >
                     {/* Header Section */}
                     <View style={styles.header}>
@@ -96,37 +110,39 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                                 placeholder="Rechercher un bar, un plat..."
                                 placeholderTextColor={colors.textMuted}
                                 style={[styles.searchInput, { color: colors.text }]}
+                                onFocus={() => navigation.navigate("Search")}
                             />
                         </View>
-                        <TouchableOpacity style={styles.mapButton}>
+                        <TouchableOpacity style={styles.mapButton} onPress={() => navigation.navigate("Map")}>
                             <MaterialIcons name="map" size={24} color={colors.text} />
                         </TouchableOpacity>
                     </View>
 
                     {/* Main Banner */}
-                    {activeBanner && (
-                        <View style={[styles.bannerContainer, { backgroundColor: colors.surface }]}>
-                            <Image
-                                source={{ uri: activeBanner.image }}
-                                style={styles.bannerImage}
-                            />
-                            <LinearGradient
-                                colors={["transparent", "rgba(0,0,0,0.85)"]}
-                                style={styles.bannerOverlay}
-                            />
-                            <View style={styles.bannerContent}>
-                                <View style={[styles.bannerBadge, { backgroundColor: activeBanner.isGeneric ? colors.accent : "rgba(255,255,255,0.2)" }]}>
-                                    <Text style={styles.bannerBadgeText}>{activeBanner.isGeneric ? "À DÉCOUVRIR" : "COMPÉTITION"}</Text>
-                                </View>
-                                <Text style={styles.bannerTitle}>{activeBanner.title}</Text>
-                                <Text style={styles.bannerSubtitle}>{activeBanner.subtitle} • {activeBanner.dateLabel}</Text>
-                                <TouchableOpacity style={[styles.bannerCTA, { backgroundColor: colors.primary }]}>
-                                    <Text style={styles.bannerCTAText}>{activeBanner.isGeneric ? "Explorer" : "Voir les bars"}</Text>
-                                    <MaterialIcons name="arrow-forward" size={14} color="white" />
-                                </TouchableOpacity>
+                    <View style={[styles.bannerContainer, { backgroundColor: colors.surface }]}>
+                        <Image
+                            source={{ uri: bannerToDisplay.image_url }}
+                            style={styles.bannerImage}
+                        />
+                        <LinearGradient
+                            colors={["transparent", "rgba(0,0,0,0.85)"]}
+                            style={styles.bannerOverlay}
+                        />
+                        <View style={styles.bannerContent}>
+                            <View style={[styles.bannerBadge, { backgroundColor: bannerToDisplay.isGeneric ? colors.accent : "rgba(255,255,255,0.2)" }]}>
+                                <Text style={styles.bannerBadgeText}>{bannerToDisplay.isGeneric ? "À DÉCOUVRIR" : "COMPÉTITION"}</Text>
                             </View>
+                            <Text style={styles.bannerTitle}>{bannerToDisplay.title}</Text>
+                            <Text style={styles.bannerSubtitle}>{bannerToDisplay.subtitle} • {bannerToDisplay.date_range_label}</Text>
+                            <TouchableOpacity 
+                                style={[styles.bannerCTA, { backgroundColor: colors.primary }]}
+                                onPress={() => bannerToDisplay.tournament_id ? navigation.navigate("Search", { tournamentId: bannerToDisplay.tournament_id }) : navigation.navigate("Map")}
+                            >
+                                <Text style={styles.bannerCTAText}>{bannerToDisplay.isGeneric ? "Explorer" : "Voir les bars"}</Text>
+                                <MaterialIcons name="arrow-forward" size={14} color="white" />
+                            </TouchableOpacity>
                         </View>
-                    )}
+                    </View>
 
                     {/* Teams Section */}
                     <View style={styles.sectionHeader}>
@@ -134,26 +150,26 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                     </View>
                     {hasTeams ? (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.teamsScroll} contentContainerStyle={styles.teamsContent}>
-                            {[
-                                { id: 1, name: "PSG", live: true },
-                                { id: 2, name: "Lakers", live: false },
-                                { id: 3, name: "Real Madrid", live: false },
-                            ].map((team) => (
-                                <View key={team.id} style={styles.teamContainer}>
-                                    <View style={[styles.teamAvatarContainer, { backgroundColor: colors.surface, borderColor: team.live ? colors.accent : colors.border }]}>
+                            {discoveryHome.followed_teams.map((team: any) => (
+                                <TouchableOpacity key={team.id} style={styles.teamContainer} onPress={() => team.live_match_id && navigation.navigate("MatchDetails", { matchId: team.live_match_id })}>
+                                    <View style={[styles.teamAvatarContainer, { backgroundColor: colors.surface, borderColor: team.is_live ? colors.accent : colors.border }]}>
                                         <View style={[styles.teamAvatarInner, { backgroundColor: isLightTheme ? colors.background : "#2a2a30" }]}>
-                                            <MaterialCommunityIcons name="soccer" size={24} color={team.live ? colors.accent : colors.textMuted} />
+                                            {team.logo_url ? (
+                                                <Image source={{ uri: team.logo_url }} style={styles.teamLogo} />
+                                            ) : (
+                                                <MaterialCommunityIcons name="soccer" size={24} color={team.is_live ? colors.accent : colors.textMuted} />
+                                            )}
                                         </View>
-                                        {team.live && (
+                                        {team.is_live && (
                                             <View style={styles.liveLabel}>
                                                 <Text style={styles.liveLabelText}>LIVE</Text>
                                             </View>
                                         )}
                                     </View>
-                                    <Text style={[styles.teamName, { color: colors.text }]}>{team.name}</Text>
-                                </View>
+                                    <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={1}>{team.name}</Text>
+                                </TouchableOpacity>
                             ))}
-                            <TouchableOpacity style={styles.addTeamContainer}>
+                            <TouchableOpacity style={styles.addTeamContainer} onPress={() => navigation.navigate("EditProfile")}>
                                 <View style={[styles.addTeamCircle, { borderColor: colors.border }]}>
                                     <MaterialIcons name="add" size={24} color={colors.textMuted} />
                                 </View>
@@ -183,51 +199,17 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Compétitions populaires</Text>
                     </View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.competitionsScroll} contentContainerStyle={styles.competitionsContent}>
-                        {[
-                            { icon: "sports-soccer", name: "World Cup" },
-                            { icon: "sports-tennis", name: "Roland-Garros" },
-                            { icon: "sports-basketball", name: "NBA Finals" },
-                            { icon: "directions-car", name: "Formula 1" },
-                            { icon: "sports-rugby", name: "Top 14" },
-                        ].map((comp, idx) => (
-                            <TouchableOpacity key={idx} style={styles.compContainer}>
+                        {discoveryHome.popular_competitions?.map((comp: any, idx: number) => (
+                            <TouchableOpacity key={comp.id || idx} style={styles.compContainer} onPress={() => navigation.navigate("Search", { leagueId: comp.id })}>
                                 <View style={[styles.compIconCircle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                    <MaterialIcons name={comp.icon as any} size={20} color={colors.accent} />
+                                    {comp.logo_url ? (
+                                        <Image source={{ uri: comp.logo_url }} style={styles.compLogo} />
+                                    ) : (
+                                        <MaterialIcons name="emoji-events" size={20} color={colors.accent} />
+                                    )}
                                 </View>
-                                <Text style={[styles.compName, { color: colors.textMuted }]}>{comp.name}</Text>
+                                <Text style={[styles.compName, { color: colors.textMuted }]} numberOfLines={2}>{comp.name}</Text>
                             </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-
-                    {/* Featured Matches */}
-                    <View style={styles.sectionHeader}>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>À la une</Text>
-                    </View>
-                    <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.featuredScroll}>
-                        {[1, 2].map((match) => (
-                            <View key={match} style={[styles.featuredCard, { backgroundColor: colors.surface }]}>
-                                <Image
-                                    source={{ uri: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1974&auto=format&fit=crop" }}
-                                    style={styles.featuredImage}
-                                />
-                                <LinearGradient
-                                    colors={["transparent", "rgba(0,0,0,0.9)"]}
-                                    style={styles.featuredOverlay}
-                                />
-                                <View style={[styles.featuredLabel, { backgroundColor: colors.primary }]}>
-                                    <Text style={styles.featuredLabelText}>MATCH CHOC</Text>
-                                </View>
-                                <View style={styles.featuredCardContent}>
-                                    <View style={styles.featuredTopRow}>
-                                        <Text style={[styles.featuredLeague, { color: colors.accent }]}>La Liga • 21:00</Text>
-                                        <TouchableOpacity style={[styles.reserveButton, { backgroundColor: colors.white }]}>
-                                            <Text style={styles.reserveButtonText}>Réserver</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                    <Text style={styles.featuredMatchTitle}>El Clásico</Text>
-                                    <Text style={styles.featuredTeams}>Real Madrid vs FC Barcelone</Text>
-                                </View>
-                            </View>
                         ))}
                     </ScrollView>
 
@@ -235,28 +217,32 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Récemment vus</Text>
                         {hasHistory && (
-                            <TouchableOpacity>
+                            <TouchableOpacity onPress={clearDiscoveryHistory}>
                                 <Text style={[styles.clearText, { color: colors.textMuted }]}>Effacer</Text>
                             </TouchableOpacity>
                         )}
                     </View>
                     {hasHistory ? (
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recentScroll} contentContainerStyle={styles.recentContent}>
-                            {[1, 2].map((bar) => (
-                                <View key={bar} style={[styles.recentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            {discoveryHome.recently_viewed.map((item: any) => (
+                                <TouchableOpacity 
+                                    key={item.venue.id} 
+                                    style={[styles.recentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                                    onPress={() => navigation.navigate("VenueDetails", { venueId: item.venue.id })}
+                                >
                                     <Image
-                                        source={{ uri: "https://images.unsplash.com/photo-1543007630-9710e4a00a20?q=80&w=2070&auto=format&fit=crop" }}
+                                        source={{ uri: item.venue.photos?.[0]?.photo_url || "https://images.unsplash.com/photo-1543007630-9710e4a00a20?q=80&w=2070&auto=format&fit=crop" }}
                                         style={styles.recentImage}
                                     />
                                     <View style={styles.recentInfo}>
-                                        <Text style={[styles.recentTitle, { color: colors.text }]}>The Lions Pub</Text>
-                                        <Text style={[styles.recentSub, { color: colors.textMuted }]}>Pub irlandais • Paris 11</Text>
-                                        <Text style={[styles.recentDetail, { color: colors.textMuted }]}>Happy Hour 17h-20h</Text>
+                                        <Text style={[styles.recentTitle, { color: colors.text }]} numberOfLines={1}>{item.venue.name}</Text>
+                                        <Text style={[styles.recentSub, { color: colors.textMuted }]} numberOfLines={1}>{item.venue.type} • {item.venue.city}</Text>
+                                        <Text style={[styles.recentDetail, { color: colors.textMuted }]}>Vu {new Date(item.viewed_at).toLocaleDateString()}</Text>
                                     </View>
                                     <View style={[styles.ratingBadge, { backgroundColor: colors.accent10 }]}>
-                                        <Text style={[styles.ratingText, { color: colors.accent }]}>9.2</Text>
+                                        <Text style={[styles.ratingText, { color: colors.accent }]}>{parseFloat(item.venue.average_rating || "0").toFixed(1)}</Text>
                                     </View>
-                                </View>
+                                </TouchableOpacity>
                             ))}
                         </ScrollView>
                     ) : (
@@ -288,36 +274,45 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                     </View>
                     {hasMatches ? (
                         <View style={styles.upcomingContainer}>
-                            {[
-                                { t1: "PSG", t2: "Marseille", time: "21:00", league: "Ligue 1", day: "Ce soir" },
-                                { t1: "Lakers", t2: "Warriors", time: "03:00", league: "NBA", day: "Demain" },
-                            ].map((match, idx) => (
-                                <View key={idx} style={[styles.upcomingRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            {discoveryHome.upcoming_matches.map((match: any, idx: number) => (
+                                <TouchableOpacity key={match.id || idx} style={[styles.upcomingRow, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.navigate("MatchDetails", { matchId: match.id })}>
                                     <View style={styles.upcomingTeam}>
                                         <View style={[styles.smallBadge, { backgroundColor: colors.surfaceAlt }]}>
-                                            <Text style={[styles.smallBadgeText, { color: colors.text }]}>{match.t1.substring(0, 1)}</Text>
+                                            {match.homeTeam?.logo_url ? (
+                                                <Image source={{ uri: match.homeTeam.logo_url }} style={styles.smallTeamLogo} />
+                                            ) : (
+                                                <Text style={[styles.smallBadgeText, { color: colors.text }]}>{getInitials(match.homeTeam?.name || "T")}</Text>
+                                            )}
                                         </View>
-                                        <View>
-                                            <Text style={[styles.upcomingTeamName, { color: colors.text }]}>{match.t1}</Text>
-                                            <Text style={[styles.upcomingLeague, { color: colors.textMuted }]}>{match.league}</Text>
+                                        <View style={{ flex: 1 }}>
+                                            <Text style={[styles.upcomingTeamName, { color: colors.text }]} numberOfLines={1}>{match.homeTeam?.name}</Text>
+                                            <Text style={[styles.upcomingLeague, { color: colors.textMuted }]} numberOfLines={1}>{match.league?.name}</Text>
                                         </View>
                                     </View>
                                     <View style={styles.upcomingCenter}>
                                         <View style={[styles.timePill, { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
-                                            <Text style={[styles.timeText, { color: colors.accent }]}>{match.time}</Text>
+                                            <Text style={[styles.timeText, { color: colors.accent }]}>
+                                                {new Date(match.scheduled_at).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                                            </Text>
                                         </View>
-                                        <Text style={[styles.dayText, { color: colors.textMuted }]}>{match.day}</Text>
+                                        <Text style={[styles.dayText, { color: colors.textMuted }]}>
+                                            {new Date(match.scheduled_at).toLocaleDateString("fr-FR", { weekday: 'short', day: 'numeric' })}
+                                        </Text>
                                     </View>
                                     <View style={[styles.upcomingTeam, { justifyContent: 'flex-end' }]}>
-                                        <View style={{ alignItems: 'flex-end' }}>
-                                            <Text style={[styles.upcomingTeamName, { color: colors.text }]}>{match.t2}</Text>
-                                            <Text style={[styles.upcomingLeague, { color: colors.textMuted }]}>{match.league}</Text>
+                                        <View style={{ alignItems: 'flex-end', flex: 1 }}>
+                                            <Text style={[styles.upcomingTeamName, { color: colors.text }]} numberOfLines={1}>{match.awayTeam?.name}</Text>
+                                            <Text style={[styles.upcomingLeague, { color: colors.textMuted }]} numberOfLines={1}>{match.league?.name}</Text>
                                         </View>
                                         <View style={[styles.smallBadge, { backgroundColor: colors.surfaceAlt }]}>
-                                            <Text style={[styles.smallBadgeText, { color: colors.text }]}>{match.t2.substring(0, 1)}</Text>
+                                            {match.awayTeam?.logo_url ? (
+                                                <Image source={{ uri: match.awayTeam.logo_url }} style={styles.smallTeamLogo} />
+                                            ) : (
+                                                <Text style={[styles.smallBadgeText, { color: colors.text }]}>{getInitials(match.awayTeam?.name || "T")}</Text>
+                                            )}
                                         </View>
                                     </View>
-                                </View>
+                                </TouchableOpacity>
                             ))}
                             <TouchableOpacity 
                                 style={[styles.moreMatchesButton, { borderColor: colors.border }]}
@@ -524,7 +519,7 @@ const styles = StyleSheet.create({
     },
     teamContainer: {
         alignItems: "center",
-        width: 60,
+        width: 65,
     },
     teamAvatarContainer: {
         width: 56,
@@ -541,6 +536,12 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         alignItems: "center",
         justifyContent: "center",
+        overflow: "hidden",
+    },
+    teamLogo: {
+        width: 32,
+        height: 32,
+        resizeMode: "contain",
     },
     liveLabel: {
         position: "absolute",
@@ -550,7 +551,7 @@ const styles = StyleSheet.create({
         paddingVertical: 1,
         borderRadius: 4,
         borderWidth: 1.5,
-        borderColor: "transparent", 
+        borderColor: "#0b0b0f", 
     },
     liveLabelText: {
         color: "white",
@@ -560,6 +561,7 @@ const styles = StyleSheet.create({
     teamName: {
         fontSize: 9,
         fontWeight: "500",
+        textAlign: "center",
     },
     addTeamContainer: {
         alignItems: "center",
@@ -621,7 +623,7 @@ const styles = StyleSheet.create({
     },
     compContainer: {
         alignItems: "center",
-        width: 60,
+        width: 70,
     },
     compIconCircle: {
         width: 48,
@@ -631,77 +633,18 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 4,
+        overflow: "hidden",
+    },
+    compLogo: {
+        width: 28,
+        height: 28,
+        resizeMode: "contain",
     },
     compName: {
         fontSize: 8,
         fontWeight: "bold",
         textAlign: "center",
         textTransform: "uppercase",
-    },
-    featuredScroll: {
-        marginBottom: 25,
-    },
-    featuredCard: {
-        width: width * 0.7,
-        height: 150,
-        marginLeft: 20,
-        borderRadius: 16,
-        overflow: "hidden",
-    },
-    featuredImage: {
-        width: "100%",
-        height: "100%",
-    },
-    featuredOverlay: {
-        ...StyleSheet.absoluteFillObject,
-    },
-    featuredLabel: {
-        position: "absolute",
-        top: 10,
-        left: 10,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    featuredLabelText: {
-        color: "white",
-        fontSize: 8,
-        fontWeight: "bold",
-    },
-    featuredCardContent: {
-        position: "absolute",
-        bottom: 12,
-        left: 12,
-        right: 12,
-    },
-    featuredTopRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 4,
-    },
-    featuredLeague: {
-        fontSize: 9,
-        fontWeight: "bold",
-    },
-    reserveButton: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    reserveButtonText: {
-        color: "black",
-        fontSize: 9,
-        fontWeight: "bold",
-    },
-    featuredMatchTitle: {
-        color: "white",
-        fontSize: 14,
-        fontWeight: "bold",
-    },
-    featuredTeams: {
-        color: "rgba(255,255,255,0.7)",
-        fontSize: 10,
     },
     recentScroll: {
         marginBottom: 25,
@@ -751,7 +694,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
     },
     clearText: {
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: "bold",
     },
     emptyHistoryContainer: {
@@ -812,6 +755,12 @@ const styles = StyleSheet.create({
         borderRadius: 14,
         alignItems: "center",
         justifyContent: "center",
+        overflow: "hidden",
+    },
+    smallTeamLogo: {
+        width: 20,
+        height: 20,
+        resizeMode: "contain",
     },
     smallBadgeText: {
         fontSize: 10,
