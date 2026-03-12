@@ -19,9 +19,44 @@ import { useStore } from "../store/useStore";
 
 const { width } = Dimensions.get("window");
 
-const DiscoverScreen = () => {
-    const { colors, computedTheme: themeMode } = useStore();
+const DiscoverScreen = ({ navigation }: { navigation: any }) => {
+    const { colors, computedTheme: themeMode, user } = useStore();
     const isLightTheme = themeMode === "light";
+    
+    // Extract user preferences for dynamic filtering
+    const userData = user?.user ?? user ?? null;
+    const favSports = userData?.preferences?.sports || [];
+    const followedTeamIds = userData?.preferences?.fav_team_ids || [];
+
+    // State detection for new users
+    const hasHistory = false; // In production, check if recent history exists in state/API
+    const hasTeams = followedTeamIds.length > 0;
+    const hasMatches = true; // In production, check if upcoming matches list is empty
+
+    // Mock dynamic banners
+    const allBanners = [
+        {
+            id: "onboarding",
+            sport: "generic",
+            title: "BIENVENUE SUR MATCH",
+            subtitle: "Ton nouveau QG sportif",
+            dateLabel: "Prêt pour le coup d'envoi ?",
+            image: "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=2000&auto=format&fit=crop",
+            isGeneric: true
+        },
+        {
+            id: "world-cup",
+            sport: "football",
+            title: "FIFA WORLD CUP",
+            subtitle: "Qatar 2022",
+            dateLabel: "Du 20 Nov au 18 Dec",
+            image: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=2070&auto=format&fit=crop"
+        }
+    ];
+
+    // Banner logic: show generic if it's a new arrival or follow specific interests
+    const relevantBanners = allBanners.filter(b => b.isGeneric || favSports.includes(b.sport));
+    const activeBanner = relevantBanners[0];
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -69,59 +104,79 @@ const DiscoverScreen = () => {
                     </View>
 
                     {/* Main Banner */}
-                    <View style={[styles.bannerContainer, { backgroundColor: colors.surface }]}>
-                        <Image
-                            source={{ uri: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=2070&auto=format&fit=crop" }}
-                            style={styles.bannerImage}
-                        />
-                        <LinearGradient
-                            colors={["transparent", "rgba(0,0,0,0.8)"]}
-                            style={styles.bannerOverlay}
-                        />
-                        <View style={styles.bannerContent}>
-                            <View style={[styles.bannerBadge, { backgroundColor: "rgba(255,255,255,0.2)" }]}>
-                                <Text style={styles.bannerBadgeText}>COMPÉTITION</Text>
+                    {activeBanner && (
+                        <View style={[styles.bannerContainer, { backgroundColor: colors.surface }]}>
+                            <Image
+                                source={{ uri: activeBanner.image }}
+                                style={styles.bannerImage}
+                            />
+                            <LinearGradient
+                                colors={["transparent", "rgba(0,0,0,0.85)"]}
+                                style={styles.bannerOverlay}
+                            />
+                            <View style={styles.bannerContent}>
+                                <View style={[styles.bannerBadge, { backgroundColor: activeBanner.isGeneric ? colors.accent : "rgba(255,255,255,0.2)" }]}>
+                                    <Text style={styles.bannerBadgeText}>{activeBanner.isGeneric ? "À DÉCOUVRIR" : "COMPÉTITION"}</Text>
+                                </View>
+                                <Text style={styles.bannerTitle}>{activeBanner.title}</Text>
+                                <Text style={styles.bannerSubtitle}>{activeBanner.subtitle} • {activeBanner.dateLabel}</Text>
+                                <TouchableOpacity style={[styles.bannerCTA, { backgroundColor: colors.primary }]}>
+                                    <Text style={styles.bannerCTAText}>{activeBanner.isGeneric ? "Explorer" : "Voir les bars"}</Text>
+                                    <MaterialIcons name="arrow-forward" size={14} color="white" />
+                                </TouchableOpacity>
                             </View>
-                            <Text style={styles.bannerTitle}>FIFA WORLD CUP</Text>
-                            <Text style={styles.bannerSubtitle}>Qatar 2022 • Du 20 Nov au 18 Dec</Text>
-                            <TouchableOpacity style={[styles.bannerCTA, { backgroundColor: colors.primary }]}>
-                                <Text style={styles.bannerCTAText}>Voir les bars</Text>
-                                <MaterialIcons name="arrow-forward" size={14} color="white" />
-                            </TouchableOpacity>
                         </View>
-                    </View>
+                    )}
 
                     {/* Teams Section */}
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Tes Équipes</Text>
                     </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.teamsScroll} contentContainerStyle={styles.teamsContent}>
-                        {[
-                            { id: 1, name: "PSG", live: true },
-                            { id: 2, name: "Lakers", live: false },
-                            { id: 3, name: "Real Madrid", live: false },
-                        ].map((team) => (
-                            <View key={team.id} style={styles.teamContainer}>
-                                <View style={[styles.teamAvatarContainer, { backgroundColor: colors.surface, borderColor: team.live ? colors.accent : colors.border }]}>
-                                    <View style={[styles.teamAvatarInner, { backgroundColor: isLightTheme ? colors.background : "#2a2a30" }]}>
-                                        <MaterialCommunityIcons name="soccer" size={24} color={team.live ? colors.accent : colors.textMuted} />
-                                    </View>
-                                    {team.live && (
-                                        <View style={styles.liveLabel}>
-                                            <Text style={styles.liveLabelText}>LIVE</Text>
+                    {hasTeams ? (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.teamsScroll} contentContainerStyle={styles.teamsContent}>
+                            {[
+                                { id: 1, name: "PSG", live: true },
+                                { id: 2, name: "Lakers", live: false },
+                                { id: 3, name: "Real Madrid", live: false },
+                            ].map((team) => (
+                                <View key={team.id} style={styles.teamContainer}>
+                                    <View style={[styles.teamAvatarContainer, { backgroundColor: colors.surface, borderColor: team.live ? colors.accent : colors.border }]}>
+                                        <View style={[styles.teamAvatarInner, { backgroundColor: isLightTheme ? colors.background : "#2a2a30" }]}>
+                                            <MaterialCommunityIcons name="soccer" size={24} color={team.live ? colors.accent : colors.textMuted} />
                                         </View>
-                                    )}
+                                        {team.live && (
+                                            <View style={styles.liveLabel}>
+                                                <Text style={styles.liveLabelText}>LIVE</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <Text style={[styles.teamName, { color: colors.text }]}>{team.name}</Text>
                                 </View>
-                                <Text style={[styles.teamName, { color: colors.text }]}>{team.name}</Text>
+                            ))}
+                            <TouchableOpacity style={styles.addTeamContainer}>
+                                <View style={[styles.addTeamCircle, { borderColor: colors.border }]}>
+                                    <MaterialIcons name="add" size={24} color={colors.textMuted} />
+                                </View>
+                                <Text style={[styles.addTeamText, { color: colors.textMuted }]}>Ajouter</Text>
+                            </TouchableOpacity>
+                        </ScrollView>
+                    ) : (
+                        <View style={styles.emptyTeamsContainer}>
+                            <View style={[styles.emptyTeamsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                <MaterialIcons name="star-outline" size={32} color={colors.accent} />
+                                <View style={styles.emptyTeamsContent}>
+                                    <Text style={[styles.emptyTeamsTitle, { color: colors.text }]}>Suis tes équipes favorites</Text>
+                                    <Text style={[styles.emptyTeamsSubtitle, { color: colors.textMuted }]}>Ne rate plus aucun match en direct et reçois des alertes.</Text>
+                                </View>
+                                <TouchableOpacity 
+                                    style={[styles.emptyTeamsAction, { backgroundColor: colors.accent10 }]}
+                                    onPress={() => navigation.navigate("EditProfile")}
+                                >
+                                    <Text style={[styles.emptyTeamsActionText, { color: colors.accent }]}>Configurer</Text>
+                                </TouchableOpacity>
                             </View>
-                        ))}
-                        <TouchableOpacity style={styles.addTeamContainer}>
-                            <View style={[styles.addTeamCircle, { borderColor: colors.border }]}>
-                                <MaterialIcons name="add" size={24} color={colors.textMuted} />
-                            </View>
-                            <Text style={[styles.addTeamText, { color: colors.textMuted }]}>Ajouter</Text>
-                        </TouchableOpacity>
-                    </ScrollView>
+                        </View>
+                    )}
 
                     {/* Competitions Section */}
                     <View style={styles.sectionHeader}>
@@ -179,66 +234,114 @@ const DiscoverScreen = () => {
                     {/* Recently Viewed */}
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Récemment vus</Text>
-                        <TouchableOpacity>
-                            <Text style={[styles.clearText, { color: colors.textMuted }]}>Effacer</Text>
-                        </TouchableOpacity>
+                        {hasHistory && (
+                            <TouchableOpacity>
+                                <Text style={[styles.clearText, { color: colors.textMuted }]}>Effacer</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recentScroll} contentContainerStyle={styles.recentContent}>
-                        {[1, 2].map((bar) => (
-                            <View key={bar} style={[styles.recentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                <Image
-                                    source={{ uri: "https://images.unsplash.com/photo-1543007630-9710e4a00a20?q=80&w=2070&auto=format&fit=crop" }}
-                                    style={styles.recentImage}
-                                />
-                                <View style={styles.recentInfo}>
-                                    <Text style={[styles.recentTitle, { color: colors.text }]}>The Lions Pub</Text>
-                                    <Text style={[styles.recentSub, { color: colors.textMuted }]}>Pub irlandais • Paris 11</Text>
-                                    <Text style={[styles.recentDetail, { color: colors.textMuted }]}>Happy Hour 17h-20h</Text>
+                    {hasHistory ? (
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.recentScroll} contentContainerStyle={styles.recentContent}>
+                            {[1, 2].map((bar) => (
+                                <View key={bar} style={[styles.recentCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                    <Image
+                                        source={{ uri: "https://images.unsplash.com/photo-1543007630-9710e4a00a20?q=80&w=2070&auto=format&fit=crop" }}
+                                        style={styles.recentImage}
+                                    />
+                                    <View style={styles.recentInfo}>
+                                        <Text style={[styles.recentTitle, { color: colors.text }]}>The Lions Pub</Text>
+                                        <Text style={[styles.recentSub, { color: colors.textMuted }]}>Pub irlandais • Paris 11</Text>
+                                        <Text style={[styles.recentDetail, { color: colors.textMuted }]}>Happy Hour 17h-20h</Text>
+                                    </View>
+                                    <View style={[styles.ratingBadge, { backgroundColor: colors.accent10 }]}>
+                                        <Text style={[styles.ratingText, { color: colors.accent }]}>9.2</Text>
+                                    </View>
                                 </View>
-                                <View style={[styles.ratingBadge, { backgroundColor: colors.accent10 }]}>
-                                    <Text style={[styles.ratingText, { color: colors.accent }]}>9.2</Text>
-                                </View>
-                            </View>
-                        ))}
-                    </ScrollView>
+                            ))}
+                        </ScrollView>
+                    ) : (
+                        <View style={styles.emptyHistoryContainer}>
+                            <LinearGradient
+                                colors={[isLightTheme ? "#f1f5f9" : "#1c1c21", colors.background]}
+                                style={[styles.emptyHistoryCard, { borderColor: colors.border, borderStyle: 'dashed', borderWidth: 1.5 }]}
+                            >
+                                <MaterialIcons name="explore" size={40} color={colors.textMuted} />
+                                <Text style={[styles.emptyHistoryTitle, { color: colors.text }]}>Aucun bar consulté</Text>
+                                <Text style={[styles.emptyHistorySubtitle, { color: colors.textMuted }]}>Lance ta première recherche pour trouver les meilleurs spots autour de toi.</Text>
+                                <TouchableOpacity 
+                                    style={[styles.emptyHistoryAction, { backgroundColor: colors.primary }]}
+                                    onPress={() => navigation.navigate("Map")}
+                                >
+                                    <Text style={styles.emptyHistoryActionText}>Lancer la recherche</Text>
+                                    <MaterialIcons name="near-me" size={18} color="#fff" />
+                                </TouchableOpacity>
+                            </LinearGradient>
+                        </View>
+                    )}
 
                     {/* Upcoming Matches */}
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Matchs à venir</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate("Search")}>
+                            <Text style={[styles.seeAllText, { color: colors.accent }]}>Voir tout</Text>
+                        </TouchableOpacity>
                     </View>
-                    <View style={styles.upcomingContainer}>
-                        {[
-                            { t1: "PSG", t2: "Marseille", time: "21:00", league: "Ligue 1", day: "Ce soir" },
-                            { t1: "Lakers", t2: "Warriors", time: "03:00", league: "NBA", day: "Demain" },
-                        ].map((match, idx) => (
-                            <View key={idx} style={[styles.upcomingRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                <View style={styles.upcomingTeam}>
-                                    <View style={[styles.smallBadge, { backgroundColor: colors.surfaceAlt }]}>
-                                        <Text style={[styles.smallBadgeText, { color: colors.text }]}>{match.t1.substring(0, 1)}</Text>
+                    {hasMatches ? (
+                        <View style={styles.upcomingContainer}>
+                            {[
+                                { t1: "PSG", t2: "Marseille", time: "21:00", league: "Ligue 1", day: "Ce soir" },
+                                { t1: "Lakers", t2: "Warriors", time: "03:00", league: "NBA", day: "Demain" },
+                            ].map((match, idx) => (
+                                <View key={idx} style={[styles.upcomingRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                    <View style={styles.upcomingTeam}>
+                                        <View style={[styles.smallBadge, { backgroundColor: colors.surfaceAlt }]}>
+                                            <Text style={[styles.smallBadgeText, { color: colors.text }]}>{match.t1.substring(0, 1)}</Text>
+                                        </View>
+                                        <View>
+                                            <Text style={[styles.upcomingTeamName, { color: colors.text }]}>{match.t1}</Text>
+                                            <Text style={[styles.upcomingLeague, { color: colors.textMuted }]}>{match.league}</Text>
+                                        </View>
                                     </View>
-                                    <View>
-                                        <Text style={[styles.upcomingTeamName, { color: colors.text }]}>{match.t1}</Text>
-                                        <Text style={[styles.upcomingLeague, { color: colors.textMuted }]}>{match.league}</Text>
+                                    <View style={styles.upcomingCenter}>
+                                        <View style={[styles.timePill, { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
+                                            <Text style={[styles.timeText, { color: colors.accent }]}>{match.time}</Text>
+                                        </View>
+                                        <Text style={[styles.dayText, { color: colors.textMuted }]}>{match.day}</Text>
+                                    </View>
+                                    <View style={[styles.upcomingTeam, { justifyContent: 'flex-end' }]}>
+                                        <View style={{ alignItems: 'flex-end' }}>
+                                            <Text style={[styles.upcomingTeamName, { color: colors.text }]}>{match.t2}</Text>
+                                            <Text style={[styles.upcomingLeague, { color: colors.textMuted }]}>{match.league}</Text>
+                                        </View>
+                                        <View style={[styles.smallBadge, { backgroundColor: colors.surfaceAlt }]}>
+                                            <Text style={[styles.smallBadgeText, { color: colors.text }]}>{match.t2.substring(0, 1)}</Text>
+                                        </View>
                                     </View>
                                 </View>
-                                <View style={styles.upcomingCenter}>
-                                    <View style={[styles.timePill, { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
-                                        <Text style={[styles.timeText, { color: colors.accent }]}>{match.time}</Text>
-                                    </View>
-                                    <Text style={[styles.dayText, { color: colors.textMuted }]}>{match.day}</Text>
-                                </View>
-                                <View style={[styles.upcomingTeam, { justifyContent: 'flex-end' }]}>
-                                    <View style={{ alignItems: 'flex-end' }}>
-                                        <Text style={[styles.upcomingTeamName, { color: colors.text }]}>{match.t2}</Text>
-                                        <Text style={[styles.upcomingLeague, { color: colors.textMuted }]}>{match.league}</Text>
-                                    </View>
-                                    <View style={[styles.smallBadge, { backgroundColor: colors.surfaceAlt }]}>
-                                        <Text style={[styles.smallBadgeText, { color: colors.text }]}>{match.t2.substring(0, 1)}</Text>
-                                    </View>
-                                </View>
+                            ))}
+                            <TouchableOpacity 
+                                style={[styles.moreMatchesButton, { borderColor: colors.border }]}
+                                onPress={() => navigation.navigate("Search")}
+                            >
+                                <Text style={[styles.moreMatchesText, { color: colors.textMuted }]}>Trouver d'autres matchs</Text>
+                                <MaterialIcons name="keyboard-arrow-right" size={18} color={colors.textMuted} />
+                            </TouchableOpacity>
+                        </View>
+                    ) : (
+                        <View style={styles.emptyMatchesContainer}>
+                            <View style={[styles.emptyMatchesCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                <MaterialIcons name="event-busy" size={32} color={colors.textMuted} />
+                                <Text style={[styles.emptyMatchesTitle, { color: colors.text }]}>Aucun match prévu</Text>
+                                <Text style={[styles.emptyMatchesSubtitle, { color: colors.textMuted }]}>Reviens plus tard pour voir les prochaines diffusions ou change tes filtres.</Text>
+                                <TouchableOpacity 
+                                    style={[styles.emptyMatchesAction, { backgroundColor: colors.accent10 }]}
+                                    onPress={() => navigation.navigate("Search")}
+                                >
+                                    <Text style={[styles.emptyMatchesActionText, { color: colors.accent }]}>Explorer</Text>
+                                </TouchableOpacity>
                             </View>
-                        ))}
-                    </View>
+                        </View>
+                    )}
                     
                     <View style={{ height: 120 }} />
                 </ScrollView>
@@ -447,7 +550,7 @@ const styles = StyleSheet.create({
         paddingVertical: 1,
         borderRadius: 4,
         borderWidth: 1.5,
-        borderColor: "transparent", // dynamic overlay would be better but this works for now
+        borderColor: "transparent", 
     },
     liveLabelText: {
         color: "white",
@@ -475,6 +578,39 @@ const styles = StyleSheet.create({
     addTeamText: {
         fontSize: 9,
         fontWeight: "500",
+    },
+    emptyTeamsContainer: {
+        paddingHorizontal: 20,
+        marginBottom: 25,
+    },
+    emptyTeamsCard: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 16,
+        borderRadius: 20,
+        borderWidth: 1,
+        gap: 12,
+    },
+    emptyTeamsContent: {
+        flex: 1,
+        gap: 2,
+    },
+    emptyTeamsTitle: {
+        fontSize: 13,
+        fontWeight: "700",
+    },
+    emptyTeamsSubtitle: {
+        fontSize: 11,
+        lineHeight: 15,
+    },
+    emptyTeamsAction: {
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+    },
+    emptyTeamsActionText: {
+        fontSize: 11,
+        fontWeight: "700",
     },
     competitionsScroll: {
         marginBottom: 25,
@@ -618,6 +754,41 @@ const styles = StyleSheet.create({
         fontSize: 9,
         fontWeight: "bold",
     },
+    emptyHistoryContainer: {
+        paddingHorizontal: 20,
+        marginBottom: 25,
+    },
+    emptyHistoryCard: {
+        padding: 24,
+        borderRadius: 24,
+        alignItems: "center",
+        gap: 12,
+    },
+    emptyHistoryTitle: {
+        fontSize: 16,
+        fontWeight: "700",
+        marginTop: 4,
+    },
+    emptyHistorySubtitle: {
+        fontSize: 12,
+        textAlign: "center",
+        lineHeight: 18,
+        paddingHorizontal: 10,
+    },
+    emptyHistoryAction: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 8,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 14,
+        marginTop: 8,
+    },
+    emptyHistoryActionText: {
+        color: "#fff",
+        fontSize: 14,
+        fontWeight: "700",
+    },
     upcomingContainer: {
         paddingHorizontal: 20,
         gap: 10,
@@ -670,6 +841,58 @@ const styles = StyleSheet.create({
     dayText: {
         fontSize: 7,
         marginTop: 2,
+    },
+    seeAllText: {
+        fontSize: 12,
+        fontWeight: "700",
+        textTransform: "uppercase",
+        letterSpacing: 0.5,
+    },
+    moreMatchesButton: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingVertical: 12,
+        marginTop: 8,
+        borderWidth: 1,
+        borderStyle: "dashed",
+        borderRadius: 14,
+        gap: 4,
+    },
+    moreMatchesText: {
+        fontSize: 12,
+        fontWeight: "600",
+    },
+    emptyMatchesContainer: {
+        paddingHorizontal: 20,
+        marginBottom: 25,
+    },
+    emptyMatchesCard: {
+        alignItems: "center",
+        padding: 24,
+        borderRadius: 20,
+        borderWidth: 1,
+        gap: 8,
+    },
+    emptyMatchesTitle: {
+        fontSize: 15,
+        fontWeight: "700",
+        marginTop: 4,
+    },
+    emptyMatchesSubtitle: {
+        fontSize: 12,
+        textAlign: "center",
+        lineHeight: 18,
+        marginBottom: 8,
+    },
+    emptyMatchesAction: {
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 12,
+    },
+    emptyMatchesActionText: {
+        fontSize: 13,
+        fontWeight: "700",
     },
 });
 
