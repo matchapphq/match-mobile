@@ -59,6 +59,13 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
             
             if (stats) {
                 setRatingDistribution(stats);
+                // Calculate total reviews and average from stats for accuracy
+                const total = stats.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0);
+                if (total > 0) {
+                    setDisplayReviewCount(total);
+                    const sum = stats.reduce((acc: number, curr: any) => acc + (curr.stars * (curr.count || 0)), 0);
+                    setDisplayRating(sum / total);
+                }
             }
 
             // Transform API response to our local Review interface
@@ -248,12 +255,12 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                     <View style={styles.ratingOverview}>
                         {/* Left: Big Rating */}
                         <View style={styles.ratingLeft}>
-                            <Text style={[styles.bigRating, { color: colors.text }]}>{(typeof venueRating === 'number' ? venueRating : (Number(venueRating) || 0)).toFixed(1)}</Text>
+                            <Text style={[styles.bigRating, { color: colors.text }]}>{displayRating.toFixed(1)}</Text>
                             <View style={styles.starsRow}>
-                                {renderStars(venueRating)}
+                                {renderStars(displayRating)}
                             </View>
                             <Text style={[styles.reviewCount, { color: colors.textMuted }]}>
-                                {venueReviewCount} AVIS
+                                {displayReviewCount} AVIS
                             </Text>
                         </View>
 
