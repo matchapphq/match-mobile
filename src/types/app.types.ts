@@ -22,10 +22,15 @@ export interface Venue {
     distance?: string;
     image: string;
     rating: number;
+    totalReviews: number;
     tags: string[];
     priceLevel: string;
     isOpen: boolean;
     matches?: VenueMatch[];
+    averageAtmosphere?: number;
+    averageService?: number;
+    averageFood?: number;
+    averageValue?: number;
 }
 
 export interface VenueMatch {
