@@ -648,6 +648,11 @@ export const apiService = {
         return response.data;
     },
 
+    toggleLeagueFollow: async (leagueId: string): Promise<{ followed: boolean }> => {
+        const response = await api.post(`/discovery/competition/${leagueId}/follow`);
+        return response.data;
+    },
+
     clearHistory: async (): Promise<void> => {
         await api.post("/discovery/history/clear");
     },

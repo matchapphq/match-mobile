@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
     View,
     Text,
@@ -12,27 +12,39 @@ import {
     RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import { useStore } from "../store/useStore";
 import { apiService } from "../services/api";
 
 const { width } = Dimensions.get("window");
 
 const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigation: any }) => {
-    const { competitionId, competitionName } = route.params;
+    const { competitionId } = route.params;
     const { colors, computedTheme: themeMode } = useStore();
     const isLightTheme = themeMode === "light";
 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [data, setData] = useState<any>(null);
-    const [selectedDateIdx, setSelectedDateIdx] = useState(0);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [isFollowed, setIsFollowed] = useState(false);
+    const [isTogglingFollow, setIsTogglingFollow] = useState(false);
 
     const fetchData = async () => {
         try {
             const result = await apiService.getCompetitionDetails(competitionId);
             setData(result);
+            setIsFollowed(result.competition.is_followed);
+            
+            // Set initial selected date to the first match's date if available
+            if (result.upcoming_matches?.length > 0) {
+                const firstMatchDate = new Date(result.upcoming_matches[0].scheduled_at);
+                setSelectedDate(firstMatchDate.toISOString().split('T')[0]!);
+            } else {
+                setSelectedDate(new Date().toISOString().split('T')[0]!);
+            }
         } catch (error) {
             console.error("Error fetching competition details:", error);
         } finally {
@@ -49,6 +61,53 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
         await fetchData();
         setRefreshing(false);
     }, [competitionId]);
+
+    const toggleFollow = async () => {
+        if (isTogglingFollow) return;
+        
+        setIsTogglingFollow(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        
+        try {
+            const result = await apiService.toggleLeagueFollow(competitionId);
+            setIsFollowed(result.followed);
+        } catch (error) {
+            console.error("Error toggling follow:", error);
+        } finally {
+            setIsTogglingFollow(false);
+        }
+    };
+
+    // Generate 7 days starting from today or first match
+    const dateCarouselItems = useMemo(() => {
+        if (!data) return [];
+        
+        const startDate = new Date();
+        const items = [];
+        
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(startDate);
+            d.setDate(startDate.getDate() + i);
+            const isoDate = d.toISOString().split('T')[0]!;
+            
+            items.push({
+                day: d.toLocaleDateString("fr-FR", { weekday: 'short' }).replace('.', ''),
+                date: d.getDate().toString(),
+                fullIso: isoDate,
+                hasMatches: data.upcoming_matches?.some((m: any) => 
+                    m.scheduled_at.split('T')[0] === isoDate
+                )
+            });
+        }
+        return items;
+    }, [data]);
+
+    const filteredMatches = useMemo(() => {
+        if (!data || !selectedDate) return [];
+        return data.upcoming_matches.filter((m: any) => 
+            m.scheduled_at.split('T')[0] === selectedDate
+        );
+    }, [data, selectedDate]);
 
     if (loading) {
         return (
@@ -69,18 +128,7 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
         );
     }
 
-    const { competition, upcoming_matches, best_bars, stats } = data;
-
-    // Dates for the carousel
-    const dates = [
-        { day: 'Lun', date: '15' },
-        { day: 'Mar', date: '16' },
-        { day: 'Mer', date: '17' },
-        { day: 'Jeu', date: '18' },
-        { day: 'Ven', date: '19' },
-        { day: 'Sam', date: '20' },
-        { day: 'Dim', date: '21' },
-    ];
+    const { competition, best_bars, stats } = data;
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -96,7 +144,7 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                 {/* Hero Section */}
                 <View style={styles.heroSection}>
                     <Image 
-                        source={{ uri: competition.logo_url || "https://lh3.googleusercontent.com/aida-public/AB6AXuB58__Tnl3Tk5Zk0Zn50rAVXBTz3L4r5PwVugU-VSQ3JNAYydzeIzS7BNPkWzAzTUUhufA0bVga_Q97N-J4ePOoDQUxTSA9dbSCiITFfrsjadXeoP_H-phSpFMNKrG-T4pzU-Rk_oX6Qo7Fru5-wgTclp2ST15CBsmIouHJPEBxoBONE_BLgKeqLB5UkEOAGAyU-K9CMtWgJy-z23vy1cYAk3ASOehb8qL91XAumizAwJMfl8opHd5U_OAYg0oSc5C7jNV_p7xrFu4M" }} 
+                        source={{ uri: competition.logo_url || "https://images.unsplash.com/photo-1540747913346-19e32dc3e97e?q=80&w=2000" }} 
                         style={styles.heroImage}
                     />
                     <LinearGradient
@@ -104,7 +152,6 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                         style={styles.heroOverlay}
                     />
                     
-                    {/* Top Navigation */}
                     <SafeAreaView edges={["top"]} style={styles.topNav}>
                         <TouchableOpacity style={styles.navButton} onPress={() => navigation.goBack()}>
                             <MaterialIcons name="chevron-left" size={28} color="white" />
@@ -114,15 +161,31 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                         </TouchableOpacity>
                     </SafeAreaView>
 
-                    {/* Hero Content */}
                     <View style={styles.heroContent}>
                         <View style={[styles.liveBadge, { backgroundColor: colors.primary }]}>
                             <Text style={styles.liveBadgeText}>LIVE NOW</Text>
                         </View>
                         <Text style={styles.heroTitle}>{competition.name}</Text>
                         <Text style={styles.heroSubtitle}>{competition.type} • {competition.country}</Text>
-                        <TouchableOpacity style={[styles.mainCTA, { backgroundColor: colors.primary }]}>
-                            <Text style={styles.mainCTAText}>Suivre & Voir les Bars</Text>
+                        
+                        <TouchableOpacity 
+                            style={[
+                                styles.mainCTA, 
+                                { backgroundColor: isFollowed ? 'rgba(255,255,255,0.1)' : colors.primary, borderWidth: isFollowed ? 1 : 0, borderColor: 'rgba(255,255,255,0.2)' }
+                            ]}
+                            onPress={toggleFollow}
+                            disabled={isTogglingFollow}
+                        >
+                            {isTogglingFollow ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <View style={styles.ctaInner}>
+                                    <MaterialIcons name={isFollowed ? "check" : "add"} size={20} color="white" style={{ marginRight: 8 }} />
+                                    <Text style={styles.mainCTAText}>
+                                        {isFollowed ? "Suivi" : "Suivre & Voir les Bars"}
+                                    </Text>
+                                </View>
+                            )}
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -131,10 +194,9 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                 <View style={styles.spotlightSection}>
                     <Text style={[styles.sectionLabel, { color: colors.accent }]}>TOURNAMENT SPOTLIGHT</Text>
                     <Text style={[styles.spotlightDesc, { color: colors.textMuted }]}>
-                        {competition.description || "Découvrez le sommet de la compétition où les meilleures équipes s'affrontent pour la gloire éternelle sous les projecteurs."}
+                        {competition.description || "Découvrez le sommet de la compétition où les meilleures équipes s'affrontent pour la gloire éternelle."}
                     </Text>
 
-                    {/* Stat Cards */}
                     <View style={styles.statsRow}>
                         <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
                             <Text style={styles.statLabel}>Matchs à venir</Text>
@@ -162,33 +224,36 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                         </TouchableOpacity>
                     </View>
 
-                    {/* Date Carousel */}
+                    {/* Dynamic Date Carousel */}
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateCarousel}>
-                        {dates.map((date, idx) => (
+                        {dateCarouselItems.map((item, idx) => (
                             <TouchableOpacity 
                                 key={idx} 
                                 style={[
                                     styles.datePill, 
-                                    { backgroundColor: idx === selectedDateIdx ? colors.accent10 : 'transparent', borderColor: idx === selectedDateIdx ? colors.accent : colors.border }
+                                    { 
+                                        backgroundColor: item.fullIso === selectedDate ? colors.accent10 : colors.surface, 
+                                        borderColor: item.fullIso === selectedDate ? colors.accent : colors.border 
+                                    }
                                 ]}
-                                onPress={() => setSelectedDateIdx(idx)}
+                                onPress={() => setSelectedDate(item.fullIso)}
                             >
-                                <Text style={[styles.dateDay, { color: idx === selectedDateIdx ? colors.accent : colors.textMuted }]}>{date.day}</Text>
-                                <Text style={[styles.dateNum, { color: colors.text }]}>{date.date}</Text>
+                                <Text style={[styles.dateDay, { color: item.fullIso === selectedDate ? colors.accent : colors.textMuted }]}>{item.day}</Text>
+                                <Text style={[styles.dateNum, { color: colors.text }]}>{item.date}</Text>
+                                {item.hasMatches && <View style={[styles.hasMatchDot, { backgroundColor: colors.accent }]} />}
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
 
-                    {/* Match Cards */}
+                    {/* Filtered Match Cards */}
                     <View style={styles.matchList}>
-                        {upcoming_matches.length > 0 ? (
-                            upcoming_matches.map((match: any) => (
+                        {filteredMatches.length > 0 ? (
+                            filteredMatches.map((match: any) => (
                                 <View key={match.id} style={[styles.matchCard, { backgroundColor: colors.surface }]}>
                                     <View style={styles.matchCardHeader}>
                                         <Text style={styles.matchDate}>
-                                            {new Date(match.scheduled_at).toLocaleDateString("fr-FR", { weekday: 'long', day: 'numeric', month: 'long' })} • {new Date(match.scheduled_at).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                                            {new Date(match.scheduled_at).toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })} • Main Event
                                         </Text>
-                                        <Text style={styles.matchStatus}>ÉVÉNEMENT</Text>
                                     </View>
 
                                     <View style={styles.matchTeamsRow}>
@@ -212,21 +277,18 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                                         </View>
                                     </View>
 
-                                    <Text style={styles.matchQuote}>
-                                        "{match.description || "Un choc au sommet entre deux géants de la compétition. Préparez-vous pour une soirée de maîtrise technique."}"
-                                    </Text>
-
                                     <TouchableOpacity 
                                         style={[styles.findVenueButton, { borderColor: colors.border }]}
                                         onPress={() => navigation.navigate("MatchDetail", { matchId: match.id })}
                                     >
-                                        <Text style={styles.findVenueText}>Trouver un bar pour voir le match</Text>
+                                        <Text style={styles.findVenueText}>Trouver un bar</Text>
                                     </TouchableOpacity>
                                 </View>
                             ))
                         ) : (
                             <View style={styles.emptyMatches}>
-                                <Text style={{ color: colors.textMuted }}>Aucun match programmé pour le moment.</Text>
+                                <MaterialIcons name="event-busy" size={40} color={colors.textMuted} />
+                                <Text style={{ color: colors.textMuted, marginTop: 10 }}>Aucun match ce jour.</Text>
                             </View>
                         )}
                     </View>
@@ -237,11 +299,8 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                     <View style={styles.sectionHeader}>
                         <View>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>Meilleurs Bars</Text>
-                            <Text style={styles.sectionSubtitle}>Sélectionnés pour leur atmosphère.</Text>
+                            <Text style={styles.sectionSubtitle}>Atmosphère garantie.</Text>
                         </View>
-                        <TouchableOpacity style={styles.filterButton}>
-                            <Text style={[styles.filterText, { color: colors.accent }]}>FILTRER</Text>
-                        </TouchableOpacity>
                     </View>
 
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.barsCarousel}>
@@ -259,19 +318,10 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                                     </View>
                                 </View>
                                 <View style={styles.barInfo}>
-                                    <View style={styles.barHeader}>
-                                        <Text style={[styles.barName, { color: colors.text }]} numberOfLines={1}>{bar.name}</Text>
-                                        <Text style={styles.barDistance}>1.2 KM</Text>
-                                    </View>
-                                    <Text style={styles.barDesc} numberOfLines={2}>
-                                        Situé au cœur du quartier, offrant une expérience visuelle inégalée avec des écrans géants.
-                                    </Text>
-                                    <View style={styles.tagRow}>
-                                        <View style={styles.tag}><Text style={styles.tagText}>BIÈRE ARTISANALE</Text></View>
-                                        <View style={styles.tag}><Text style={styles.tagText}>TERRASSE</Text></View>
-                                    </View>
+                                    <Text style={[styles.barName, { color: colors.text }]} numberOfLines={1}>{bar.name}</Text>
+                                    <Text style={styles.barDistance}>{bar.city} • 1.2 KM</Text>
                                     <TouchableOpacity style={[styles.reserveButton, { backgroundColor: colors.primary }]}>
-                                        <Text style={styles.reserveButtonText}>Réserver une Table</Text>
+                                        <Text style={styles.reserveButtonText}>Réserver</Text>
                                     </TouchableOpacity>
                                 </View>
                             </TouchableOpacity>
@@ -299,6 +349,7 @@ const styles = StyleSheet.create({
     heroTitle: { color: 'white', fontSize: 42, fontWeight: '800', lineHeight: 48, marginBottom: 8, fontStyle: 'italic' },
     heroSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 14, marginBottom: 24 },
     mainCTA: { width: '100%', paddingVertical: 16, borderRadius: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 5 },
+    ctaInner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
     mainCTAText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
     spotlightSection: { padding: 20, marginTop: 10 },
     sectionLabel: { fontSize: 10, fontWeight: 'bold', letterSpacing: 2, marginBottom: 12 },
@@ -315,14 +366,14 @@ const styles = StyleSheet.create({
     sectionSubtitle: { fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 },
     seeAllText: { fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase' },
     dateCarousel: { paddingHorizontal: 20, gap: 12, paddingBottom: 20 },
-    datePill: { width: 64, height: 80, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
+    datePill: { width: 64, height: 85, borderRadius: 20, borderWidth: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
     dateDay: { fontSize: 10, fontWeight: 'bold', textTransform: 'uppercase' },
     dateNum: { fontSize: 20, fontWeight: 'bold' },
+    hasMatchDot: { width: 4, height: 4, borderRadius: 2, marginTop: 2 },
     matchList: { paddingHorizontal: 20, gap: 20 },
     matchCard: { padding: 24, borderRadius: 24, borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
     matchCardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 24 },
     matchDate: { fontSize: 10, fontWeight: 'bold', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' },
-    matchStatus: { fontSize: 10, fontWeight: 'bold', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase' },
     matchTeamsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
     teamInfo: { alignItems: 'center', gap: 12, width: 80 },
     teamLogoBg: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#2a2a30', alignItems: 'center', justifyContent: 'center', padding: 12 },
@@ -331,29 +382,21 @@ const styles = StyleSheet.create({
     vsContainer: { alignItems: 'center' },
     vsText: { color: 'rgba(255,255,255,0.3)', fontSize: 20, fontWeight: '900', fontStyle: 'italic' },
     venueName: { fontSize: 9, fontWeight: 'bold', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginTop: 4 },
-    matchQuote: { textAlign: 'center', fontSize: 12, fontStyle: 'italic', color: 'rgba(255,255,255,0.4)', lineHeight: 18, marginBottom: 24, paddingHorizontal: 10 },
     findVenueButton: { width: '100%', paddingVertical: 12, borderRadius: 12, borderWidth: 1, alignItems: 'center' },
     findVenueText: { color: 'white', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
     barsSection: { marginTop: 40 },
-    filterButton: { paddingBottom: 4 },
-    filterText: { fontSize: 12, fontWeight: 'bold' },
     barsCarousel: { paddingHorizontal: 20, gap: 16, paddingBottom: 20 },
-    barCard: { width: 300, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
-    barImageContainer: { height: 176, width: '100%', position: 'relative' },
+    barCard: { width: 260, borderRadius: 24, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)' },
+    barImageContainer: { height: 150, width: '100%', position: 'relative' },
     barImage: { width: '100%', height: '100%', resizeMode: 'cover' },
     ratingBadge: { position: 'absolute', top: 12, right: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 },
     ratingText: { color: 'white', fontSize: 10, fontWeight: 'bold' },
-    barInfo: { padding: 20 },
-    barHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-    barName: { fontSize: 18, fontWeight: 'bold', flex: 1 },
-    barDistance: { fontSize: 10, fontWeight: 'bold', color: 'rgba(255,255,255,0.4)' },
-    barDesc: { fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 16, marginBottom: 16 },
-    tagRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
-    tag: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
-    tagText: { fontSize: 9, fontWeight: 'bold', color: 'white' },
-    reserveButton: { width: '100%', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
-    reserveButtonText: { color: 'white', fontSize: 12, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1 },
-    emptyMatches: { alignItems: 'center', padding: 40 },
+    barInfo: { padding: 16 },
+    barName: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
+    barDistance: { fontSize: 10, fontWeight: 'bold', color: 'rgba(255,255,255,0.4)', marginBottom: 16 },
+    reserveButton: { width: '100%', paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+    reserveButtonText: { color: 'white', fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase' },
+    emptyMatches: { alignItems: 'center', padding: 40, borderDash: [5, 5] },
 });
 
 export default CompetitionDetailsScreen;
