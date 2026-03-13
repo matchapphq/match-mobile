@@ -123,6 +123,8 @@ interface AppState {
     fetchUserProfile: () => Promise<void>;
     refreshUserProfile: () => Promise<void>;
     fetchDiscoveryHome: () => Promise<void>;
+    refreshDiscoveryHome: () => Promise<void>;
+    recordVenueView: (venueId: string) => Promise<void>;
     clearDiscoveryHistory: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
     updateComputedTheme: () => void;
@@ -256,6 +258,26 @@ export const useStore = create<AppState>((set, get) => ({
         } catch (error) {
             console.error("Error fetching discovery home:", error);
             set({ isLoading: false });
+        }
+    },
+
+    refreshDiscoveryHome: async () => {
+        try {
+            const data = await apiService.getHomeDiscovery();
+            set({ discoveryHome: data });
+        } catch (error) {
+            console.warn("Background refresh of discovery home failed:", error);
+        }
+    },
+
+    recordVenueView: async (venueId: string) => {
+        try {
+            await apiService.recordView(venueId);
+            // Refresh to update history list immediately
+            const data = await apiService.getHomeDiscovery();
+            set({ discoveryHome: data });
+        } catch (error) {
+            console.warn("Failed to record venue view:", error);
         }
     },
 

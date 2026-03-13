@@ -21,6 +21,7 @@ import Animated, {
     useAnimatedScrollHandler
 } from "react-native-reanimated";
 import { useStore } from "../store/useStore";
+import { useFocusEffect } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
@@ -30,6 +31,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         computedTheme: themeMode, 
         discoveryHome, 
         fetchDiscoveryHome,
+        refreshDiscoveryHome,
         clearDiscoveryHistory,
     } = useStore();
     
@@ -44,6 +46,13 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
     useEffect(() => {
         fetchDiscoveryHome();
     }, []);
+
+    // Refresh history in background when screen is focused (e.g. coming back from VenueDetails)
+    useFocusEffect(
+        useCallback(() => {
+            refreshDiscoveryHome();
+        }, [])
+    );
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
@@ -133,7 +142,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
             {hasTeams ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.teamsContent}>
                     {discoveryHome.followed_teams.map((team: any) => (
-                        <TouchableOpacity key={team.id} style={styles.teamContainer} onPress={() => team.live_match_id && navigation.navigate("MatchDetails", { matchId: team.live_match_id })}>
+                        <TouchableOpacity key={team.id} style={styles.teamContainer} onPress={() => team.live_match_id && navigation.navigate("MatchDetail", { matchId: team.live_match_id })}>
                             <View style={[styles.teamAvatarContainer, { backgroundColor: colors.surface, borderColor: team.is_live ? colors.accent : colors.border }]}>
                                 <View style={[styles.teamAvatarInner, { backgroundColor: isLightTheme ? colors.background : "#2a2a30" }]}>
                                     {team.logo_url ? <Image source={{ uri: team.logo_url }} style={styles.teamLogo} /> : <MaterialCommunityIcons name="soccer" size={24} color={team.is_live ? colors.accent : colors.textMuted} />}
@@ -193,7 +202,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
             {hasHistory ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentContent}>
                     {discoveryHome.recently_viewed.map((item: any) => (
-                        <TouchableOpacity key={item.venue.id} style={[styles.recentCard, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.navigate("VenueDetails", { venueId: item.venue.id })}>
+                        <TouchableOpacity key={item.venue.id} style={[styles.recentCard, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.navigate("VenueProfile", { venueId: item.venue.id })}>
                             <Image source={{ uri: item.venue.photos?.[0]?.photo_url || "https://images.unsplash.com/photo-1543007630-9710e4a00a20?q=80&w=2070&auto=format&fit=crop" }} style={styles.recentImage} />
                             <View style={styles.recentInfo}>
                                 <Text style={[styles.recentTitle, { color: colors.text }]} numberOfLines={1}>{item.venue.name}</Text>
@@ -222,7 +231,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
             {hasMatches ? (
                 <View style={styles.upcomingContainer}>
                     {discoveryHome.upcoming_matches.map((match: any, idx: number) => (
-                        <TouchableOpacity key={match.id || idx} style={[styles.upcomingRow, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.navigate("MatchDetails", { matchId: match.id })}>
+                        <TouchableOpacity key={match.id || idx} style={[styles.upcomingRow, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => navigation.navigate("MatchDetail", { matchId: match.id })}>
                             <View style={styles.upcomingTeam}>
                                 <View style={[styles.smallBadge, { backgroundColor: colors.surfaceAlt }]}>
                                     {match.homeTeam?.logo_url ? <Image source={{ uri: match.homeTeam.logo_url }} style={styles.smallTeamLogo} /> : <Text style={[styles.smallBadgeText, { color: colors.text }]}>{getInitials(match.homeTeam?.name)}</Text>}
@@ -359,9 +368,16 @@ const styles = StyleSheet.create({
     bannerSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 11, marginTop: 2 },
     bannerCTA: { alignSelf: "flex-end", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 4 },
     bannerCTAText: { color: "white", fontSize: 11, fontWeight: "bold" },
-    sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginBottom: 12 },
-    sectionTitle: { fontSize: 14, fontWeight: "bold" },
-    teamsContent: { paddingHorizontal: 20, gap: 15 },
+    sectionHeader: { 
+        flexDirection: "row", 
+        justifyContent: "space-between", 
+        alignItems: "center", 
+        paddingHorizontal: 20, 
+        marginTop: 24, 
+        marginBottom: 12 
+    },
+    sectionTitle: { fontSize: 15, fontWeight: "bold", letterSpacing: 0.2 },
+    teamsContent: { paddingHorizontal: 20, gap: 15, paddingBottom: 5 },
     teamContainer: { alignItems: "center", width: 65 },
     teamAvatarContainer: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, alignItems: "center", justifyContent: "center", marginBottom: 4 },
     teamAvatarInner: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", overflow: "hidden" },
@@ -372,34 +388,34 @@ const styles = StyleSheet.create({
     addTeamContainer: { alignItems: "center", width: 60 },
     addTeamCircle: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center", marginBottom: 4 },
     addTeamText: { fontSize: 9, fontWeight: "500" },
-    emptyTeamsContainer: { paddingHorizontal: 20, marginBottom: 25 },
+    emptyTeamsContainer: { paddingHorizontal: 20, marginBottom: 10 },
     emptyTeamsCard: { flexDirection: "row", alignItems: "center", padding: 16, borderRadius: 20, borderWidth: 1, gap: 12 },
     emptyTeamsContent: { flex: 1, gap: 2 },
     emptyTeamsTitle: { fontSize: 13, fontWeight: "700" },
     emptyTeamsSubtitle: { fontSize: 11, lineHeight: 15 },
     emptyTeamsAction: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
     emptyTeamsActionText: { fontSize: 11, fontWeight: "700" },
-    competitionsContent: { paddingHorizontal: 20, gap: 12 },
+    competitionsContent: { paddingHorizontal: 20, gap: 15, paddingBottom: 5 },
     compContainer: { alignItems: "center", width: 70 },
-    compIconCircle: { width: 48, height: 48, borderRadius: 24, borderWidth: 1, alignItems: "center", justifyContent: "center", marginBottom: 4, overflow: "hidden" },
-    compLogo: { width: 28, height: 28, resizeMode: "contain" },
-    compName: { fontSize: 8, fontWeight: "bold", textAlign: "center", textTransform: "uppercase" },
-    recentContent: { paddingHorizontal: 20, gap: 15 },
-    recentCard: { width: width * 0.65, borderRadius: 16, padding: 10, flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1 },
-    recentImage: { width: 56, height: 56, borderRadius: 12 },
-    recentInfo: { flex: 1 },
-    recentTitle: { fontSize: 12, fontWeight: "bold" },
-    recentSub: { fontSize: 9 },
-    recentDetail: { fontSize: 8, marginTop: 2 },
-    ratingBadge: { position: "absolute", top: 8, right: 8, paddingHorizontal: 4, paddingVertical: 2, borderRadius: 4 },
-    ratingText: { fontSize: 8, fontWeight: "bold" },
-    clearText: { fontSize: 10, fontWeight: "bold" },
-    emptyHistoryContainer: { paddingHorizontal: 20, marginBottom: 25 },
-    emptyHistoryCard: { padding: 24, borderRadius: 24, alignItems: "center", gap: 12 },
-    emptyHistoryTitle: { fontSize: 16, fontWeight: "700", marginTop: 4 },
-    emptyHistoryAction: { paddingHorizontal: 20, paddingVertical: 12, borderRadius: 14, marginTop: 8 },
-    emptyHistoryActionText: { color: "#fff", fontSize: 14, fontWeight: "700" },
-    upcomingContainer: { paddingHorizontal: 20, gap: 10 },
+    compIconCircle: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, alignItems: "center", justifyContent: "center", marginBottom: 6, overflow: "hidden" },
+    compLogo: { width: 32, height: 32, resizeMode: "contain" },
+    compName: { fontSize: 9, fontWeight: "bold", textAlign: "center", textTransform: "uppercase" },
+    recentContent: { paddingHorizontal: 20, gap: 15, paddingBottom: 5 },
+    recentCard: { width: width * 0.72, borderRadius: 20, padding: 12, flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1 },
+    recentImage: { width: 64, height: 64, borderRadius: 14 },
+    recentInfo: { flex: 1, gap: 2 },
+    recentTitle: { fontSize: 14, fontWeight: "bold" },
+    recentSub: { fontSize: 11 },
+    recentDetail: { fontSize: 9, marginTop: 2 },
+    ratingBadge: { position: "absolute", top: 10, right: 10, paddingHorizontal: 6, paddingVertical: 3, borderRadius: 6 },
+    ratingText: { fontSize: 10, fontWeight: "bold" },
+    clearText: { fontSize: 12, fontWeight: "bold" },
+    emptyHistoryContainer: { paddingHorizontal: 20, marginBottom: 10 },
+    emptyHistoryCard: { padding: 30, borderRadius: 28, alignItems: "center", gap: 15 },
+    emptyHistoryTitle: { fontSize: 18, fontWeight: "700", marginTop: 4 },
+    emptyHistoryAction: { paddingHorizontal: 24, paddingVertical: 14, borderRadius: 16, marginTop: 8 },
+    emptyHistoryActionText: { color: "#fff", fontSize: 15, fontWeight: "700" },
+    upcomingContainer: { paddingHorizontal: 20, gap: 12, paddingBottom: 20 },
     upcomingRow: { flexDirection: "row", alignItems: "center", padding: 12, borderRadius: 16, borderWidth: 1 },
     upcomingTeam: { flex: 1, flexDirection: "row", alignItems: "center", gap: 8 },
     smallBadge: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center", overflow: "hidden" },

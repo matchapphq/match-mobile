@@ -643,6 +643,13 @@ export const apiService = {
         return response.data;
     },
 
+    recordView: async (venueId: string): Promise<void> => {
+        // Calling venue details already records a view on the backend if auth is present,
+        // but we can explicitly call it to be sure.
+        // Actually, the backend records it in discoveryLogic.getVenueDetails
+        await api.get(`/discovery/venues/${venueId}`);
+    },
+
     getCompetitionDetails: async (competitionId: string): Promise<any> => {
         const response = await api.get(`/discovery/competition/${competitionId}`);
         return response.data;
