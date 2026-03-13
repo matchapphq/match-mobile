@@ -820,7 +820,7 @@ export const apiService = {
         return response.data;
     },
 
-    getVenueReviews: async (venueId: string, page: number = 1, limit: number = 20): Promise<any[]> => {
+    getVenueReviews: async (venueId: string, page: number = 1, limit: number = 20): Promise<{ reviews: any[], stats: any[] }> => {
         const response = await api.get(`/reviews/venue/${venueId}`, {
             params: { page, limit }
         });

@@ -38,26 +38,29 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
     const insets = useSafeAreaInsets();
     const venueId: string = route?.params?.venueId;
     const venueName: string = route?.params?.venueName || 'Bar';
-    const venueRating: number = route?.params?.venueRating || 4.8;
-    const venueReviewCount: number = route?.params?.venueReviewCount || 120;
     const venue: any = route?.params?.venue;
     
     const [isLoading, setIsLoading] = useState(true);
     const [reviews, setReviews] = useState<Review[]>([]);
-
-    const ratingDistribution: RatingDistribution[] = [
-        { stars: 5, percentage: 85 },
-        { stars: 4, percentage: 10 },
-        { stars: 3, percentage: 3 },
-        { stars: 2, percentage: 1 },
-        { stars: 1, percentage: 1 },
-    ];
+    const [displayRating, setDisplayRating] = useState<number>(route?.params?.venueRating || 4.8);
+    const [displayReviewCount, setDisplayReviewCount] = useState<number>(route?.params?.venueReviewCount || 0);
+    const [ratingDistribution, setRatingDistribution] = useState<RatingDistribution[]>([
+        { stars: 5, percentage: 0 },
+        { stars: 4, percentage: 0 },
+        { stars: 3, percentage: 0 },
+        { stars: 2, percentage: 0 },
+        { stars: 1, percentage: 0 },
+    ]);
 
     const loadReviews = useCallback(async () => {
         try {
             setIsLoading(true);
-            const data = await apiService.getVenueReviews(venueId);
+            const { reviews: data, stats } = await apiService.getVenueReviews(venueId);
             
+            if (stats) {
+                setRatingDistribution(stats);
+            }
+
             // Transform API response to our local Review interface
             const transformedReviews: Review[] = data.map((r: any) => ({
                 id: r.id,

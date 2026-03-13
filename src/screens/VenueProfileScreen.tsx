@@ -93,7 +93,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
     const renderRatingLabel = useMemo(() => {
         if (!venue) return null;
         const rating = typeof venue.rating === 'number' ? venue.rating : Number(venue.rating) || 0;
-        return `${rating.toFixed(1)} (${venue.tags.length * 40 + 40} avis)`;
+        return `${rating.toFixed(1)} (${venue.totalReviews || 0} avis)`;
     }, [venue]);
 
     const renderMatchCard = (match: VenueMatch) => (
