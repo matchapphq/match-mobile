@@ -653,6 +653,21 @@ export const apiService = {
         return response.data;
     },
 
+    toggleTeamFollow: async (teamId: string): Promise<{ followed: boolean }> => {
+        const response = await api.post(`/discovery/team/${teamId}/follow`);
+        return response.data;
+    },
+
+    getFollowedTeams: async (): Promise<any[]> => {
+        const response = await api.get("/discovery/teams/followed");
+        return response.data;
+    },
+
+    getFollowedLeagues: async (): Promise<any[]> => {
+        const response = await api.get("/discovery/competitions/followed");
+        return response.data;
+    },
+
     clearHistory: async (): Promise<void> => {
         await api.post("/discovery/history/clear");
     },
