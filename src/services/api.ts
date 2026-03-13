@@ -632,6 +632,57 @@ export const apiService = {
     },
 
     // Discovery
+    getHomeDiscovery: async (): Promise<{
+        banners: any[];
+        followed_teams: any[];
+        popular_competitions: any[];
+        recently_viewed: any[];
+        upcoming_matches: any[];
+    }> => {
+        const response = await api.get("/discovery/home");
+        return response.data;
+    },
+
+    recordView: async (venueId: string): Promise<void> => {
+        // Calling venue details already records a view on the backend if auth is present,
+        // but we can explicitly call it to be sure.
+        // Actually, the backend records it in discoveryLogic.getVenueDetails
+        await api.get(`/discovery/venues/${venueId}`);
+    },
+
+    getCompetitionDetails: async (competitionId: string): Promise<any> => {
+        const response = await api.get(`/discovery/competition/${competitionId}`);
+        return response.data;
+    },
+
+    toggleLeagueFollow: async (leagueId: string): Promise<{ followed: boolean }> => {
+        const response = await api.post(`/discovery/competition/${leagueId}/follow`);
+        return response.data;
+    },
+
+    toggleTeamFollow: async (teamId: string): Promise<{ followed: boolean }> => {
+        const response = await api.post(`/discovery/team/${teamId}/follow`);
+        return response.data;
+    },
+
+    getFollowedTeams: async (): Promise<any[]> => {
+        const response = await api.get("/discovery/teams/followed");
+        return response.data;
+    },
+
+    getFollowedLeagues: async (): Promise<any[]> => {
+        const response = await api.get("/discovery/competitions/followed");
+        return response.data;
+    },
+
+    clearHistory: async (): Promise<void> => {
+        await api.post("/discovery/history/clear");
+    },
+
+    trackVenueView: async (venueId: string): Promise<void> => {
+        await api.post(`/venues/${venueId}/view`);
+    },
+
     discoverNearby: async (
         lat: number,
         lng: number,

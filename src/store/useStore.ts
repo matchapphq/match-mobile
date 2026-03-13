@@ -99,6 +99,15 @@ interface AppState {
         sortDirection: "asc" | "desc";
     };
 
+    // Discovery
+    discoveryHome: {
+        banners: any[];
+        followed_teams: any[];
+        popular_competitions: any[];
+        recently_viewed: any[];
+        upcoming_matches: any[];
+    };
+
     // Actions
     setUser: (user: User | null) => void;
     setOnboardingCompleted: (completed: boolean) => void;
@@ -113,6 +122,10 @@ interface AppState {
     }) => Promise<boolean>;
     fetchUserProfile: () => Promise<void>;
     refreshUserProfile: () => Promise<void>;
+    fetchDiscoveryHome: () => Promise<void>;
+    refreshDiscoveryHome: () => Promise<void>;
+    recordVenueView: (venueId: string) => Promise<void>;
+    clearDiscoveryHistory: () => Promise<void>;
     setThemeMode: (mode: 'light' | 'dark' | 'system') => void;
     updateComputedTheme: () => void;
     setPushNotificationsEnabled: (enabled: boolean) => void;
@@ -224,9 +237,63 @@ export const useStore = create<AppState>((set, get) => ({
     isLoading: false,
     error: null,
 
+    discoveryHome: {
+        banners: [],
+        followed_teams: [],
+        popular_competitions: [],
+        recently_viewed: [],
+        upcoming_matches: [],
+    },
+
     // Loading state actions
     setLoading: (loading) => set({ isLoading: loading }),
     setError: (error) => set({ error }),
+
+    // Discovery Actions
+    fetchDiscoveryHome: async () => {
+        set({ isLoading: true, error: null });
+        try {
+            const data = await apiService.getHomeDiscovery();
+            set({ discoveryHome: data, isLoading: false });
+        } catch (error) {
+            console.error("Error fetching discovery home:", error);
+            set({ isLoading: false });
+        }
+    },
+
+    refreshDiscoveryHome: async () => {
+        try {
+            const data = await apiService.getHomeDiscovery();
+            set({ discoveryHome: data });
+        } catch (error) {
+            console.warn("Background refresh of discovery home failed:", error);
+        }
+    },
+
+    recordVenueView: async (venueId: string) => {
+        try {
+            await apiService.recordView(venueId);
+            // Refresh to update history list immediately
+            const data = await apiService.getHomeDiscovery();
+            set({ discoveryHome: data });
+        } catch (error) {
+            console.warn("Failed to record venue view:", error);
+        }
+    },
+
+    clearDiscoveryHistory: async () => {
+        try {
+            await apiService.clearHistory();
+            set((state) => ({
+                discoveryHome: {
+                    ...state.discoveryHome,
+                    recently_viewed: [],
+                },
+            }));
+        } catch (error) {
+            console.error("Error clearing discovery history:", error);
+        }
+    },
 
     // Favourites
     toggleFavourite: async (venueIdOrObj: string | { id: string, venue_id?: string }) => {

@@ -90,15 +90,15 @@ const BottomTabPill = ({ state, descriptors, navigation }: BottomTabPillProps) =
                 let displayText = label;
 
                 // Adjust these based on your actual route names in TabNavigator
-                if (route.name === "Map") {
-                    iconName = "map";
+                if (route.name === "Discover") {
+                    iconName = "explore";
                     displayText = "Découvrir";
+                } else if (route.name === "Map") {
+                    iconName = "map";
+                    displayText = "Carte";
                 } else if (route.name === "Search") {
                     iconName = "search";
                     displayText = "Rechercher";
-                } else if (route.name === "Discover") {
-                    iconName = "discord";
-                    displayText = "Discover";
                 } else if (route.name === "Reservations") {
                     iconName = "confirmation-number";
                     displayText = "Réservations";
@@ -128,7 +128,7 @@ const NavBarItem = ({ icon, label, active, onPress, colors }: any) => {
 
     useEffect(() => {
         Animated.spring(scaleAnim, {
-            toValue: active ? 1.15 : 1,
+            toValue: active ? 1.1 : 1, // Reduced scale slightly from 1.15 to 1.1
             useNativeDriver: true,
             friction: 5,
             tension: 40
@@ -137,9 +137,18 @@ const NavBarItem = ({ icon, label, active, onPress, colors }: any) => {
 
     return (
         <TouchableOpacity style={styles.navItem} onPress={onPress} activeOpacity={0.7}>
-            <Animated.View style={{ alignItems: 'center', gap: 4, transform: [{ scale: scaleAnim }] }}>
-                <MaterialIcons name={icon} size={26} color={active ? colors.accent : colors.slate400} />
-                <Text style={[styles.navItemLabel, { color: colors.slate400 }, active && { color: colors.accent, fontWeight: 'bold' }]}>{label}</Text>
+            <Animated.View style={{ alignItems: 'center', gap: 2, transform: [{ scale: scaleAnim }] }}>
+                <MaterialIcons name={icon} size={24} color={active ? colors.accent : colors.slate400} />
+                <Text 
+                    numberOfLines={1} 
+                    style={[
+                        styles.navItemLabel, 
+                        { color: colors.slate400 }, 
+                        active && { color: colors.accent, fontWeight: 'bold' }
+                    ]}
+                >
+                    {label}
+                </Text>
             </Animated.View>
         </TouchableOpacity>
     );
@@ -149,31 +158,32 @@ const styles = StyleSheet.create({
     navBar: {
         position: 'absolute',
         bottom: 32,
-        left: 16,
-        right: 16,
+        left: 12,
+        right: 12,
         flexDirection: 'row',
         justifyContent: 'space-between',
         borderRadius: 32,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
         borderWidth: 1,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
         zIndex: 50,
-        maxWidth: 384,
+        maxWidth: 400,
         alignSelf: 'center',
-        overflow: 'hidden', // Required for BlurView to clip correctly
+        overflow: 'hidden',
     },
     navItem: {
         alignItems: 'center',
         justifyContent: 'center',
         flex: 1,
+        paddingHorizontal: 2,
     },
     navItemLabel: {
-        fontSize: 10,
-        fontWeight: '500',
+        fontSize: 9, // Reduced from 10 to prevent overlap
+        fontWeight: '600',
     },
 });
 
