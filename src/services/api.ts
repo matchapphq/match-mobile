@@ -805,4 +805,33 @@ export const apiService = {
         const response = await api.post(url, data);
         return response.data;
     },
+
+    // Reviews
+    createReview: async (venueId: string, data: {
+        rating: number;
+        content: string;
+        tags?: string[];
+        atmosphere_rating?: number;
+        food_rating?: number;
+        service_rating?: number;
+        value_rating?: number;
+    }): Promise<any> => {
+        const response = await api.post(`/reviews/venue/${venueId}`, data);
+        return response.data;
+    },
+
+    getVenueReviews: async (venueId: string, page: number = 1, limit: number = 20): Promise<any[]> => {
+        const response = await api.get(`/reviews/venue/${venueId}`, {
+            params: { page, limit }
+        });
+        return response.data;
+    },
+
+    markReviewHelpful: async (reviewId: string, isHelpful: boolean): Promise<void> => {
+        await api.post(`/reviews/${reviewId}/helpful`, { is_helpful: isHelpful });
+    },
+
+    deleteReview: async (reviewId: string): Promise<void> => {
+        await api.delete(`/reviews/${reviewId}`);
+    },
 };

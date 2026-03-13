@@ -253,6 +253,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                                 venueName: venue.name,
                                 venueRating: venue.rating,
                                 venueReviewCount: venue.tags.length * 40 + 40,
+                                venue: venue, // Pass the full venue object
                             })}
                         >
                             <MaterialIcons name="rate-review" size={20} color={colors.text} />

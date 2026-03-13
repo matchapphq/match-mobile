@@ -38,6 +38,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
     const venueName: string = route?.params?.venueName || 'Bar';
     const venueRating: number = route?.params?.venueRating || 4.8;
     const venueReviewCount: number = route?.params?.venueReviewCount || 120;
+    const venue: any = route?.params?.venue;
     
     const [isLoading, setIsLoading] = useState(true);
     const [reviews, setReviews] = useState<Review[]>([]);
@@ -290,6 +291,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
             <TouchableOpacity 
                 style={[styles.writeReviewButton, { bottom: insets.bottom + 24 }]}
                 activeOpacity={0.9}
+                onPress={() => navigation.navigate('GiveReview', { venue })}
             >
                 <MaterialIcons name="edit" size={20} color="#fff" />
                 <Text style={styles.writeReviewText}>Laisser un avis</Text>
