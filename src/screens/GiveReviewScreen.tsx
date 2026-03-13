@@ -60,10 +60,21 @@ const GiveReviewScreen = ({ navigation, route }: { navigation: any, route: any }
 
         setIsSubmitting(true);
         try {
+            // Map tags to specific notes for the backend
+            // This links the visual "tags" to the structured data columns
+            const atmosphere_rating = selectedTags.includes("Bonne ambiance") ? 5 : undefined;
+            const service_rating = selectedTags.includes("Service rapide") ? 5 : undefined;
+            const food_rating = selectedTags.includes("Large choix") ? 5 : undefined;
+            // "Écrans géants", "Prix corrects", "Propre" could also be mapped if columns exist, 
+            // otherwise they stay in the tags jsonb.
+
             await apiService.createReview(venue.id, {
                 rating,
                 content,
                 tags: selectedTags,
+                atmosphere_rating,
+                service_rating,
+                food_rating,
             });
             hapticFeedback.success();
             Alert.alert("Succès", "Merci pour votre avis !", [

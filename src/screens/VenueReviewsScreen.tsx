@@ -13,6 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 import { useStore } from '../store/useStore';
+import { apiService } from '../services/api';
 
 interface Review {
     id: string;
@@ -35,6 +36,7 @@ interface RatingDistribution {
 const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const { colors, computedTheme: themeMode } = useStore();
     const insets = useSafeAreaInsets();
+    const venueId: string = route?.params?.venueId;
     const venueName: string = route?.params?.venueName || 'Bar';
     const venueRating: number = route?.params?.venueRating || 4.8;
     const venueReviewCount: number = route?.params?.venueReviewCount || 120;
@@ -51,56 +53,37 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
         { stars: 1, percentage: 1 },
     ];
 
-    const mockReviews: Review[] = [
-        {
-            id: '1',
-            userName: 'Thomas Dubois',
-            userAvatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-            rating: 5.0,
-            date: 'Il y a 2 jours',
-            content: "Ambiance incroyable pour le match PSG-OM ! Les écrans sont immenses et le son est top. Le service était rapide malgré le monde. Je recommande vivement pour les soirs de match.",
-            photos: [
-                'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=200&h=200&fit=crop',
-                'https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?w=200&h=200&fit=crop',
-            ],
-            helpfulCount: 12,
-        },
-        {
-            id: '2',
-            userName: 'Léa Jackson',
-            userInitials: 'LJ',
-            rating: 4.5,
-            date: 'Il y a 1 semaine',
-            content: "Super spot pour l'happy hour. Les prix sont corrects pour le quartier et les planches à partager sont généreuses. Un peu bruyant mais c'est normal pour un sports bar.",
-            helpfulCount: 8,
-        },
-        {
-            id: '3',
-            userName: 'Marc Simon',
-            userAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-            rating: 5.0,
-            date: 'Il y a 2 semaines',
-            content: "Le staff est au top ! On a pu réserver une table devant l'écran principal pour la finale. Je reviendrai sans hésiter.",
-            helpfulCount: 24,
-            isHelpful: true,
-        },
-        {
-            id: '4',
-            userName: 'Sophie Petit',
-            userInitials: 'SP',
-            rating: 4.0,
-            date: 'Il y a 3 semaines',
-            content: "Bonne ambiance générale. La bière est fraîche et les burgers sont bons. Seul bémol, il faut arriver tôt pour avoir une place assise.",
-            helpfulCount: 3,
-        },
-    ];
+    const loadReviews = useCallback(async () => {
+        try {
+            setIsLoading(true);
+            const data = await apiService.getVenueReviews(venueId);
+            
+            // Transform API response to our local Review interface
+            const transformedReviews: Review[] = data.map((r: any) => ({
+                id: r.id,
+                userName: r.user ? `${r.user.first_name || ""} ${r.user.last_name || ""}`.trim() || "Anonyme" : "Anonyme",
+                userAvatar: r.user?.avatar,
+                userInitials: r.user ? ((r.user.first_name?.[0] || "") + (r.user.last_name?.[0] || "")).toUpperCase() || "A" : "A",
+                rating: parseFloat(r.rating),
+                date: new Date(r.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }),
+                content: r.content,
+                helpfulCount: r.helpful_count || 0,
+                isHelpful: false,
+            }));
+
+            setReviews(transformedReviews);
+        } catch (error) {
+            console.error("Failed to load reviews:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [venueId]);
 
     useEffect(() => {
-        setTimeout(() => {
-            setReviews(mockReviews);
-            setIsLoading(false);
-        }, 500);
-    }, []);
+        if (venueId) {
+            loadReviews();
+        }
+    }, [venueId, loadReviews]);
 
     const handleBack = () => {
         navigation.goBack();
