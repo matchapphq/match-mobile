@@ -30,10 +30,15 @@ const transformApiVenue = (apiVenue: any): Venue => ({
     distance: apiVenue.distance !== undefined && apiVenue.distance !== null ? `${Number(apiVenue.distance).toFixed(1)} km` : "0.5 km",
     image: apiVenue.cover_image_url || apiVenue.photos?.[0]?.url || apiVenue.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
     rating: Number(apiVenue.average_rating ?? apiVenue.rating ?? 4.5),
+    totalReviews: Number(apiVenue.total_reviews ?? 0),
     tags: apiVenue.amenities || apiVenue.tags || ["Bar sportif"],
     priceLevel: apiVenue.price_range || apiVenue.priceLevel || "€€",
     isOpen: true,
     matches: [],
+    averageAtmosphere: Number(apiVenue.average_atmosphere_rating ?? 0),
+    averageService: Number(apiVenue.average_service_rating ?? 0),
+    averageFood: Number(apiVenue.average_food_rating ?? 0),
+    averageValue: Number(apiVenue.average_value_rating ?? 0),
 });
 
 // Transform API match to VenueMatch format

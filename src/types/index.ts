@@ -27,7 +27,11 @@ export interface User {
 
 export interface UserPreferences {
     sports: string[];
+    fav_sports?: string[];
+    fav_team_ids?: string[];
     ambiance: string[];
+    ambiances?: string[];
+    venue_types?: string[];
     foodTypes: string[];
     budget: string;
 }

@@ -23,6 +23,7 @@ import VenueMatchesScreen from "../screens/VenueMatchesScreen";
 import VenueReviewsScreen from "../screens/VenueReviewsScreen";
 import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
+import CompetitionDetailsScreen from "../screens/CompetitionDetailsScreen";
 import DeleteAccountWarningScreen from "../screens/DeleteAccountWarningScreen";
 import DeleteAccountConfirmScreen from "../screens/DeleteAccountConfirmScreen";
 import DeleteAccountFinalScreen from "../screens/DeleteAccountFinalScreen";
@@ -30,6 +31,7 @@ import DeleteAccountSuccessScreen from "../screens/DeleteAccountSuccessScreen";
 import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 import DataPrivacyScreen from "../screens/DataPrivacyScreen";
 import FavouritesScreen from "../screens/FavouritesScreen";
+import GiveReviewScreen from "../screens/GiveReviewScreen";
 import { PostHogProvider } from 'posthog-react-native';
 import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
 import * as Network from 'expo-network';
@@ -209,12 +211,14 @@ export const AppNavigator = () => {
                             <Stack.Screen name="ReservationsScreen" component={ReservationsScreen} />
                             <Stack.Screen name="ReservationSuccess" component={ReservationSuccessScreen} />
                             <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
+                            <Stack.Screen name="CompetitionDetails" component={CompetitionDetailsScreen} />
                             <Stack.Screen name="FaqSupport" component={FaqSupport} />
                             {/* LanguageSelection temporarily disabled: app is French-only for now. */}
                             <Stack.Screen name="ThemeSelection" component={ThemeSelectionScreen} />
                             <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
                             <Stack.Screen name="DataPrivacy" component={DataPrivacyScreen} />
                             <Stack.Screen name="Favourites" component={FavouritesScreen} />
+                            <Stack.Screen name="GiveReview" component={GiveReviewScreen} />
                         </>
                     )}
                 </Stack.Navigator>

@@ -18,7 +18,14 @@ import { sharing } from '../utils/sharing';
 const { width } = Dimensions.get('window');
 
 const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const { colors, computedTheme: themeMode, favouriteVenueIds, toggleFavourite, checkAndCacheFavourite } = useStore();
+    const { 
+        colors, 
+        computedTheme: themeMode, 
+        favouriteVenueIds, 
+        toggleFavourite, 
+        checkAndCacheFavourite,
+        recordVenueView,
+    } = useStore();
     const posthog = usePostHog();
     const insets = useSafeAreaInsets();
     const venueId: string | undefined = route?.params?.venueId;
@@ -62,13 +69,18 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
             setIsLoading(true);
             const data = venueId ? await mobileApi.fetchVenueById(venueId) : null;
             setVenue(data ?? null);
+            
+            // Explicitly record view via discovery endpoint to ensure it's in history
+            if (venueId) {
+                recordVenueView(venueId);
+            }
         } catch (err) {
             console.warn('Failed to load venue', err);
             setError("Impossible de charger les informations de ce bar.");
         } finally {
             setIsLoading(false);
         }
-    }, [venueId]);
+    }, [venueId, recordVenueView]);
 
     useEffect(() => {
         loadVenue();
@@ -81,7 +93,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
     const renderRatingLabel = useMemo(() => {
         if (!venue) return null;
         const rating = typeof venue.rating === 'number' ? venue.rating : Number(venue.rating) || 0;
-        return `${rating.toFixed(1)} (${venue.tags.length * 40 + 40} avis)`;
+        return `${rating.toFixed(1)} (${venue.totalReviews || 0} avis)`;
     }, [venue]);
 
     const renderMatchCard = (match: VenueMatch) => (
@@ -241,6 +253,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                                 venueName: venue.name,
                                 venueRating: venue.rating,
                                 venueReviewCount: venue.tags.length * 40 + 40,
+                                venue: venue, // Pass the full venue object
                             })}
                         >
                             <MaterialIcons name="rate-review" size={20} color={colors.text} />

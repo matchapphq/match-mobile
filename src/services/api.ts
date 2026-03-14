@@ -632,6 +632,57 @@ export const apiService = {
     },
 
     // Discovery
+    getHomeDiscovery: async (): Promise<{
+        banners: any[];
+        followed_teams: any[];
+        popular_competitions: any[];
+        recently_viewed: any[];
+        upcoming_matches: any[];
+    }> => {
+        const response = await api.get("/discovery/home");
+        return response.data;
+    },
+
+    recordView: async (venueId: string): Promise<void> => {
+        // Calling venue details already records a view on the backend if auth is present,
+        // but we can explicitly call it to be sure.
+        // Actually, the backend records it in discoveryLogic.getVenueDetails
+        await api.get(`/discovery/venues/${venueId}`);
+    },
+
+    getCompetitionDetails: async (competitionId: string): Promise<any> => {
+        const response = await api.get(`/discovery/competition/${competitionId}`);
+        return response.data;
+    },
+
+    toggleLeagueFollow: async (leagueId: string): Promise<{ followed: boolean }> => {
+        const response = await api.post(`/discovery/competition/${leagueId}/follow`);
+        return response.data;
+    },
+
+    toggleTeamFollow: async (teamId: string): Promise<{ followed: boolean }> => {
+        const response = await api.post(`/discovery/team/${teamId}/follow`);
+        return response.data;
+    },
+
+    getFollowedTeams: async (): Promise<any[]> => {
+        const response = await api.get("/discovery/teams/followed");
+        return response.data;
+    },
+
+    getFollowedLeagues: async (): Promise<any[]> => {
+        const response = await api.get("/discovery/competitions/followed");
+        return response.data;
+    },
+
+    clearHistory: async (): Promise<void> => {
+        await api.post("/discovery/history/clear");
+    },
+
+    trackVenueView: async (venueId: string): Promise<void> => {
+        await api.post(`/venues/${venueId}/view`);
+    },
+
     discoverNearby: async (
         lat: number,
         lng: number,
@@ -753,5 +804,34 @@ export const apiService = {
     post: async (url: string, data?: any) => {
         const response = await api.post(url, data);
         return response.data;
+    },
+
+    // Reviews
+    createReview: async (venueId: string, data: {
+        rating: number;
+        content: string;
+        tags?: string[];
+        atmosphere_rating?: number;
+        food_rating?: number;
+        service_rating?: number;
+        value_rating?: number;
+    }): Promise<any> => {
+        const response = await api.post(`/reviews/venue/${venueId}`, data);
+        return response.data;
+    },
+
+    getVenueReviews: async (venueId: string, page: number = 1, limit: number = 20): Promise<{ reviews: any[], stats: any[] }> => {
+        const response = await api.get(`/reviews/venue/${venueId}`, {
+            params: { page, limit }
+        });
+        return response.data;
+    },
+
+    markReviewHelpful: async (reviewId: string, isHelpful: boolean): Promise<void> => {
+        await api.post(`/reviews/${reviewId}/helpful`, { is_helpful: isHelpful });
+    },
+
+    deleteReview: async (reviewId: string): Promise<void> => {
+        await api.delete(`/reviews/${reviewId}`);
     },
 };
