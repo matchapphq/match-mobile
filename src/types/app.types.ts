@@ -1,5 +1,15 @@
 // match-mobile/src/types/app.types.ts
 
+export interface Team {
+    id: string;
+    name: string;
+    logo_url: string;
+    league: string;
+    country: string;
+    sport: string;
+    is_followed: boolean;
+}
+
 export interface UserProfile {
     name: string;
     email: string;

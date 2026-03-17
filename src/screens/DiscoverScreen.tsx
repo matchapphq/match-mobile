@@ -142,7 +142,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
             {hasTeams ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.teamsContent}>
                     {discoveryHome.followed_teams.map((team: any) => (
-                        <TouchableOpacity key={team.id} style={styles.teamContainer} onPress={() => team.live_match_id && navigation.navigate("MatchDetail", { matchId: team.live_match_id })}>
+                        <TouchableOpacity key={team.id} style={styles.teamContainer} onPress={() => navigation.navigate("TeamDetail", { teamId: team.id })}>
                             <View style={[styles.teamAvatarContainer, { backgroundColor: colors.surface, borderColor: team.is_live ? colors.accent : colors.border }]}>
                                 <View style={[styles.teamAvatarInner, { backgroundColor: isLightTheme ? colors.background : "#2a2a30" }]}>
                                     {team.logo_url ? <Image source={{ uri: team.logo_url }} style={styles.teamLogo} /> : <MaterialCommunityIcons name="soccer" size={24} color={team.is_live ? colors.accent : colors.textMuted} />}
@@ -152,7 +152,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                             <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={1}>{team.name}</Text>
                         </TouchableOpacity>
                     ))}
-                    <TouchableOpacity style={styles.addTeamContainer} onPress={() => navigation.navigate("EditProfile")}>
+                    <TouchableOpacity style={styles.addTeamContainer} onPress={() => navigation.navigate("TeamsConfiguration")}>
                         <View style={[styles.addTeamCircle, { borderColor: colors.border }]}><MaterialIcons name="add" size={24} color={colors.textMuted} /></View>
                         <Text style={[styles.addTeamText, { color: colors.textMuted }]}>Ajouter</Text>
                     </TouchableOpacity>
@@ -165,7 +165,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                             <Text style={[styles.emptyTeamsTitle, { color: colors.text }]}>Suis tes équipes favorites</Text>
                             <Text style={[styles.emptyTeamsSubtitle, { color: colors.textMuted }]}>Ne rate plus aucun match en direct.</Text>
                         </View>
-                        <TouchableOpacity style={[styles.emptyTeamsAction, { backgroundColor: colors.accent10 }]} onPress={() => navigation.navigate("EditProfile")}>
+                        <TouchableOpacity style={[styles.emptyTeamsAction, { backgroundColor: colors.accent10 }]} onPress={() => navigation.navigate("TeamsConfiguration")}>
                             <Text style={[styles.emptyTeamsActionText, { color: colors.accent }]}>Configurer</Text>
                         </TouchableOpacity>
                     </View>

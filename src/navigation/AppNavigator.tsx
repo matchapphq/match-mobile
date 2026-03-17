@@ -32,6 +32,8 @@ import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 import DataPrivacyScreen from "../screens/DataPrivacyScreen";
 import FavouritesScreen from "../screens/FavouritesScreen";
 import GiveReviewScreen from "../screens/GiveReviewScreen";
+import TeamsConfigurationScreen from "../screens/TeamsConfigurationScreen";
+import TeamDetailScreen from "../screens/TeamDetailScreen";
 import { PostHogProvider } from 'posthog-react-native';
 import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
 import * as Network from 'expo-network';
@@ -219,6 +221,8 @@ export const AppNavigator = () => {
                             <Stack.Screen name="DataPrivacy" component={DataPrivacyScreen} />
                             <Stack.Screen name="Favourites" component={FavouritesScreen} />
                             <Stack.Screen name="GiveReview" component={GiveReviewScreen} />
+                            <Stack.Screen name="TeamsConfiguration" component={TeamsConfigurationScreen} />
+                            <Stack.Screen name="TeamDetail" component={TeamDetailScreen} />
                         </>
                     )}
                 </Stack.Navigator>
