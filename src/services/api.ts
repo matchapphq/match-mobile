@@ -675,6 +675,21 @@ export const apiService = {
         return response.data;
     },
 
+    getDiscoveryFilters: async (): Promise<{ countries: any[], leagues: any[] }> => {
+        const response = await api.get("/discovery/filters");
+        return response.data;
+    },
+
+    getTeams: async (filters?: { sport?: string, country?: string, leagueId?: string, query?: string }): Promise<any[]> => {
+        const response = await api.get("/discovery/teams", { params: filters });
+        return response.data;
+    },
+
+    getTeamDetails: async (teamId: string): Promise<any> => {
+        const response = await api.get(`/discovery/team/${teamId}`);
+        return response.data;
+    },
+
     clearHistory: async (): Promise<void> => {
         await api.post("/discovery/history/clear");
     },

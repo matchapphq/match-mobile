@@ -179,6 +179,7 @@ const ProfileScreen = () => {
     name: userData
       ? [userData.first_name, userData.last_name].filter(Boolean).join(' ') || userData.username || userData.email || 'Utilisateur'
       : DEFAULT_PROFILE.name,
+    username: userData?.username,
     email: userData?.email || DEFAULT_PROFILE.email,
     badgeLabel: 'Fan',
     avatar: userData?.avatar || DEFAULT_PROFILE.avatar,
@@ -219,7 +220,7 @@ const ProfileScreen = () => {
         platform: Platform.OS,
         os_version: Platform.Version,
         device_model: Platform.select({ ios: 'iPhone', android: 'Android' }),
-        app_version: '2.4.0',
+        app_version: '0.9.5',
         user_id: userData?.id,
         timestamp: new Date().toISOString(),
       };

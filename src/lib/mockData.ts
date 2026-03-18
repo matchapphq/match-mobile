@@ -10,7 +10,65 @@ import type {
     UserProfile,
     NotificationSetting,
     MockReservation,
+    Team,
 } from "../types/app.types";
+
+export const mockTeams: Team[] = [
+    {
+        id: "team-psg",
+        name: "Paris Saint-Germain",
+        logo_url: "https://crests.football-data.org/524.png",
+        league: "Ligue 1",
+        country: "France",
+        sport: "football",
+        is_followed: true,
+    },
+    {
+        id: "team-om",
+        name: "Olympique de Marseille",
+        logo_url: "https://crests.football-data.org/516.png",
+        league: "Ligue 1",
+        country: "France",
+        sport: "football",
+        is_followed: false,
+    },
+    {
+        id: "team-real",
+        name: "Real Madrid",
+        logo_url: "https://crests.football-data.org/86.png",
+        league: "La Liga",
+        country: "Espagne",
+        sport: "football",
+        is_followed: false,
+    },
+    {
+        id: "team-barca",
+        name: "FC Barcelone",
+        logo_url: "https://crests.football-data.org/81.png",
+        league: "La Liga",
+        country: "Espagne",
+        sport: "football",
+        is_followed: false,
+    },
+    {
+        id: "team-arsenal",
+        name: "Arsenal FC",
+        logo_url: "https://crests.football-data.org/57.png",
+        league: "Premier League",
+        country: "Angleterre",
+        sport: "football",
+        is_followed: false,
+    },
+    {
+        id: "team-liverpool",
+        name: "Liverpool FC",
+        logo_url: "https://crests.football-data.org/64.png",
+        league: "Premier League",
+        country: "Angleterre",
+        sport: "football",
+        is_followed: false,
+    },
+];
 
 export const mockProfile: UserProfile = {
     name: "Alex Martin",
