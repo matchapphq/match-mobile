@@ -135,6 +135,28 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 </View>
             </View>
 
+            {/* Popular Competitions Section */}
+            <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Compétitions populaires</Text>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.competitionsContent}>
+                {discoveryHome.popular_competitions?.map((comp: any, idx: number) => (
+                    <TouchableOpacity 
+                        key={comp.id || idx} 
+                        style={styles.compContainer} 
+                        onPress={() => navigation.navigate("CompetitionDetails", { 
+                            competitionId: comp.id,
+                            competitionName: comp.name 
+                        })}
+                    >
+                        <View style={[styles.compIconCircle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            {comp.logo_url ? <Image source={{ uri: comp.logo_url }} style={styles.compLogo} /> : <MaterialIcons name="emoji-events" size={20} color={colors.accent} />}
+                        </View>
+                        <Text style={[styles.compName, { color: colors.textMuted }]} numberOfLines={2}>{comp.name}</Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+
             {/* Teams Section */}
             <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Tes Équipes</Text>
