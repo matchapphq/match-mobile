@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     View,
     Text,
@@ -9,13 +9,15 @@ import {
     StatusBar,
     Dimensions,
     TextInput,
+    ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { useStore } from "../store/useStore";
-import { mockTeams } from "../lib/mockData";
+import { mobileApi } from "../services/mobileApi";
+import { apiService } from "../services/api";
 import { Team } from "../types/app.types";
 
 const { width } = Dimensions.get("window");
@@ -27,44 +29,81 @@ const SPORTS = [
     { id: "rugby", label: "Rugby", icon: "sports-rugby" },
 ];
 
-const COUNTRIES = ["France", "Espagne", "Angleterre", "Italie", "Allemagne"];
-const LEAGUES = ["Ligue 1", "La Liga", "Premier League", "Serie A", "Bundesliga"];
-
 const TeamsConfigurationScreen = () => {
-    const { colors, computedTheme } = useStore();
+    const { colors, computedTheme, toggleTeamFollow, discoveryHome } = useStore();
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const isDark = computedTheme === "dark";
 
+    const [isLoading, setIsLoading] = useState(true);
+    const [isFiltersLoading, setIsFiltersLoading] = useState(true);
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [availableCountries, setAvailableCountries] = useState<{name: string, id: string}[]>([]);
+    const [availableLeagues, setAvailableLeagues] = useState<{name: string, id: string}[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedSport, setSelectedSport] = useState("football");
     const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
-    const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
-    const [followedTeamIds, setFollowedTeamIds] = useState<Set<string>>(
-        new Set(mockTeams.filter(t => t.is_followed).map(t => t.id))
-    );
+    const [selectedLeagueId, setSelectedLeagueId] = useState<string | null>(null);
 
-    const filteredTeams = useMemo(() => {
-        return mockTeams.filter(team => {
-            const matchesSearch = team.name.toLowerCase().includes(searchQuery.toLowerCase());
-            if (!matchesSearch) return false;
+    const followedTeamIds = new Set(discoveryHome.followed_teams.map(t => t.id));
+
+    const fetchFilters = useCallback(async () => {
+        setIsFiltersLoading(true);
+        try {
+            const data = await apiService.getDiscoveryFilters();
             
-            if (selectedSport !== "all" && team.sport !== selectedSport) return false;
-            if (selectedCountry && team.country !== selectedCountry) return false;
-            if (selectedLeague && team.league !== selectedLeague) return false;
-            return true;
-        });
-    }, [searchQuery, selectedSport, selectedCountry, selectedLeague]);
+            // Map and deduplicate countries
+            const countries = data.countries.map((c: any) => ({
+                name: c.name,
+                id: c.id
+            }));
+            setAvailableCountries(countries);
 
-    const toggleFollow = (teamId: string) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        const next = new Set(followedTeamIds);
-        if (next.has(teamId)) {
-            next.delete(teamId);
-        } else {
-            next.add(teamId);
+            // Map leagues, optionally filter by sport if selectedSport is not "all"
+            let leagues = data.leagues;
+            if (selectedSport !== "all") {
+                leagues = leagues.filter((l: any) => l.sport?.name.toLowerCase().includes(selectedSport.toLowerCase()));
+            }
+            
+            setAvailableLeagues(leagues.map((l: any) => ({
+                name: l.name,
+                id: l.id
+            })));
+        } catch (error) {
+            console.error("Error fetching filters:", error);
+        } finally {
+            setIsFiltersLoading(false);
         }
-        setFollowedTeamIds(next);
+    }, [selectedSport]);
+
+    useEffect(() => {
+        fetchFilters();
+    }, [fetchFilters]);
+
+    const fetchTeams = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const data = await mobileApi.fetchTeams({
+                sport: selectedSport === "all" ? undefined : selectedSport,
+                country: selectedCountry || undefined,
+                leagueId: selectedLeagueId || undefined,
+                query: searchQuery || undefined,
+            });
+            setTeams(data);
+        } catch (error) {
+            console.error("Error fetching teams:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [selectedSport, selectedCountry, selectedLeagueId, searchQuery]);
+
+    useEffect(() => {
+        fetchTeams();
+    }, [fetchTeams]);
+
+    const handleToggleFollow = async (team: Team) => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        await toggleTeamFollow(team);
     };
 
     const handleContinue = () => {
@@ -124,7 +163,11 @@ const TeamsConfigurationScreen = () => {
                                     { backgroundColor: isSelected ? colors.accent : colors.surfaceAlt },
                                     isSelected && styles.activeChipShadow
                                 ]}
-                                onPress={() => setSelectedSport(sport.id)}
+                                onPress={() => {
+                                    setSelectedSport(sport.id);
+                                    setSelectedLeagueId(null);
+                                    setSelectedCountry(null);
+                                }}
                             >
                                 <MaterialIcons 
                                     name={sport.icon as any} 
@@ -141,53 +184,63 @@ const TeamsConfigurationScreen = () => {
 
                 {/* Sub-filters: Pays & Compétition */}
                 <View style={styles.subFilters}>
-                    <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Pays</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollSmall}>
-                        {COUNTRIES.map(country => {
-                            const isSelected = selectedCountry === country;
-                            return (
-                                <TouchableOpacity
-                                    key={country}
-                                    style={[
-                                        styles.smallChip,
-                                        { backgroundColor: isSelected ? colors.accent : "transparent", borderColor: isSelected ? colors.accent : colors.border }
-                                    ]}
-                                    onPress={() => setSelectedCountry(isSelected ? null : country)}
-                                >
-                                    <Text style={[styles.smallChipLabel, { color: isSelected ? "#000" : colors.textMuted }]}>
-                                        {country}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
+                    {availableCountries.length > 0 && (
+                        <>
+                            <Text style={[styles.filterSectionTitle, { color: colors.text }]}>Pays</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollSmall}>
+                                {availableCountries.map(country => {
+                                    const isSelected = selectedCountry === country.name;
+                                    return (
+                                        <TouchableOpacity
+                                            key={country.id}
+                                            style={[
+                                                styles.smallChip,
+                                                { backgroundColor: isSelected ? colors.accent : "transparent", borderColor: isSelected ? colors.accent : colors.border }
+                                            ]}
+                                            onPress={() => setSelectedCountry(isSelected ? null : country.name)}
+                                        >
+                                            <Text style={[styles.smallChipLabel, { color: isSelected ? "#000" : colors.textMuted }]}>
+                                                {country.name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        </>
+                    )}
 
-                    <Text style={[styles.filterSectionTitle, { color: colors.text, marginTop: 16 }]}>Compétition</Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollSmall}>
-                        {LEAGUES.map(league => {
-                            const isSelected = selectedLeague === league;
-                            return (
-                                <TouchableOpacity
-                                    key={league}
-                                    style={[
-                                        styles.smallChip,
-                                        { backgroundColor: isSelected ? colors.accent : "transparent", borderColor: isSelected ? colors.accent : colors.border }
-                                    ]}
-                                    onPress={() => setSelectedLeague(isSelected ? null : league)}
-                                >
-                                    <Text style={[styles.smallChipLabel, { color: isSelected ? "#000" : colors.textMuted }]}>
-                                        {league}
-                                    </Text>
-                                </TouchableOpacity>
-                            );
-                        })}
-                    </ScrollView>
+                    {availableLeagues.length > 0 && (
+                        <>
+                            <Text style={[styles.filterSectionTitle, { color: colors.text, marginTop: 16 }]}>Compétition</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScrollSmall}>
+                                {availableLeagues.map(league => {
+                                    const isSelected = selectedLeagueId === league.id;
+                                    return (
+                                        <TouchableOpacity
+                                            key={league.id}
+                                            style={[
+                                                styles.smallChip,
+                                                { backgroundColor: isSelected ? colors.accent : "transparent", borderColor: isSelected ? colors.accent : colors.border }
+                                            ]}
+                                            onPress={() => setSelectedLeagueId(isSelected ? null : league.id)}
+                                        >
+                                            <Text style={[styles.smallChipLabel, { color: isSelected ? "#000" : colors.textMuted }]}>
+                                                {league.name}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </ScrollView>
+                        </>
+                    )}
                 </View>
 
                 {/* Teams List */}
                 <View style={styles.teamsList}>
-                    {filteredTeams.length > 0 ? (
-                        filteredTeams.map(team => {
+                    {isLoading ? (
+                        <ActivityIndicator color={colors.accent} style={{ marginTop: 20 }} />
+                    ) : teams.length > 0 ? (
+                        teams.map(team => {
                             const isFollowed = followedTeamIds.has(team.id);
                             return (
                                 <TouchableOpacity 
@@ -209,7 +262,7 @@ const TeamsConfigurationScreen = () => {
                                             styles.followPill,
                                             { backgroundColor: isFollowed ? colors.accent : colors.surfaceAlt }
                                         ]}
-                                        onPress={() => toggleFollow(team.id)}
+                                        onPress={() => handleToggleFollow(team)}
                                     >
                                         <Text style={[styles.followPillText, { color: isFollowed ? "#000" : colors.text }]}>
                                             {isFollowed ? "Suivi" : "Suivre"}
@@ -256,6 +309,11 @@ const TeamsConfigurationScreen = () => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
     },
     header: {
         paddingHorizontal: 20,

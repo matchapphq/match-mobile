@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
     View,
     Text,
@@ -8,6 +8,7 @@ import {
     Image,
     StatusBar,
     Dimensions,
+    ActivityIndicator,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons, Ionicons, FontAwesome5 } from "@expo/vector-icons";
@@ -15,25 +16,74 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as Haptics from "expo-haptics";
 import { useStore } from "../store/useStore";
-import { mockTeams, mockVenues } from "../lib/mockData";
+import { mobileApi, SearchMatchResult, SearchResult, Team } from "../services/mobileApi";
+import { apiService } from "../services/api";
 
 const { width, height } = Dimensions.get("window");
 
 const TeamDetailScreen = () => {
-    const { colors, computedTheme } = useStore();
+    const { colors, computedTheme, toggleTeamFollow, discoveryHome } = useStore();
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const route = useRoute<any>();
-    const { teamId } = route.params || { teamId: "team-psg" };
+    const { teamId } = route.params || {};
     
     const isDark = computedTheme === "dark";
-    const team = useMemo(() => mockTeams.find(t => t.id === teamId) || mockTeams[0], [teamId]);
-    const [isFollowed, setIsFollowed] = useState(team.is_followed);
+    
+    const [isLoading, setIsLoading] = useState(true);
+    const [team, setTeam] = useState<Team | null>(null);
+    const [upcomingMatches, setUpcomingMatches] = useState<SearchMatchResult[]>([]);
+    const [bestBars, setBestBars] = useState<SearchResult[]>([]);
 
-    const toggleFollow = () => {
+    const isFollowed = useMemo(() => 
+        discoveryHome.followed_teams.some(t => t.id === teamId),
+    [discoveryHome.followed_teams, teamId]);
+
+    const fetchDetails = useCallback(async () => {
+        if (!teamId) return;
+        setIsLoading(true);
+        try {
+            const data = await mobileApi.fetchTeamDetails(teamId);
+            if (data) {
+                setTeam(data.team);
+                setUpcomingMatches(data.upcoming_matches);
+                setBestBars(data.best_bars);
+            }
+        } catch (error) {
+            console.error("Error fetching team details:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [teamId]);
+
+    useEffect(() => {
+        fetchDetails();
+    }, [fetchDetails]);
+
+    const handleToggleFollow = async () => {
+        if (!team) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        setIsFollowed(!isFollowed);
+        await toggleTeamFollow(team);
     };
+
+    if (isLoading && !team) {
+        return (
+            <View style={[styles.container, { backgroundColor: colors.background, justifyContent: "center" }]}>
+                <ActivityIndicator size="large" color={colors.accent} />
+            </View>
+        );
+    }
+
+    if (!team) {
+        return (
+            <View style={[styles.container, { backgroundColor: colors.background, justifyContent: "center", alignItems: "center" }]}>
+                <Text style={{ color: colors.text }}>Équipe introuvable.</Text>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginTop: 20 }}>
+                    <Text style={{ color: colors.accent }}>Retour</Text>
+                </TouchableOpacity>
+            </View>
+        );
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -72,7 +122,7 @@ const TeamDetailScreen = () => {
                                 styles.followButtonMain, 
                                 { backgroundColor: isFollowed ? "rgba(255,255,255,0.1)" : colors.accent, borderColor: isFollowed ? colors.accent : "transparent" }
                             ]}
-                            onPress={toggleFollow}
+                            onPress={handleToggleFollow}
                         >
                             <MaterialIcons 
                                 name={isFollowed ? "check" : "add"} 
@@ -96,36 +146,52 @@ const TeamDetailScreen = () => {
                     </View>
                     
                     <View style={styles.matchesList}>
-                        {[1, 2].map((_, idx) => (
-                            <TouchableOpacity 
-                                key={idx} 
-                                style={[styles.matchCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                                onPress={() => navigation.navigate("MatchDetail", { matchId: "match-" + idx })}
-                            >
-                                <View style={styles.matchDateCol}>
-                                    <Text style={[styles.matchDay, { color: colors.text }]}>{24 + idx}</Text>
-                                    <Text style={[styles.matchMonth, { color: colors.textMuted }]}>MARS</Text>
-                                </View>
-                                <View style={styles.matchInfo}>
-                                    <View style={styles.matchTeamsRow}>
-                                        <Text style={[styles.matchTeamName, { color: colors.text }]}>{team.name}</Text>
-                                        <Text style={[styles.vsLabel, { color: colors.textMuted }]}>vs</Text>
-                                        <Text style={[styles.matchTeamName, { color: colors.text }]}>Opposition {idx + 1}</Text>
+                        {upcomingMatches.length > 0 ? (
+                            upcomingMatches.map((match) => (
+                                <TouchableOpacity 
+                                    key={match.id} 
+                                    style={[styles.matchCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                                    onPress={() => navigation.navigate("MatchDetail", { matchId: match.id })}
+                                >
+                                    <View style={styles.matchDateCol}>
+                                        <Text style={[styles.matchDay, { color: colors.text }]}>
+                                            {new Date(match.scheduledAt).getDate()}
+                                        </Text>
+                                        <Text style={[styles.matchMonth, { color: colors.textMuted }]}>
+                                            {new Date(match.scheduledAt).toLocaleDateString("fr-FR", { month: "short" }).toUpperCase()}
+                                        </Text>
                                     </View>
-                                    <View style={styles.matchMetaRow}>
-                                        <View style={styles.leagueInfoRow}>
-                                            <MaterialIcons name="emoji-events" size={14} color={colors.accent} />
-                                            <Text style={[styles.matchTime, { color: colors.textMuted, marginLeft: 4 }]}>21:00 • {team.league}</Text>
+                                    <View style={styles.matchInfo}>
+                                        <View style={styles.matchTeamsRow}>
+                                            <Text style={[styles.matchTeamName, { color: colors.text }]} numberOfLines={1}>
+                                                {match.home.name}
+                                            </Text>
+                                            <Text style={[styles.vsLabel, { color: colors.textMuted }]}>vs</Text>
+                                            <Text style={[styles.matchTeamName, { color: colors.text }]} numberOfLines={1}>
+                                                {match.away.name}
+                                            </Text>
                                         </View>
-                                        <View style={[styles.livePill, { backgroundColor: colors.accent + "20" }]}>
-                                            <MaterialIcons name="location-on" size={12} color={colors.accent} />
-                                            <Text style={[styles.livePillText, { color: colors.accent }]}>Diffusé près de toi</Text>
+                                        <View style={styles.matchMetaRow}>
+                                            <View style={styles.leagueInfoRow}>
+                                                <MaterialIcons name="emoji-events" size={14} color={colors.accent} />
+                                                <Text style={[styles.matchTime, { color: colors.textMuted, marginLeft: 4 }]}>
+                                                    {match.kickoffTime} • {match.league}
+                                                </Text>
+                                            </View>
+                                            <View style={[styles.livePill, { backgroundColor: colors.accent + "20" }]}>
+                                                <MaterialIcons name="location-on" size={12} color={colors.accent} />
+                                                <Text style={[styles.livePillText, { color: colors.accent }]}>Diffusé près de toi</Text>
+                                            </View>
                                         </View>
                                     </View>
-                                </View>
-                                <MaterialIcons name="chevron-right" size={24} color={colors.textMuted} />
-                            </TouchableOpacity>
-                        ))}
+                                    <MaterialIcons name="chevron-right" size={24} color={colors.textMuted} />
+                                </TouchableOpacity>
+                            ))
+                        ) : (
+                            <Text style={[styles.emptyText, { color: colors.textMuted, paddingHorizontal: 20 }]}>
+                                Aucun match programmé.
+                            </Text>
+                        )}
                     </View>
                 </View>
 
@@ -135,58 +201,65 @@ const TeamDetailScreen = () => {
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Bars qui diffusent le plus cette équipe</Text>
                     </View>
                     
-                    <ScrollView 
-                        horizontal 
-                        showsHorizontalScrollIndicator={false} 
-                        contentContainerStyle={styles.barsScroll}
-                    >
-                        {mockVenues.map(venue => (
-                            <TouchableOpacity 
-                                key={venue.id} 
-                                style={[styles.barCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-                                onPress={() => navigation.navigate("VenueProfile", { venueId: venue.id })}
-                            >
-                                <Image source={{ uri: venue.image }} style={styles.barImage} />
-                                <View style={styles.barInfo}>
-                                    <Text style={[styles.barName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
-                                    <View style={styles.barLocation}>
-                                        <MaterialIcons name="place" size={14} color={colors.textMuted} />
-                                        <Text style={[styles.barCity, { color: colors.textMuted }]}>{venue.address.split(',')[1]?.trim() || "Paris"}</Text>
-                                    </View>
-                                    
-                                    <View style={[styles.frequentLabel, { backgroundColor: colors.accent + "15" }]}>
-                                        <Text style={[styles.frequentText, { color: colors.accent }]}>Diffuse souvent {team.name.split(' ').pop()}</Text>
-                                    </View>
+                    {bestBars.length > 0 ? (
+                        <ScrollView 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false} 
+                            contentContainerStyle={styles.barsScroll}
+                        >
+                            {bestBars.map(venue => (
+                                <TouchableOpacity 
+                                    key={venue.id} 
+                                    style={[styles.barCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                                    onPress={() => navigation.navigate("VenueProfile", { venueId: venue.id })}
+                                >
+                                    <Image source={{ uri: venue.image }} style={styles.barImage} />
+                                    <View style={styles.barInfo}>
+                                        <Text style={[styles.barName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
+                                        <View style={styles.barLocation}>
+                                            <MaterialIcons name="place" size={14} color={colors.textMuted} />
+                                            <Text style={[styles.barCity, { color: colors.textMuted }]}>{venue.distance}</Text>
+                                        </View>
+                                        
+                                        <View style={[styles.frequentLabel, { backgroundColor: colors.accent + "15" }]}>
+                                            <Text style={[styles.frequentText, { color: colors.accent }]}>
+                                                Diffuse souvent {team.name.split(' ').pop()}
+                                            </Text>
+                                        </View>
 
-                                    <View style={styles.ratingRow}>
-                                        {[1, 2, 3, 4, 5].map(s => (
-                                            <MaterialIcons 
-                                                key={s} 
-                                                name="star" 
-                                                size={14} 
-                                                color={s <= Math.floor(venue.rating) ? colors.accent : colors.surfaceAlt} 
-                                            />
-                                        ))}
-                                        <Text style={[styles.ratingCount, { color: colors.textMuted }]}>(124)</Text>
-                                    </View>
+                                        <View style={styles.ratingRow}>
+                                            {[1, 2, 3, 4, 5].map(s => (
+                                                <MaterialIcons 
+                                                    key={s} 
+                                                    name="star" 
+                                                    size={14} 
+                                                    color={s <= Math.floor(venue.rating) ? colors.accent : colors.surfaceAlt} 
+                                                />
+                                            ))}
+                                            <Text style={[styles.ratingCount, { color: colors.textMuted }]}>({venue.rating.toFixed(1)})</Text>
+                                        </View>
 
-                                    <TouchableOpacity 
-                                        style={[styles.detailsBtn, { borderColor: colors.border }]}
-                                        onPress={() => navigation.navigate("VenueProfile", { venueId: venue.id })}
-                                    >
-                                        <Text style={[styles.detailsBtnText, { color: colors.text }]}>Voir les détails</Text>
-                                    </TouchableOpacity>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
+                                        <TouchableOpacity 
+                                            style={[styles.detailsBtn, { borderColor: colors.border }]}
+                                            onPress={() => navigation.navigate("VenueProfile", { venueId: venue.id })}
+                                        >
+                                            <Text style={[styles.detailsBtnText, { color: colors.text }]}>Voir les détails</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
+                    ) : (
+                        <Text style={[styles.emptyText, { color: colors.textMuted, paddingHorizontal: 20 }]}>
+                            Aucun bar trouvé pour le moment.
+                        </Text>
+                    )}
                 </View>
 
                 <View style={{ height: 120 }} />
             </ScrollView>
 
-            {/* Visual Mock of Bottom Tab Bar (as it's usually persistent but required in layout) */}
-            {/* In a real app, this is handled by TabNavigator, but I'll add a placeholder to match requirements */}
+            {/* Visual Mock of Bottom Tab Bar */}
             <View style={[styles.tabBarMock, { backgroundColor: "rgba(11,11,15,0.95)", borderTopColor: colors.border }]}>
                 <View style={styles.tabItem}>
                     <MaterialIcons name="map" size={24} color={colors.textMuted} />
@@ -368,6 +441,7 @@ const styles = StyleSheet.create({
     matchTeamName: {
         fontSize: 15,
         fontWeight: "700",
+        maxWidth: width * 0.25,
     },
     vsLabel: {
         fontSize: 12,
@@ -462,6 +536,10 @@ const styles = StyleSheet.create({
     detailsBtnText: {
         fontSize: 14,
         fontWeight: "700",
+    },
+    emptyText: {
+        fontSize: 14,
+        marginTop: 10,
     },
     tabBarMock: {
         position: "absolute",
