@@ -690,7 +690,7 @@ export const apiService = {
         return response.data;
     },
 
-    toggleHistory: async (): Promise<void> => {
+    clearHistory: async (): Promise<void> => {
         await api.post("/discovery/history/clear");
     },
 

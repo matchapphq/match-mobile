@@ -33,6 +33,7 @@ const EditProfileScreen = () => {
     const [avatar, setAvatar] = useState(userData?.avatar || AVATAR_PLACEHOLDER);
     const [firstName, setFirstName] = useState(userData?.first_name || "");
     const [lastName, setLastName] = useState(userData?.last_name || "");
+    const [username, setUsername] = useState(userData?.username || "");    
     const [email, setEmail] = useState(userData?.email || "");
     const [bio, setBio] = useState(userData?.bio || "");
     const [phone, setPhone] = useState(userData?.phone || "");
@@ -47,6 +48,7 @@ const EditProfileScreen = () => {
             setEmail(userData.email || "");
             setBio(userData.bio || "");
             setPhone(userData.phone || "");
+            setUsername(userData.username || "");
         }
     }, [userData]);
 
@@ -74,6 +76,7 @@ const EditProfileScreen = () => {
                 avatar,
                 first_name: firstName.trim(),
                 last_name: lastName.trim(),
+                username: username.trim(),
                 email,
                 bio,
                 phone,
@@ -148,6 +151,15 @@ const EditProfileScreen = () => {
                             containerStyle={styles.flexItem}
                         />
                     </View>
+                    
+                    <InputField
+                        label="Username"
+                        value={username}
+                        onChangeText={setUsername}
+                        placeholder="alex_martin"
+                        colors={colors}
+                        containerStyle={styles.flexItem}
+                    />
 
                     <InputField
                         label="Email"

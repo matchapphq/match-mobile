@@ -219,7 +219,7 @@ const ProfileScreen = () => {
         platform: Platform.OS,
         os_version: Platform.Version,
         device_model: Platform.select({ ios: 'iPhone', android: 'Android' }),
-        app_version: '2.4.0',
+        app_version: '0.9.5',
         user_id: userData?.id,
         timestamp: new Date().toISOString(),
       };
