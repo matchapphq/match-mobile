@@ -30,7 +30,7 @@ const EditProfileScreen = () => {
     const userData = useMemo(() => user?.user ?? user ?? null, [user]);
     const isLightTheme = themeMode === "light";
 
-    const [avatar, setAvatar] = useState(userData?.avatar || AVATAR_PLACEHOLDER);
+    const [avatar, setAvatar] = useState(userData?.avatar || userData?.avatar_url || AVATAR_PLACEHOLDER);
     const [firstName, setFirstName] = useState(userData?.first_name || "");
     const [lastName, setLastName] = useState(userData?.last_name || "");
     const [username, setUsername] = useState(userData?.username || "");    
@@ -42,7 +42,7 @@ const EditProfileScreen = () => {
     // Sync state with userData when it's loaded
     React.useEffect(() => {
         if (userData) {
-            setAvatar(userData.avatar || AVATAR_PLACEHOLDER);
+            setAvatar(userData.avatar || userData.avatar_url || AVATAR_PLACEHOLDER);
             setFirstName(userData.first_name || "");
             setLastName(userData.last_name || "");
             setEmail(userData.email || "");

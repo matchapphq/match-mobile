@@ -179,6 +179,7 @@ const ProfileScreen = () => {
     name: userData
       ? [userData.first_name, userData.last_name].filter(Boolean).join(' ') || userData.username || userData.email || 'Utilisateur'
       : DEFAULT_PROFILE.name,
+    username: userData?.username,
     email: userData?.email || DEFAULT_PROFILE.email,
     badgeLabel: 'Fan',
     avatar: userData?.avatar || DEFAULT_PROFILE.avatar,
