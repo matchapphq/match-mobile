@@ -427,6 +427,50 @@ export const mobileApi = {
         }
     },
 
+    async fetchTeams(filters?: { sport?: string, country?: string, leagueId?: string, query?: string }): Promise<Team[]> {
+        try {
+            const teams = await apiService.getTeams(filters);
+            return teams.map((t: any) => ({
+                id: t.id,
+                name: t.name,
+                logo_url: t.logo_url || t.logo,
+                league: t.league?.name || "Football",
+                country: t.country?.name || t.country || "France",
+                sport: t.sport || "football",
+                is_followed: t.is_followed ?? false,
+            }));
+        } catch (error) {
+            console.warn("API fetchTeams failed", error);
+            return [];
+        }
+    },
+
+    async fetchTeamDetails(teamId: string): Promise<{
+        team: Team;
+        upcoming_matches: SearchMatchResult[];
+        best_bars: SearchResult[];
+    } | null> {
+        try {
+            const data = await apiService.getTeamDetails(teamId);
+            return {
+                team: {
+                    id: data.team.id,
+                    name: data.team.name,
+                    logo_url: data.team.logo_url || data.team.logo,
+                    league: data.team.league?.name || "Football",
+                    country: data.team.country?.name || data.team.country || "France",
+                    sport: data.team.sport || "football",
+                    is_followed: data.team.is_followed ?? false,
+                },
+                upcoming_matches: (data.upcoming_matches || []).map(transformToSearchMatch),
+                best_bars: (data.best_bars || []).map(transformToSearchResult),
+            };
+        } catch (error) {
+            console.warn("API fetchTeamDetails failed", error);
+            return null;
+        }
+    },
+
     // Favourites
     async fetchFavoriteVenues(): Promise<SearchResult[]> {
         try {

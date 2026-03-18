@@ -159,6 +159,7 @@ interface AppState {
     isFavourite: (venueId: string) => boolean;
     fetchFavourites: () => Promise<void>;
     checkAndCacheFavourite: (venueId: string) => Promise<boolean>;
+    toggleTeamFollow: (team: any) => Promise<void>;
 
     // Reservation API Actions
     fetchReservations: () => Promise<void>;
@@ -329,6 +330,52 @@ export const useStore = create<AppState>((set, get) => ({
             set({ favouriteVenueIds: revertSet });
             console.warn('Failed to toggle favourite:', error);
             return isFav;
+        }
+    },
+
+    toggleTeamFollow: async (team: any) => {
+        const { discoveryHome, user } = get();
+        const isFollowed = discoveryHome.followed_teams.some(t => t.id === team.id);
+        
+        // 1. Optimistically update discoveryHome.followed_teams
+        let newFollowedTeams = [...discoveryHome.followed_teams];
+        if (isFollowed) {
+            newFollowedTeams = newFollowedTeams.filter(t => t.id !== team.id);
+        } else {
+            // Add if not there, making sure it follows the expected shape
+            newFollowedTeams.push({
+                ...team,
+                is_live: team.is_live ?? false,
+            });
+        }
+
+        // 2. Optimistically update user preferences if they exist
+        const updatedUser = user ? { ...user } : null;
+        if (updatedUser) {
+            const currentPrefs = updatedUser.preferences || { sports: [], foodTypes: [], ambiance: [], budget: "standard", fav_team_ids: [] };
+            const currentFavTeams = currentPrefs.fav_team_ids || [];
+            let newFavTeams = [...currentFavTeams];
+            
+            if (isFollowed) {
+                newFavTeams = newFavTeams.filter(id => id !== team.id);
+            } else {
+                newFavTeams.push(team.id);
+            }
+            
+            updatedUser.preferences = { ...currentPrefs, fav_team_ids: newFavTeams };
+        }
+
+        set({ 
+            discoveryHome: { ...discoveryHome, followed_teams: newFollowedTeams },
+            user: updatedUser
+        });
+
+        try {
+            await apiService.toggleTeamFollow(team.id);
+        } catch (error) {
+            console.error("Failed to toggle team follow on API:", error);
+            // Revert on error
+            set({ discoveryHome, user });
         }
     },
 
