@@ -24,6 +24,7 @@ import VenueReviewsScreen from "../screens/VenueReviewsScreen";
 import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
 import CompetitionDetailsScreen from "../screens/CompetitionDetailsScreen";
+import CompetitionsScreen from "../screens/CompetitionsScreen";
 import DeleteAccountWarningScreen from "../screens/DeleteAccountWarningScreen";
 import DeleteAccountConfirmScreen from "../screens/DeleteAccountConfirmScreen";
 import DeleteAccountFinalScreen from "../screens/DeleteAccountFinalScreen";
@@ -214,6 +215,7 @@ export const AppNavigator = () => {
                             <Stack.Screen name="ReservationSuccess" component={ReservationSuccessScreen} />
                             <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
                             <Stack.Screen name="CompetitionDetails" component={CompetitionDetailsScreen} />
+                            <Stack.Screen name="Competitions" component={CompetitionsScreen} />
                             <Stack.Screen name="FaqSupport" component={FaqSupport} />
                             {/* LanguageSelection temporarily disabled: app is French-only for now. */}
                             <Stack.Screen name="ThemeSelection" component={ThemeSelectionScreen} />

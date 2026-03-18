@@ -103,6 +103,7 @@ interface AppState {
     discoveryHome: {
         banners: any[];
         followed_teams: any[];
+        followed_leagues: any[];
         popular_competitions: any[];
         recently_viewed: any[];
         upcoming_matches: any[];
@@ -160,6 +161,7 @@ interface AppState {
     fetchFavourites: () => Promise<void>;
     checkAndCacheFavourite: (venueId: string) => Promise<boolean>;
     toggleTeamFollow: (team: any) => Promise<void>;
+    toggleLeagueFollow: (league: any) => Promise<void>;
 
     // Reservation API Actions
     fetchReservations: () => Promise<void>;
@@ -241,6 +243,7 @@ export const useStore = create<AppState>((set, get) => ({
     discoveryHome: {
         banners: [],
         followed_teams: [],
+        followed_leagues: [],
         popular_competitions: [],
         recently_viewed: [],
         upcoming_matches: [],
@@ -376,6 +379,31 @@ export const useStore = create<AppState>((set, get) => ({
             console.error("Failed to toggle team follow on API:", error);
             // Revert on error
             set({ discoveryHome, user });
+        }
+    },
+
+    toggleLeagueFollow: async (league: any) => {
+        const { discoveryHome } = get();
+        const isFollowed = discoveryHome.followed_leagues.some(l => l.id === league.id);
+        
+        // Optimistically update
+        let newFollowedLeagues = [...discoveryHome.followed_leagues];
+        if (isFollowed) {
+            newFollowedLeagues = newFollowedLeagues.filter(l => l.id !== league.id);
+        } else {
+            newFollowedLeagues.push(league);
+        }
+
+        set({ 
+            discoveryHome: { ...discoveryHome, followed_leagues: newFollowedLeagues }
+        });
+
+        try {
+            await apiService.toggleLeagueFollow(league.id);
+        } catch (error) {
+            console.error("Failed to toggle league follow on API:", error);
+            // Revert on error
+            set({ discoveryHome });
         }
     },
 
