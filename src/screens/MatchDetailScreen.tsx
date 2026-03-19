@@ -65,7 +65,7 @@ const MatchDetailScreen = ({
                 return (venue.averageAtmosphere && venue.averageAtmosphere > 4) || 
                        venue.tags.some(t => t.toLowerCase().includes("animé") || t.toLowerCase().includes("ambiance"));
             }
-            if (activeFilter === "Avec réservation") return venue.isOpen; // Placeholder for actual reservation status if available
+            if (activeFilter === "Avec réservation") return venue.isOpen;
             
             return true;
         });
