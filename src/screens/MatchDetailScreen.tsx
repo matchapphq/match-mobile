@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useMemo } from "react";
 import {
     ActivityIndicator,
     ScrollView,
@@ -47,9 +47,29 @@ const MatchDetailScreen = ({
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-    const [activeFilter, setActiveFilter] = useState("À proximité");
+    const [activeFilter, setActiveFilter] = useState("Tout");
 
-    const FILTERS = ["À proximité", "< 1 km", "< 5 km", "Ambiance animée", "Avec réservation"];
+    const FILTERS = ["Tout", "À proximité", "< 1 km", "< 5 km", "Ambiance animée", "Avec réservation"];
+
+    // Filter venues based on selected chip
+    const filteredVenues = useMemo(() => {
+        if (activeFilter === "Tout") return venues;
+
+        return venues.filter(venue => {
+            const distanceValue = venue.distance ? parseFloat(venue.distance.replace(/[^\d.]/g, '')) : 999;
+
+            if (activeFilter === "À proximité") return distanceValue < 2;
+            if (activeFilter === "< 1 km") return distanceValue < 1;
+            if (activeFilter === "< 5 km") return distanceValue < 5;
+            if (activeFilter === "Ambiance animée") {
+                return (venue.averageAtmosphere && venue.averageAtmosphere > 4) || 
+                       venue.tags.some(t => t.toLowerCase().includes("animé") || t.toLowerCase().includes("ambiance"));
+            }
+            if (activeFilter === "Avec réservation") return venue.isOpen; // Placeholder for actual reservation status if available
+            
+            return true;
+        });
+    }, [venues, activeFilter]);
 
     // Get user location on mount
     useEffect(() => {
@@ -304,8 +324,8 @@ const MatchDetailScreen = ({
 
                     {/* Venues List */}
                     <View style={styles.venuesList}>
-                        {venues.length > 0 ? (
-                            venues.map((venue) => (
+                        {filteredVenues.length > 0 ? (
+                            filteredVenues.map((venue) => (
                                 <TouchableOpacity 
                                     key={venue.id} 
                                     style={[styles.venueListItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
@@ -368,12 +388,21 @@ const MatchDetailScreen = ({
                                 <View style={[styles.emptyIconCircle, { backgroundColor: colors.background }]}>
                                     <MaterialIcons name="sports-bar" size={32} color={colors.textMuted} />
                                 </View>
-                                <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun bar ne diffuse encore ce match.</Text>
-                                <Text style={[styles.emptySub, { color: colors.textMuted }]}>
-                                    Les établissements mettent à jour leur programme au fil de la semaine.
+                                <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                                    {venues.length === 0 ? "Aucun bar ne diffuse encore ce match." : "Aucun bar ne correspond à vos filtres."}
                                 </Text>
-                                <TouchableOpacity style={[styles.emptyBtn, { borderColor: colors.primary }]}>
-                                    <Text style={[styles.emptyBtnText, { color: colors.primary }]}>Voir les bars populaires à proximité</Text>
+                                <Text style={[styles.emptySub, { color: colors.textMuted }]}>
+                                    {venues.length === 0 
+                                        ? "Les établissements mettent à jour leur programme au fil de la semaine."
+                                        : "Essayez de modifier vos filtres pour voir plus de résultats."}
+                                </Text>
+                                <TouchableOpacity 
+                                    style={[styles.emptyBtn, { borderColor: colors.primary }]}
+                                    onPress={() => setActiveFilter("Tout")}
+                                >
+                                    <Text style={[styles.emptyBtnText, { color: colors.primary }]}>
+                                        {venues.length === 0 ? "Voir les bars populaires à proximité" : "Réinitialiser les filtres"}
+                                    </Text>
                                 </TouchableOpacity>
                             </View>
                         )}
@@ -436,7 +465,7 @@ const MatchDetailScreen = ({
             ]}>
                 <View style={styles.stickyContent}>
                     <View>
-                        <Text style={[styles.stickyCount, { color: colors.text }]}>{venues.length} bars</Text>
+                        <Text style={[styles.stickyCount, { color: colors.text }]}>{filteredVenues.length} bars</Text>
                         <Text style={[styles.stickySub, { color: colors.textMuted }]}>près de toi</Text>
                     </View>
                     <TouchableOpacity style={[styles.stickyBtn, { backgroundColor: colors.primary }]}>
