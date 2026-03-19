@@ -830,8 +830,33 @@ export const apiService = {
         food_rating?: number;
         service_rating?: number;
         value_rating?: number;
+        photos_urls?: string[];
     }): Promise<any> => {
         const response = await api.post(`/reviews/venue/${venueId}`, data);
+        return response.data;
+    },
+
+    uploadReviewPhoto: async (uri: string): Promise<{ success: boolean; url: string }> => {
+        const formData = new FormData();
+        const filename = uri.split('/').pop() || 'review_photo.jpg';
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image/jpeg`;
+
+        // @ts-ignore
+        formData.append('file', {
+            uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+            name: filename,
+            type,
+        });
+        formData.append('type', 'review');
+
+        const response = await api.post("/media/upload", formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+            transformRequest: (data) => data,
+        });
+
         return response.data;
     },
 

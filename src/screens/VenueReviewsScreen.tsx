@@ -23,7 +23,7 @@ interface Review {
     rating: number;
     date: string;
     content: string;
-    photos?: string[];
+    photos_urls?: string[];
     helpfulCount: number;
     isHelpful?: boolean;
 }
@@ -59,7 +59,6 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
             
             if (stats) {
                 setRatingDistribution(stats);
-                // Calculate total reviews and average from stats for accuracy
                 const total = stats.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0);
                 if (total > 0) {
                     setDisplayReviewCount(total);
@@ -68,7 +67,6 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                 }
             }
 
-            // Transform API response to our local Review interface
             const transformedReviews: Review[] = data.map((r: any) => ({
                 id: r.id,
                 userName: r.user ? `${r.user.first_name || ""} ${r.user.last_name || ""}`.trim() || "Anonyme" : "Anonyme",
@@ -77,6 +75,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                 rating: parseFloat(r.rating),
                 date: new Date(r.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }),
                 content: r.content,
+                photos_urls: r.photos_urls || [],
                 helpfulCount: r.helpful_count || 0,
                 isHelpful: false,
             }));
@@ -172,14 +171,19 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
             </Text>
 
             {/* Photos */}
-            {review.photos && review.photos.length > 0 && (
-                <View style={styles.photoGrid}>
-                    {review.photos.map((photo, index) => (
+            {review.photos_urls && review.photos_urls.length > 0 && (
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false} 
+                    contentContainerStyle={styles.photoGrid}
+                    style={{ marginBottom: 12 }}
+                >
+                    {review.photos_urls.map((photo, index) => (
                         <TouchableOpacity key={index} style={styles.photoContainer} activeOpacity={0.8}>
                             <Image source={{ uri: photo }} style={styles.photo} />
                         </TouchableOpacity>
                     ))}
-                </View>
+                </ScrollView>
             )}
 
             {/* Actions */}

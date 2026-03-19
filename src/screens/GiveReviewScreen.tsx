@@ -10,13 +10,17 @@ import {
     Platform,
     ActivityIndicator,
     Alert,
+    Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { useStore } from "../store/useStore";
 import { apiService } from "../services/api";
 import { hapticFeedback } from "../utils/haptics";
+
+const { width } = Dimensions.get("window");
 
 const TAGS = [
     "Bonne ambiance",
@@ -34,6 +38,7 @@ const GiveReviewScreen = ({ navigation, route }: { navigation: any, route: any }
     const [rating, setRating] = useState(0);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [content, setContent] = useState("");
+    const [images, setImages] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const isDark = computedTheme === "dark";
@@ -45,6 +50,31 @@ const GiveReviewScreen = ({ navigation, route }: { navigation: any, route: any }
         } else {
             setSelectedTags([...selectedTags, tag]);
         }
+    };
+
+    const handlePickImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+            Alert.alert("Permission requise", "Nous avons besoin de votre permission pour accéder à vos photos.");
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            allowsMultipleSelection: true,
+            quality: 0.8,
+            selectionLimit: 5 - images.length,
+        });
+
+        if (!result.canceled) {
+            const newImages = result.assets.map(asset => asset.uri);
+            setImages(prev => [...prev, ...newImages].slice(0, 5));
+        }
+    };
+
+    const removeImage = (index: number) => {
+        hapticFeedback.light();
+        setImages(prev => prev.filter((_, i) => i !== index));
     };
 
     const handlePublish = async () => {
@@ -60,14 +90,23 @@ const GiveReviewScreen = ({ navigation, route }: { navigation: any, route: any }
 
         setIsSubmitting(true);
         try {
-            // Map tags to specific notes for the backend
-            // This links the visual "tags" to the structured data columns
+            // 1. Upload images if any
+            const uploadedUrls: string[] = [];
+            if (images.length > 0) {
+                for (const uri of images) {
+                    const result = await apiService.uploadReviewPhoto(uri);
+                    if (result.success) {
+                        uploadedUrls.push(result.url);
+                    }
+                }
+            }
+
+            // 2. Map tags to specific notes for the backend
             const atmosphere_rating = selectedTags.includes("Bonne ambiance") ? 5 : undefined;
             const service_rating = selectedTags.includes("Service rapide") ? 5 : undefined;
             const food_rating = selectedTags.includes("Large choix") ? 5 : undefined;
-            // "Écrans géants", "Prix corrects", "Propre" could also be mapped if columns exist, 
-            // otherwise they stay in the tags jsonb.
 
+            // 3. Create the review
             await apiService.createReview(venue.id, {
                 rating,
                 content,
@@ -75,7 +114,9 @@ const GiveReviewScreen = ({ navigation, route }: { navigation: any, route: any }
                 atmosphere_rating,
                 service_rating,
                 food_rating,
+                photos_urls: uploadedUrls,
             });
+
             hapticFeedback.success();
             Alert.alert("Succès", "Merci pour votre avis !", [
                 { text: "OK", onPress: () => navigation.goBack() }
@@ -218,13 +259,38 @@ const GiveReviewScreen = ({ navigation, route }: { navigation: any, route: any }
                             </Text>
                         </View>
 
+                        {/* Image Grid */}
+                        {images.length > 0 && (
+                            <View style={styles.imageGrid}>
+                                {images.map((uri, index) => (
+                                    <View key={index} style={styles.imageWrapper}>
+                                        <Image source={{ uri }} style={styles.previewImage} />
+                                        <TouchableOpacity 
+                                            style={[styles.removeImageBtn, { backgroundColor: 'rgba(0,0,0,0.6)' }]}
+                                            onPress={() => removeImage(index)}
+                                        >
+                                            <MaterialIcons name="close" size={16} color="#fff" />
+                                        </TouchableOpacity>
+                                    </View>
+                                ))}
+                            </View>
+                        )}
+
                         <TouchableOpacity
-                            style={[styles.photoPill, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                            style={[
+                                styles.photoPill, 
+                                { backgroundColor: colors.surface, borderColor: colors.border },
+                                images.length >= 5 && { opacity: 0.5 }
+                            ]}
                             activeOpacity={0.7}
+                            onPress={handlePickImage}
+                            disabled={images.length >= 5}
                         >
                             <MaterialIcons name="add-a-photo" size={20} color={colors.textMuted} />
                             <MaterialIcons name="image" size={20} color={colors.textMuted} />
-                            <Text style={[styles.photoPillText, { color: colors.text }]}>Ajouter des photos</Text>
+                            <Text style={[styles.photoPillText, { color: colors.text }]}>
+                                {images.length === 0 ? "Ajouter des photos" : `Ajouter des photos (${images.length}/5)`}
+                            </Text>
                         </TouchableOpacity>
                     </View>
 
@@ -237,13 +303,16 @@ const GiveReviewScreen = ({ navigation, route }: { navigation: any, route: any }
                                     backgroundColor: colors.primary,
                                     shadowColor: colors.primary,
                                 },
-                                isSubmitting && { opacity: 0.7 }
+                                (isSubmitting || rating === 0) && { opacity: 0.7 }
                             ]}
                             onPress={handlePublish}
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || rating === 0}
                         >
                             {isSubmitting ? (
-                                <ActivityIndicator color="#FFFFFF" />
+                                <View style={styles.loadingRow}>
+                                    <ActivityIndicator color="#FFFFFF" />
+                                    <Text style={[styles.publishButtonText, { marginLeft: 10 }]}>Publication...</Text>
+                                </View>
                             ) : (
                                 <Text style={styles.publishButtonText}>Publier l'avis</Text>
                             )}
@@ -252,6 +321,7 @@ const GiveReviewScreen = ({ navigation, route }: { navigation: any, route: any }
                         <TouchableOpacity
                             style={styles.laterButton}
                             onPress={() => navigation.goBack()}
+                            disabled={isSubmitting}
                         >
                             <Text style={[styles.laterButtonText, { color: colors.textMuted }]}>Plus tard</Text>
                         </TouchableOpacity>
@@ -357,7 +427,7 @@ const styles = StyleSheet.create({
         marginTop: 16,
     },
     activeStar: {
-        shadowColor: "#f47b25",
+        shadowColor: "#96DB1F",
         shadowOffset: { width: 0, height: 0 },
         shadowOpacity: 0.4,
         shadowRadius: 10,
@@ -403,6 +473,33 @@ const styles = StyleSheet.create({
         fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
         marginTop: 8,
     },
+    imageGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 10,
+        marginTop: 8,
+    },
+    imageWrapper: {
+        width: (width - 60) / 3,
+        aspectRatio: 1,
+        borderRadius: 12,
+        overflow: "hidden",
+        position: "relative",
+    },
+    previewImage: {
+        width: "100%",
+        height: "100%",
+    },
+    removeImageBtn: {
+        position: "absolute",
+        top: 4,
+        right: 4,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        alignItems: "center",
+        justifyContent: "center",
+    },
     photoPill: {
         flexDirection: "row",
         alignItems: "center",
@@ -431,6 +528,10 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.3,
         shadowRadius: 15,
         elevation: 8,
+    },
+    loadingRow: {
+        flexDirection: "row",
+        alignItems: "center",
     },
     publishButtonText: {
         color: "#FFFFFF",
