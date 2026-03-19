@@ -1,23 +1,23 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
-    ImageBackground,
     ScrollView,
     StatusBar,
     StyleSheet,
     Text,
     TouchableOpacity,
     View,
+    Platform,
+    Dimensions
 } from "react-native";
 import { Image } from "expo-image";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { COLORS } from "../constants/colors";
 import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
-import { SearchMatchResult, Venue, mobileApi } from "../services/mobileApi";
+import { SearchMatchResult, Venue, VenueMatch, mobileApi } from "../services/mobileApi";
 import { MatchDetailSkeleton } from "../components/Skeleton";
 import { sharing } from "../utils/sharing";
 
@@ -27,6 +27,8 @@ type MatchDetailRoute = {
     };
 };
 
+const { width } = Dimensions.get("window");
+
 const MatchDetailScreen = ({
     navigation,
     route,
@@ -35,13 +37,19 @@ const MatchDetailScreen = ({
     route: MatchDetailRoute;
 }) => {
     const { colors, computedTheme: themeMode } = useStore();
+    const insets = useSafeAreaInsets();
     const posthog = usePostHog();
     const matchId = route.params?.matchId;
+    
     const [match, setMatch] = useState<SearchMatchResult | null>(null);
     const [venues, setVenues] = useState<Venue[]>([]);
+    const [otherMatches, setOtherMatches] = useState<VenueMatch[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+    const [activeFilter, setActiveFilter] = useState("À proximité");
+
+    const FILTERS = ["À proximité", "< 1 km", "< 5 km", "Ambiance animée", "Avec réservation"];
 
     // Get user location on mount
     useEffect(() => {
@@ -74,7 +82,7 @@ const MatchDetailScreen = ({
             setError(null);
             setIsLoading(true);
             
-            // Fetch match details first
+            // Fetch match details
             const matchData = await mobileApi.fetchMatchById(matchId);
 
             if (!matchData) {
@@ -93,14 +101,23 @@ const MatchDetailScreen = ({
                 league: matchData.league,
             });
 
-            // Fetch venues broadcasting this specific match, sorted by distance from user
+            // Fetch venues broadcasting this specific match
             const venueData = await mobileApi.fetchMatchVenues(
                 matchId,
                 userLocation?.lat,
                 userLocation?.lng,
-                50 // max 50km radius
+                50000
             );
             setVenues(venueData);
+
+            // Fetch other matches for the same date
+            if (matchData.dateIso) {
+                const otherMatchesData = await mobileApi.fetchMatchesForDate(matchData.dateIso);
+                // Filter out the current match
+                const filteredOthers = otherMatchesData.filter(m => m.id !== matchId);
+                setOtherMatches(filteredOthers);
+            }
+
         } catch (err) {
             console.warn("Failed to load match details", err);
             setError("Impossible de charger les détails du match.");
@@ -124,8 +141,9 @@ const MatchDetailScreen = ({
         }
     };
 
-    // Show up to 4 venues (already sorted by distance from API)
-    const recommendedVenues = useMemo(() => venues.slice(0, 4), [venues]);
+    const navigateToOtherMatch = (id: string) => {
+        navigation.push("MatchDetailScreen", { matchId: id });
+    };
 
     const renderState = (message: string, showRetry = false) => (
         <View style={styles.stateWrapper}>
@@ -133,7 +151,7 @@ const MatchDetailScreen = ({
                 <>
                     <Text style={[styles.stateText, { color: colors.textMuted }]}>{message}</Text>
                     <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={loadData} activeOpacity={0.85}>
-                        <MaterialIcons name="refresh" size={18} color={colors.white} />
+                        <MaterialIcons name="refresh" size={18} color="#fff" />
                         <Text style={[styles.retryButtonText, { color: '#fff' }]}>Réessayer</Text>
                     </TouchableOpacity>
                 </>
@@ -147,198 +165,286 @@ const MatchDetailScreen = ({
     );
 
     if (isLoading) {
-        return <MatchDetailSkeleton />;
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+                 <View style={styles.header}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
+                        <MaterialIcons name="chevron-left" size={28} color={colors.text} />
+                    </TouchableOpacity>
+                </View>
+                <MatchDetailSkeleton />
+            </SafeAreaView>
+        );
     }
 
     if (error || !match) {
         return (
-            <View style={[styles.container, { justifyContent: "center", backgroundColor: colors.background }]}>
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.background, justifyContent: "center" }]}>
+                <View style={[styles.header, { position: 'absolute', top: insets.top, width: '100%', zIndex: 10 }]}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
+                        <MaterialIcons name="chevron-left" size={28} color={colors.text} />
+                    </TouchableOpacity>
+                </View>
                 {renderState(error ?? "Match introuvable", true)}
-            </View>
+            </SafeAreaView>
         );
     }
+
+    const isUpcoming = match.statusLabel.toLowerCase().includes("à venir") || match.statusLabel.toLowerCase().includes("en cours");
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} />
-            <ScrollView contentContainerStyle={{ paddingBottom: 32 }}>
-                <View style={styles.heroWrapper}>
-                    <ImageBackground source={{ uri: match.heroImage }} style={styles.heroImage}>
-                        <LinearGradient
-                            colors={["rgba(0,0,0,0.2)", "rgba(0,0,0,0.85)"]}
-                            style={StyleSheet.absoluteFill}
-                        />
-                        <SafeAreaView style={styles.heroSafe} edges={["top"]}>
-                            <View style={styles.heroTopBar}>
-                                <TouchableOpacity
-                                    style={styles.circleButton}
-                                    onPress={() => navigation.goBack?.()}
-                                    activeOpacity={0.85}
-                                >
-                                    <MaterialIcons name="chevron-left" size={24} color={colors.white} />
-                                </TouchableOpacity>
+            
+            {/* Custom Header */}
+            <View style={[styles.header, { paddingTop: insets.top + 8, backgroundColor: colors.background }]}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
+                    <MaterialIcons name="chevron-left" size={28} color={colors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Détails du match</Text>
+                <TouchableOpacity onPress={handleShare} style={styles.headerBtn}>
+                    <MaterialIcons name="ios-share" size={24} color={colors.text} />
+                </TouchableOpacity>
+            </View>
 
-                                <View style={styles.leaguePill}>
-                                    <Text style={styles.leaguePillText}>{match.league}</Text>
-                                </View>
+            <ScrollView 
+                contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}
+                showsVerticalScrollIndicator={false}
+            >
+                {/* 1. MATCH SUMMARY CARD */}
+                <View style={[styles.matchCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <View style={styles.matchCardTop}>
+                        <View style={[styles.leaguePill, { backgroundColor: 'rgba(150, 219, 31, 0.15)' }]}>
+                            <Text style={[styles.leaguePillText, { color: colors.primary }]}>{match.league}</Text>
+                        </View>
+                        <View style={[
+                            styles.statusPill, 
+                            { backgroundColor: isUpcoming ? 'rgba(150, 219, 31, 0.15)' : 'rgba(255, 255, 255, 0.1)' }
+                        ]}>
+                            <Text style={[
+                                styles.statusPillText, 
+                                { color: isUpcoming ? colors.primary : colors.textMuted }
+                            ]}>
+                                {match.statusLabel}
+                            </Text>
+                        </View>
+                    </View>
 
+                    <View style={styles.teamsVsContainer}>
+                        <View style={styles.teamSide}>
+                            <View style={[styles.logoContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                                {match.home.logo ? (
+                                    <Image source={{ uri: match.home.logo }} style={styles.teamLogo} contentFit="contain" />
+                                ) : (
+                                    <MaterialIcons name="shield" size={24} color={colors.textMuted} />
+                                )}
+                            </View>
+                            <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={2}>{match.home.name}</Text>
+                        </View>
+                        
+                        <View style={styles.vsCenter}>
+                            <Text style={[styles.timeText, { color: colors.text }]}>{match.kickoffTime}</Text>
+                            <Text style={[styles.dateText, { color: colors.textMuted }]}>{match.timeLabel}</Text>
+                        </View>
+
+                        <View style={styles.teamSide}>
+                            <View style={[styles.logoContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
+                                {match.away.logo ? (
+                                    <Image source={{ uri: match.away.logo }} style={styles.teamLogo} contentFit="contain" />
+                                ) : (
+                                    <MaterialIcons name="shield" size={24} color={colors.textMuted} />
+                                )}
+                            </View>
+                            <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={2}>{match.away.name}</Text>
+                        </View>
+                    </View>
+
+                    {/* Downplayed Stadium Info */}
+                    <View style={[styles.stadiumInfo, { borderTopColor: colors.border }]}>
+                        <MaterialIcons name="stadium" size={14} color={colors.textMuted} />
+                        <Text style={[styles.stadiumText, { color: colors.textMuted }]}>
+                            {match.stadium}, {match.city}
+                        </Text>
+                    </View>
+                </View>
+
+                {/* 2. VENUES SECTION */}
+                <View style={styles.venuesSection}>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Bars qui diffusent ce match</Text>
+                    
+                    {/* Filters Row */}
+                    <ScrollView 
+                        horizontal 
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.filtersContainer}
+                    >
+                        {FILTERS.map((filter) => {
+                            const isActive = filter === activeFilter;
+                            return (
                                 <TouchableOpacity 
-                                    style={styles.circleButton} 
-                                    activeOpacity={0.85}
-                                    onPress={handleShare}
+                                    key={filter} 
+                                    style={[
+                                        styles.filterChip, 
+                                        { 
+                                            backgroundColor: isActive ? colors.primary : colors.surface,
+                                            borderColor: isActive ? colors.primary : colors.border
+                                        }
+                                    ]}
+                                    onPress={() => setActiveFilter(filter)}
+                                    activeOpacity={0.7}
                                 >
-                                    <MaterialIcons name="share" size={20} color={colors.white} />
+                                    <Text style={[
+                                        styles.filterText, 
+                                        { color: isActive ? '#000' : colors.text }
+                                    ]}>{filter}</Text>
                                 </TouchableOpacity>
-                            </View>
+                            )
+                        })}
+                    </ScrollView>
 
-                            <View style={styles.heroBottom}>
-                                <View style={styles.heroCard}>
-                                    <View style={styles.teamColumn}>
-                                        <View style={styles.teamBadge}>
-                                            {match.home.logo ? (
-                                                <Image source={{ uri: match.home.logo }} style={styles.teamLogoImage} />
-                                            ) : (
-                                                <MaterialIcons name="shield" size={30} color={colors.white} />
-                                            )}
-                                        </View>
-                                        <Text style={styles.teamLabel}>{match.home.name}</Text>
-                                    </View>
-
-                                    <View style={styles.heroCenter}>
-                                        <Text style={styles.heroTime}>{match.kickoffTime}</Text>
-                                        <Text style={[styles.heroStatus, { color: colors.primary }]}>{match.statusLabel}</Text>
-                                    </View>
-
-                                    <View style={styles.teamColumn}>
-                                        <View style={styles.teamBadge}>
-                                            {match.away.logo ? (
-                                                <Image source={{ uri: match.away.logo }} style={styles.teamLogoImage} />
-                                            ) : (
-                                                <MaterialIcons name="shield" size={30} color={colors.white} />
-                                            )}
-                                        </View>
-                                        <Text style={styles.teamLabel}>{match.away.name}</Text>
-                                    </View>
-                                </View>
-                            </View>
-                        </SafeAreaView>
-                    </ImageBackground>
-                </View>
-
-                <View style={styles.contentWrapper}>
-                    <View style={[styles.infoCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <View style={styles.infoHeader}>
-                            <View style={[styles.infoIcon, { backgroundColor: colors.accent10, borderColor: colors.accent20 }]}>
-                                <MaterialIcons name="stadium" size={20} color={colors.accent} />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Text style={[styles.infoLabel, { color: colors.textMuted }]}>Lieu du match</Text>
-                                <Text style={[styles.infoValue, { color: colors.text }]}>
-                                    {match.stadium}, {match.city}
-                                </Text>
-                            </View>
-                            <TouchableOpacity style={[styles.outlineButton, { borderColor: colors.border }]}>
-                                <Text style={[styles.outlineButtonText, { color: colors.text }]}>Itinéraire</Text>
-                            </TouchableOpacity>
-                        </View>
-
-                        <View style={[styles.divider, { backgroundColor: colors.divider }]} />
-
-                        <View style={styles.actionRow}>
-                            <TouchableOpacity style={[styles.primaryAction, styles.glowPrimary, { backgroundColor: colors.primary, shadowColor: colors.primary }]}>
-                                <MaterialIcons name="calendar-today" size={20} color={colors.white} />
-                                <Text style={[styles.primaryActionText, { color: colors.white }]}>Calendrier</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={[styles.secondaryAction, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}>
-                                <MaterialIcons name="notifications-active" size={20} color={colors.text} />
-                                <Text style={[styles.secondaryActionText, { color: colors.text }]}>Rappel</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <View>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Bars à proximité</Text>
-                            <Text style={[styles.sectionSubtitle, { color: colors.textSecondary }]}>Lieux diffusant le match en direct</Text>
-                        </View>
-                        <TouchableOpacity activeOpacity={0.7}>
-                            <Text style={[styles.sectionAction, { color: colors.accent }]}>Voir tout</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {recommendedVenues.length > 0 ? (
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={{ paddingHorizontal: 16, gap: 16 }}
-                            style={{ marginHorizontal: -16 }}
-                        >
-                            {recommendedVenues.map((venue) => (
-                                <View key={venue.id} style={[styles.venueCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                                    <View style={styles.venueImageWrapper}>
-                                        <Image source={{ uri: venue.image }} style={styles.venueImage} />
-                                        <View style={styles.ratingChip}>
-                                            <MaterialIcons
-                                                name="star"
-                                                size={12}
-                                                color={colors.accent}
-                                                style={{ marginRight: 4 }}
-                                            />
-                                            <Text style={[styles.ratingChipText, { color: colors.white }]}>{typeof venue.rating === 'number' ? venue.rating.toFixed(1) : (Number(venue.rating) || 0).toFixed(1)}</Text>
-                                        </View>
-                                        <View style={styles.statusChip}>
-                                            <Text style={styles.statusChipText}>
-                                                {venue.isOpen ? "Ouvert" : "Fermé"}
-                                            </Text>
+                    {/* Venues List */}
+                    <View style={styles.venuesList}>
+                        {venues.length > 0 ? (
+                            venues.map((venue) => (
+                                <TouchableOpacity 
+                                    key={venue.id} 
+                                    style={[styles.venueListItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                                    activeOpacity={0.8}
+                                    onPress={() => navigation.navigate("ReservationsScreen", {
+                                        venue,
+                                        matchId: match.id,
+                                        match,
+                                        matchDateIso: match.dateIso,
+                                    })}
+                                >
+                                    <View style={styles.venueListImageContainer}>
+                                        <Image source={{ uri: venue.image }} style={styles.venueListImage} />
+                                        <View style={[styles.broadcastBadge, { backgroundColor: colors.primary }]}>
+                                            <MaterialIcons name="live-tv" size={10} color="#000" />
+                                            <Text style={styles.broadcastBadgeText}>DIFFUSE LE MATCH</Text>
                                         </View>
                                     </View>
-                                    <View style={styles.venueBody}>
-                                        <View style={styles.venueTitleRow}>
-                                            <Text style={[styles.venueName, { color: colors.text }]} numberOfLines={1}>
-                                                {venue.name}
-                                            </Text>
-                                            <View style={[styles.distanceBadge, { backgroundColor: colors.accent10 }]}>
-                                                <MaterialIcons name="place" size={14} color={colors.accent} />
-                                                <Text style={[styles.venueDistance, { color: colors.accent }]}>{venue.distance}</Text>
+                                    <View style={styles.venueListContent}>
+                                        <View style={styles.venueListHeader}>
+                                            <Text style={[styles.venueListName, { color: colors.text }]} numberOfLines={1}>{venue.name}</Text>
+                                            <View style={[styles.venueListDistance, { backgroundColor: 'rgba(150, 219, 31, 0.15)' }]}>
+                                                <MaterialIcons name="place" size={12} color={colors.primary} />
+                                                <Text style={[styles.venueListDistanceText, { color: colors.primary }]}>{venue.distance}</Text>
                                             </View>
                                         </View>
-                                        <Text style={[styles.venueMeta, { color: colors.textSecondary }]} numberOfLines={2}>
-                                            {venue.address}
-                                        </Text>
-                                        <TouchableOpacity
-                                            style={[styles.venueButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
-                                            onPress={() =>
-                                                navigation.navigate("ReservationsScreen", {
-                                                    venue,
-                                                    matchId: match.id,
-                                                    match,
-                                                    matchDateIso: match.dateIso,
-                                                })
-                                            }
-                                        >
-                                            <Text style={[styles.venueButtonText, { color: colors.text }]}>RÉSERVER UNE TABLE</Text>
-                                        </TouchableOpacity>
+                                        
+                                        <View style={styles.venueListMeta}>
+                                            <View style={styles.metaItem}>
+                                                <MaterialIcons name="star" size={14} color={colors.primary} />
+                                                <Text style={[styles.metaText, { color: colors.text, fontWeight: '600' }]}>
+                                                    {typeof venue.rating === 'number' ? venue.rating.toFixed(1) : Number(venue.rating || 0).toFixed(1)}
+                                                </Text>
+                                            </View>
+                                            <Text style={[styles.metaDot, { color: colors.textMuted }]}>•</Text>
+                                            <Text style={[styles.metaText, { color: colors.textMuted }]}>{venue.priceLevel}</Text>
+                                            <Text style={[styles.metaDot, { color: colors.textMuted }]}>•</Text>
+                                            <Text style={[styles.metaText, { color: colors.textMuted }]} numberOfLines={1}>
+                                                {venue.tags[0]}
+                                            </Text>
+                                        </View>
+
+                                        <View style={styles.screensInfo}>
+                                            <MaterialIcons name="tv" size={14} color={colors.primary} />
+                                            <Text style={[styles.screensText, { color: colors.textSecondary }]}>
+                                                {venue.availableCapacity && venue.totalCapacity 
+                                                    ? `Diffuse ce match (${venue.availableCapacity}/${venue.totalCapacity} places dispos)`
+                                                    : "Diffuse ce match sur écrans géants"}
+                                            </Text>
+                                        </View>
+
+                                        <View style={[styles.venueListBtn, { backgroundColor: colors.surfaceAlt }]}>
+                                            <Text style={[styles.venueListBtnText, { color: colors.text }]}>Réserver une table</Text>
+                                        </View>
                                     </View>
+                                </TouchableOpacity>
+                            ))
+                        ) : (
+                            <View style={[styles.emptyState, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                <View style={[styles.emptyIconCircle, { backgroundColor: colors.background }]}>
+                                    <MaterialIcons name="sports-bar" size={32} color={colors.textMuted} />
                                 </View>
+                                <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun bar ne diffuse encore ce match.</Text>
+                                <Text style={[styles.emptySub, { color: colors.textMuted }]}>
+                                    Les établissements mettent à jour leur programme au fil de la semaine.
+                                </Text>
+                                <TouchableOpacity style={[styles.emptyBtn, { borderColor: colors.primary }]}>
+                                    <Text style={[styles.emptyBtnText, { color: colors.primary }]}>Voir les bars populaires à proximité</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                </View>
+
+                {/* 3. OTHER MATCHES SECTION */}
+                {otherMatches.length > 0 && (
+                    <View style={styles.otherMatchesSection}>
+                        <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Autres matchs ce jour-là</Text>
+                        <ScrollView 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.otherMatchesScroll}
+                        >
+                            {otherMatches.map((m) => (
+                                <TouchableOpacity 
+                                    key={m.id} 
+                                    style={[styles.miniMatchCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                                    activeOpacity={0.8}
+                                    onPress={() => navigateToOtherMatch(m.id)}
+                                >
+                                    <Text style={[styles.miniMatchLeague, { color: colors.textMuted }]} numberOfLines={1}>{m.league}</Text>
+                                    <View style={styles.miniMatchTeams}>
+                                        <View style={styles.miniTeamRow}>
+                                            {m.team1Logo ? (
+                                                <Image source={{ uri: m.team1Logo }} style={styles.miniLogo} />
+                                            ) : (
+                                                <MaterialIcons name="shield" size={16} color={colors.textMuted} />
+                                            )}
+                                            <Text style={[styles.miniTeamName, { color: colors.text }]} numberOfLines={1}>{m.team1}</Text>
+                                        </View>
+                                        <View style={styles.miniTeamRow}>
+                                            {m.team2Logo ? (
+                                                <Image source={{ uri: m.team2Logo }} style={styles.miniLogo} />
+                                            ) : (
+                                                <MaterialIcons name="shield" size={16} color={colors.textMuted} />
+                                            )}
+                                            <Text style={[styles.miniTeamName, { color: colors.text }]} numberOfLines={1}>{m.team2}</Text>
+                                        </View>
+                                    </View>
+                                    <View style={[styles.miniMatchTime, { backgroundColor: colors.background }]}>
+                                        <Text style={[styles.miniMatchTimeText, { color: colors.text }]}>{m.time}</Text>
+                                    </View>
+                                </TouchableOpacity>
                             ))}
                         </ScrollView>
-                    ) : (
-                        <View style={[styles.emptyVenuesContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <View style={[styles.emptyVenuesIcon, { backgroundColor: colors.surfaceAlt }]}>
-                                <MaterialIcons name="tv-off" size={32} color={colors.textMuted} />
-                            </View>
-                            <Text style={[styles.emptyVenuesTitle, { color: colors.text }]}>
-                                Aucun bar ne diffuse ce match
-                            </Text>
-                            <Text style={[styles.emptyVenuesSubtitle, { color: colors.textSecondary }]}>
-                                Nous n'avons pas encore trouvé de bars diffusant ce match à proximité.
-                            </Text>
-                        </View>
-                    )}
-                </View>
+                    </View>
+                )}
             </ScrollView>
+
+            {/* 4. STICKY BOTTOM BAR */}
+            <View style={[
+                styles.stickyBottomBar, 
+                { 
+                    backgroundColor: colors.surface, 
+                    borderTopColor: colors.border,
+                    paddingBottom: insets.bottom > 0 ? insets.bottom : 20 
+                }
+            ]}>
+                <View style={styles.stickyContent}>
+                    <View>
+                        <Text style={[styles.stickyCount, { color: colors.text }]}>{venues.length} bars</Text>
+                        <Text style={[styles.stickySub, { color: colors.textMuted }]}>près de toi</Text>
+                    </View>
+                    <TouchableOpacity style={[styles.stickyBtn, { backgroundColor: colors.primary }]}>
+                        <MaterialIcons name="map" size={18} color="#000" />
+                        <Text style={[styles.stickyBtnText, { color: '#000' }]}>Voir sur la carte</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
         </View>
     );
 };
@@ -346,371 +452,355 @@ const MatchDetailScreen = ({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.background,
     },
-    heroWrapper: {
-        height: "45%",
-        minHeight: 360,
-    },
-    heroImage: {
-        flex: 1,
-    },
-    heroSafe: {
-        flex: 1,
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingBottom: 24,
+        paddingBottom: 12,
     },
-    heroTopBar: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: 8,
+    headerBtn: {
+        padding: 4,
     },
-    circleButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: "rgba(255,255,255,0.12)",
+    headerTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    scrollContent: {
+        padding: 16,
+        gap: 24,
+    },
+    matchCard: {
+        borderRadius: 24,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
-        justifyContent: "center",
-        alignItems: "center",
+        padding: 20,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+        elevation: 5,
+    },
+    matchCardTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 24,
     },
     leaguePill: {
-        paddingHorizontal: 18,
-        paddingVertical: 8,
-        borderRadius: 999,
-        backgroundColor: "rgba(255,255,255,0.12)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 8,
     },
     leaguePillText: {
-        color: '#FFFFFF',
         fontSize: 12,
-        fontWeight: "700",
-        letterSpacing: 1,
-    },
-    heroBottom: {
-        flex: 1,
-        justifyContent: "flex-end",
-        marginBottom: 16,
-    },
-    heroCard: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        backgroundColor: "rgba(18,18,22,0.9)",
-        borderRadius: 24,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-    },
-    teamColumn: {
-        flex: 1,
-        alignItems: "center",
-    },
-    teamBadge: {
-        width: 56,
-        height: 56,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.12)",
-        backgroundColor: "rgba(255,255,255,0.08)",
-        justifyContent: "center",
-        alignItems: "center",
-        marginBottom: 8,
-        overflow: "hidden",
-    },
-    teamLogoImage: {
-        width: "100%",
-        height: "100%",
-    },
-    teamLabel: {
-        color: '#FFFFFF',
-        fontWeight: "700",
-        fontSize: 13,
+        fontWeight: '800',
         letterSpacing: 0.5,
     },
-    heroCenter: {
-        alignItems: "center",
-        paddingHorizontal: 8,
-    },
-    heroTime: {
-        fontSize: 28,
-        fontWeight: "800",
-        color: '#FFFFFF',
-    },
-    heroStatus: {
-        marginTop: 4,
-        fontSize: 11,
-        fontWeight: "700",
-        textTransform: "uppercase",
-        letterSpacing: 2,
-    },
-    contentWrapper: {
-        marginTop: -30,
-        paddingHorizontal: 16,
-    },
-    infoCard: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 24,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-    },
-    infoHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 14,
-    },
-    infoIcon: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        alignItems: "center",
-        justifyContent: "center",
-        borderWidth: 1,
-    },
-    infoLabel: {
-        color: COLORS.textMuted,
-        fontSize: 11,
-        fontWeight: "700",
-        letterSpacing: 1,
-        textTransform: "uppercase",
-    },
-    infoValue: {
-        fontSize: 16,
-        fontWeight: "600",
-        marginTop: 4,
-    },
-    outlineButton: {
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.2)",
-        paddingHorizontal: 18,
-        paddingVertical: 8,
-    },
-    outlineButtonText: {
-        color: COLORS.white,
-        fontWeight: "700",
-        fontSize: 12,
-    },
-    divider: {
-        height: 1,
-        backgroundColor: "rgba(255,255,255,0.08)",
-        marginVertical: 18,
-    },
-    actionRow: {
-        flexDirection: "row",
-        gap: 12,
-    },
-    primaryAction: {
-        flex: 1,
-        backgroundColor: COLORS.primary,
-        borderRadius: 999,
-        paddingVertical: 14,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
-    },
-    glowPrimary: {
-        shadowColor: COLORS.primary,
-        shadowOpacity: 0.35,
-        shadowRadius: 16,
-        shadowOffset: { width: 0, height: 10 },
-    },
-    primaryActionText: {
-        color: '#fff',
-        fontWeight: "800",
-        letterSpacing: 0.6,
-    },
-    secondaryAction: {
-        flex: 1,
-        borderRadius: 999,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
-        paddingVertical: 14,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 10,
-        backgroundColor: "rgba(255,255,255,0.08)",
-    },
-    secondaryActionText: {
-        color: COLORS.white,
-        fontWeight: "700",
-    },
-    section: {
-        marginTop: 32,
-        paddingHorizontal: 16,
-    },
-    sectionHeader: {
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        marginBottom: 16,
-    },
-    sectionTitle: {
-        color: COLORS.white,
-        fontSize: 20,
-        fontWeight: "700",
-    },
-    sectionSubtitle: {
-        color: COLORS.textMuted,
-        marginTop: 4,
-        fontSize: 12,
-    },
-    sectionAction: {
-        color: COLORS.primary,
-        fontSize: 12,
-        fontWeight: "800",
-        letterSpacing: 1.2,
-    },
-    venueCard: {
-        width: 260,
-        borderRadius: 24,
-        backgroundColor: COLORS.surface,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.06)",
-        overflow: "hidden",
-    },
-    venueImageWrapper: {
-        height: 170,
-        position: "relative",
-    },
-    venueImage: {
-        width: "100%",
-        height: "100%",
-    },
-    ratingChip: {
-        position: "absolute",
-        top: 12,
-        right: 12,
-        flexDirection: "row",
-        alignItems: "center",
+    statusPill: {
         paddingHorizontal: 10,
         paddingVertical: 6,
-        backgroundColor: "rgba(0,0,0,0.65)",
-        borderRadius: 999,
+        borderRadius: 8,
     },
-    ratingChipText: {
-        color: COLORS.white,
-        fontSize: 12,
-        fontWeight: "700",
+    statusPillText: {
+        fontSize: 11,
+        fontWeight: '700',
+        textTransform: 'uppercase',
     },
-    statusChip: {
-        position: "absolute",
-        bottom: 14,
-        left: 14,
-        backgroundColor: "rgba(34,197,94,0.9)",
-        borderRadius: 6,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
+    teamsVsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 20,
     },
-    statusChipText: {
-        color: COLORS.white,
-        fontSize: 10,
-        fontWeight: "800",
-        letterSpacing: 1,
-    },
-    venueBody: {
-        padding: 16,
-        gap: 8,
-    },
-    venueTitleRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        gap: 8,
-    },
-    venueName: {
+    teamSide: {
         flex: 1,
-        fontSize: 16,
-        fontWeight: "700",
+        alignItems: 'center',
+        gap: 12,
     },
-    venueDistance: {
-        color: COLORS.primary,
-        fontWeight: "700",
-        fontSize: 12,
-    },
-    distanceBadge: {
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 2,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-    },
-    venueMeta: {
-        color: COLORS.textSecondary,
-        fontSize: 12,
-    },
-    venueButton: {
-        marginTop: 4,
-        borderRadius: 16,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.15)",
-        paddingVertical: 12,
-        alignItems: "center",
-        backgroundColor: "rgba(255,255,255,0.08)",
-    },
-    venueButtonText: {
-        color: COLORS.white,
-        fontSize: 12,
-        fontWeight: "800",
-        letterSpacing: 1,
-    },
-    stateWrapper: {
-        alignItems: "center",
-        padding: 24,
-    },
-    stateText: {
-        textAlign: "center",
-        fontSize: 14,
-        marginTop: 6,
-    },
-    retryButton: {
-        marginTop: 16,
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 999,
-        backgroundColor: COLORS.primary,
-        flexDirection: "row",
-        alignItems: "center",
-        gap: 8,
-    },
-    retryButtonText: {
-        color: '#fff',
-        fontWeight: "700",
-    },
-    emptyVenuesContainer: {
-        alignItems: "center",
-        justifyContent: "center",
-        paddingVertical: 40,
-        paddingHorizontal: 24,
-        borderRadius: 20,
-        borderWidth: 1,
-    },
-    emptyVenuesIcon: {
+    logoContainer: {
         width: 64,
         height: 64,
         borderRadius: 32,
-        alignItems: "center",
-        justifyContent: "center",
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 8,
+    },
+    teamLogo: {
+        width: '100%',
+        height: '100%',
+    },
+    teamName: {
+        fontSize: 14,
+        fontWeight: '700',
+        textAlign: 'center',
+    },
+    vsCenter: {
+        paddingHorizontal: 16,
+        alignItems: 'center',
+    },
+    timeText: {
+        fontSize: 24,
+        fontWeight: '800',
+        marginBottom: 4,
+    },
+    dateText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    stadiumInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingTop: 16,
+        borderTopWidth: 1,
+    },
+    stadiumText: {
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    venuesSection: {
+        gap: 16,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: '800',
+        letterSpacing: 0.2,
+    },
+    filtersContainer: {
+        gap: 8,
+        paddingBottom: 4,
+    },
+    filterChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    filterText: {
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    venuesList: {
+        gap: 12,
+        marginTop: 4,
+    },
+    venueListItem: {
+        flexDirection: 'row',
+        borderRadius: 20,
+        borderWidth: 1,
+        padding: 12,
+        gap: 16,
+    },
+    venueListImageContainer: {
+        position: 'relative',
+    },
+    venueListImage: {
+        width: 100,
+        height: 120,
+        borderRadius: 12,
+        backgroundColor: '#2A2A30',
+    },
+    broadcastBadge: {
+        position: 'absolute',
+        bottom: 8,
+        left: 4,
+        right: 4,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 4,
+        paddingHorizontal: 4,
+        borderRadius: 6,
+        gap: 4,
+    },
+    broadcastBadgeText: {
+        fontSize: 8,
+        fontWeight: '900',
+        color: '#000',
+    },
+    venueListContent: {
+        flex: 1,
+        justifyContent: 'space-between',
+    },
+    venueListHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: 8,
+    },
+    venueListName: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    venueListDistance: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 6,
+        paddingVertical: 4,
+        borderRadius: 6,
+        gap: 2,
+    },
+    venueListDistanceText: {
+        fontSize: 10,
+        fontWeight: '800',
+    },
+    venueListMeta: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    metaItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 2,
+    },
+    metaText: {
+        fontSize: 12,
+    },
+    metaDot: {
+        fontSize: 12,
+    },
+    screensInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    screensText: {
+        fontSize: 11,
+    },
+    venueListBtn: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 8,
+        marginTop: 4,
+    },
+    venueListBtnText: {
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    emptyState: {
+        alignItems: 'center',
+        padding: 32,
+        borderRadius: 24,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+    },
+    emptyIconCircle: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: 16,
     },
-    emptyVenuesTitle: {
+    emptyTitle: {
         fontSize: 16,
-        fontWeight: "700",
-        textAlign: "center",
+        fontWeight: '700',
+        textAlign: 'center',
         marginBottom: 8,
     },
-    emptyVenuesSubtitle: {
-        fontSize: 14,
-        textAlign: "center",
+    emptySub: {
+        fontSize: 13,
+        textAlign: 'center',
         lineHeight: 20,
+        marginBottom: 24,
     },
+    emptyBtn: {
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    emptyBtnText: {
+        fontSize: 13,
+        fontWeight: '700',
+    },
+    otherMatchesSection: {
+        marginTop: 8,
+    },
+    otherMatchesScroll: {
+        gap: 12,
+    },
+    miniMatchCard: {
+        width: 200,
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+    },
+    miniMatchLeague: {
+        fontSize: 11,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        marginBottom: 12,
+    },
+    miniMatchTeams: {
+        gap: 8,
+        marginBottom: 16,
+    },
+    miniTeamRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    miniLogo: {
+        width: 20,
+        height: 20,
+    },
+    miniTeamName: {
+        fontSize: 14,
+        fontWeight: '600',
+        flex: 1,
+    },
+    miniMatchTime: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
+    miniMatchTimeText: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    stickyBottomBar: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        borderTopWidth: 1,
+        paddingTop: 16,
+        paddingHorizontal: 20,
+    },
+    stickyContent: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    stickyCount: {
+        fontSize: 16,
+        fontWeight: '800',
+    },
+    stickySub: {
+        fontSize: 12,
+        fontWeight: '500',
+        marginTop: 2,
+    },
+    stickyBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        borderRadius: 12,
+    },
+    stickyBtnText: {
+        fontSize: 14,
+        fontWeight: '800',
+    }
 });
 
 export default MatchDetailScreen;
