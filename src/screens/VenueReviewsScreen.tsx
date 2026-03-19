@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS } from '../constants/colors';
 import { useStore } from '../store/useStore';
 import { apiService } from '../services/api';
+import { useFocusEffect } from '@react-navigation/native';
+import { hapticFeedback } from '../utils/haptics';
 
 interface Review {
     id: string;
@@ -25,7 +27,7 @@ interface Review {
     content: string;
     photos_urls?: string[];
     helpfulCount: number;
-    isHelpful?: boolean;
+    isHelpful: boolean;
 }
 
 interface RatingDistribution {
@@ -52,9 +54,9 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
         { stars: 1, percentage: 0 },
     ]);
 
-    const loadReviews = useCallback(async () => {
+    const loadReviews = useCallback(async (showLoading = true) => {
         try {
-            setIsLoading(true);
+            if (showLoading) setIsLoading(true);
             const { reviews: data, stats } = await apiService.getVenueReviews(venueId);
             
             if (stats) {
@@ -70,32 +72,60 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
             const transformedReviews: Review[] = data.map((r: any) => ({
                 id: r.id,
                 userName: r.user ? `${r.user.first_name || ""} ${r.user.last_name || ""}`.trim() || "Anonyme" : "Anonyme",
-                userAvatar: r.user?.avatar,
+                userAvatar: r.user?.avatar_url,
                 userInitials: r.user ? ((r.user.first_name?.[0] || "") + (r.user.last_name?.[0] || "")).toUpperCase() || "A" : "A",
                 rating: parseFloat(r.rating),
                 date: new Date(r.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }),
                 content: r.content,
                 photos_urls: r.photos_urls || [],
                 helpfulCount: r.helpful_count || 0,
-                isHelpful: false,
+                isHelpful: !!r.is_helpful,
             }));
 
             setReviews(transformedReviews);
         } catch (error) {
             console.error("Failed to load reviews:", error);
         } finally {
-            setIsLoading(false);
+            if (showLoading) setIsLoading(false);
         }
     }, [venueId]);
 
-    useEffect(() => {
-        if (venueId) {
-            loadReviews();
-        }
-    }, [venueId, loadReviews]);
+    // Refresh data when screen comes into focus (e.g. after adding a review)
+    useFocusEffect(
+        useCallback(() => {
+            if (venueId) {
+                loadReviews(reviews.length === 0); // Only show loading spinner if we don't have reviews yet
+            }
+        }, [venueId, loadReviews])
+    );
 
     const handleBack = () => {
         navigation.goBack();
+    };
+
+    const handleToggleHelpful = async (reviewId: string) => {
+        const review = reviews.find(r => r.id === reviewId);
+        if (!review || review.isHelpful) return; // Only allow liking once
+
+        const newIsHelpful = true;
+        const newHelpfulCount = review.helpfulCount + 1;
+
+        // Optimistic update
+        setReviews(prev => prev.map(r => 
+            r.id === reviewId ? { ...r, isHelpful: newIsHelpful, helpfulCount: newHelpfulCount } : r
+        ));
+
+        hapticFeedback.success();
+
+        try {
+            await apiService.markReviewHelpful(reviewId, newIsHelpful);
+        } catch (error) {
+            console.error("Failed to toggle helpful:", error);
+            // Revert on error
+            setReviews(prev => prev.map(r => 
+                r.id === reviewId ? { ...r, isHelpful: false, helpfulCount: review.helpfulCount } : r
+            ));
+        }
     };
 
     const renderStars = (rating: number) => {
@@ -191,6 +221,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
                 <TouchableOpacity 
                     style={styles.helpfulButton}
                     activeOpacity={0.7}
+                    onPress={() => handleToggleHelpful(review.id)}
                 >
                     <MaterialIcons 
                         name={review.isHelpful ? "thumb-up" : "thumb-up-off-alt"} 
