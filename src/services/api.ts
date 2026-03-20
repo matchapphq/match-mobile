@@ -294,6 +294,7 @@ export interface ApiReservation {
     status: string;
     special_requests?: string | null;
     qr_code?: string | null;
+    reservation_ref?: string | null;
     created_at: string;
     canceled_at?: string | null;
     canceled_reason?: string | null;

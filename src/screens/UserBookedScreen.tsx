@@ -318,7 +318,7 @@ const UserBookedScreen = () => {
           people: `${reservation.numberOfPeople} pers.`,
           peopleCount: reservation.numberOfPeople,
           location: reservation.venueAddress || '',
-          reference: reservation.id?.slice(0, 8).toUpperCase(),
+          reference: reservation.reference || reservation.id?.slice(0, 8).toUpperCase(),
           dateShort: date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
           time: reservation.time || date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
           qrCode: reservation.qrCode,
