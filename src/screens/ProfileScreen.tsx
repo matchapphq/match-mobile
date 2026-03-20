@@ -75,7 +75,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
       { icon: 'language', color: '#818cf8', label: 'Langue', meta: 'Français' },
       { icon: 'dark-mode', color: '#a78bfa', label: 'Thème' },
       { icon: 'notifications', color: '#fb923c', label: 'Notifications', toggle: true },
-      { icon: 'vibration', color: '#34d399', label: 'Haptique', toggle: true },
+      { icon: 'vibration', color: '#34d399', label: 'Vibration', toggle: true },
     ],
   },
   {
@@ -338,7 +338,7 @@ const ProfileScreen = () => {
                 {section.rows.map((row, index) => {
                   const isLast = index === section.rows.length - 1;
                   if (row.toggle) {
-                    const isHapticToggle = row.label === 'Haptique';
+                    const isHapticToggle = row.label === 'Vibration';
                     const isEnabled = isHapticToggle ? hapticsEnabled : pushNotificationsEnabled;
 
                     return (

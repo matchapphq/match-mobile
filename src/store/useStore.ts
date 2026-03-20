@@ -49,6 +49,7 @@ export const transformApiReservation = (
         status,
         conditions: apiRes.special_requests || undefined,
         qrCode: qrCode || apiRes.qr_code || undefined,
+        reference: apiRes.reservation_ref || undefined,
     };
 };
 

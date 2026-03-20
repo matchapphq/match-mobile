@@ -211,7 +211,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                         <Text style={styles.venueTitle}>{venue.name}</Text>
                         <View style={styles.venueAddressRow}>
                             <MaterialIcons name="location-on" size={16} color={colors.accent} />
-                            <Text style={styles.venueAddress}>{venue.address}</Text>
+                            <Text style={[styles.venueAddress, { color: colors.textSecondary }]}>{venue.address}</Text>
                         </View>
                     </View>
 
@@ -475,7 +475,6 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     venueAddress: {
-        color: '#D1D5DB', // Gray 300
         fontSize: 14,
     },
     chipsScroll: {

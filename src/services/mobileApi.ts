@@ -411,22 +411,22 @@ export const mobileApi = {
 
     async fetchMatchesForDate(dateIso: string): Promise<VenueMatch[]> {
         try {
-            // Fetch upcoming matches and filter by date
+            // Fetch upcoming matches because apiService doesn't expose a raw 'get'
             const apiMatches = await apiService.getUpcomingMatches();
             const targetDate = new Date(dateIso).toDateString();
-            
+
             const filtered = apiMatches.filter((match: any) => {
-                const matchDate = new Date(match.date).toDateString();
+                const matchDateRaw = match.scheduled_at || match.date;
+                const matchDate = new Date(matchDateRaw).toDateString();
                 return matchDate === targetDate;
             });
-            
+
             return filtered.map(transformApiMatch);
         } catch (error) {
             console.warn("API fetchMatchesForDate failed", error);
             return [];
         }
     },
-
     async fetchTeams(filters?: { sport?: string, country?: string, leagueId?: string, query?: string }): Promise<Team[]> {
         try {
             const teams = await apiService.getTeams(filters);
