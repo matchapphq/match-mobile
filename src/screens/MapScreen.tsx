@@ -200,7 +200,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
             </MapView>
 
             {/* Header Overlay */}
-            <View style={[styles.headerOverlay, { paddingTop: insets.top + 10 }]}>
+            <View style={[styles.headerOverlay, { paddingTop: insets.top + 6 }]}>
                 <View style={styles.headerRow}>
                     <View />
                     <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={[styles.fab, { backgroundColor: colors.accent }]}>
@@ -366,15 +366,15 @@ const styles = StyleSheet.create({
         flexDirection: 'row', 
         alignItems: 'center', 
         alignSelf: 'center', 
-        marginTop: 12, 
-        paddingHorizontal: 18, 
-        paddingVertical: 10, 
+        marginTop: 4, 
+        paddingHorizontal: 16, 
+        paddingVertical: 8, 
         borderRadius: 25, 
         backgroundColor: 'rgba(28,28,30,0.95)', 
         borderWidth: 1, 
         borderColor: '#2c2c2e' 
     },
-    searchAreaBtnText: { color: '#fff', marginLeft: 8, fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
+    searchAreaBtnText: { color: '#fff', marginLeft: 8, fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
     
     bottomSheet: {
         position: 'absolute',
