@@ -96,10 +96,23 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
         }).start();
     };
 
-    const handleMarkerPress = (venue: Venue) => {
+    const handleMarkerPress = async (venue: Venue) => {
         posthog?.capture("map_marker_selected", { venue_id: venue.id, venue_name: venue.name });
         setSelectedVenue(venue);
         animateTo(SNAPS.HALF);
+
+        // Fetch actual matches for this venue
+        try {
+            const fullVenue = await mobileApi.fetchVenueById(venue.id);
+            if (fullVenue && fullVenue.matches) {
+                setUpcomingMatches(fullVenue.matches);
+            } else {
+                setUpcomingMatches([]);
+            }
+        } catch (error) {
+            console.warn("Failed to fetch venue matches:", error);
+            setUpcomingMatches([]);
+        }
     };
 
     const handleSearchArea = async () => {
@@ -115,6 +128,24 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
             console.warn(error); 
         } finally {
             setIsSearching(false);
+        }
+    };
+
+    const openDirections = (lat: number, lng: number, label: string) => {
+        const url = Platform.select({
+            ios: `maps://app?daddr=${lat},${lng}&t=m`,
+            android: `google.navigation:q=${lat},${lng}`
+        });
+
+        if (url) {
+            Linking.canOpenURL(url).then(supported => {
+                if (supported) {
+                    Linking.openURL(url);
+                } else {
+                    // Fallback to Google Maps Web
+                    Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`);
+                }
+            });
         }
     };
 
@@ -141,7 +172,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                 provider={PROVIDER_DEFAULT}
                 style={StyleSheet.absoluteFillObject}
                 customMapStyle={DARK_MAP_STYLE}
-                onPress={() => { setSelectedVenue(null); animateTo(0); }}
+                onPress={() => { setSelectedVenue(null); animateTo(0); setUpcomingMatches([]); }}
                 onRegionChangeComplete={(region) => {
                     setCurrentRegion(region);
                     setHasSearchedArea(false);
@@ -229,12 +260,12 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                 {/* Header */}
                                 <View style={styles.venueHeader}>
                                     <Text style={styles.venueTitle}>{selectedVenue.name.toUpperCase()}</Text>
-                                    <Text style={styles.venueSubtitle}>Bar sportif · 9e arrondissement, Paris</Text>
+                                    <Text style={styles.venueSubtitle}>Bar sportif · {selectedVenue.address || 'Paris'}</Text>
                                     
                                     <View style={styles.metaRow}>
                                         <View style={styles.metaItem}>
                                             <MaterialIcons name="star" size={16} color="#f59e0b" />
-                                            <Text style={styles.metaText}>{selectedVenue.rating} (128)</Text>
+                                            <Text style={styles.metaText}>{selectedVenue.rating} ({selectedVenue.totalReviews || 0})</Text>
                                         </View>
                                         <Text style={styles.metaDivider}>•</Text>
                                         <Text style={styles.metaText}>{selectedVenue.priceLevel}</Text>
@@ -253,7 +284,10 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                         >
                                             <Text style={styles.btnFilledText}>Réserver</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={[styles.btnOutline, { borderColor: '#2c2c2e' }]} onPress={() => Linking.openURL(`geo:${selectedVenue.latitude},${selectedVenue.longitude}`)}>
+                                        <TouchableOpacity 
+                                            style={[styles.btnOutline, { borderColor: '#2c2c2e' }]} 
+                                            onPress={() => openDirections(selectedVenue.latitude, selectedVenue.longitude, selectedVenue.name)}
+                                        >
                                             <MaterialIcons name="directions" size={20} color={colors.accent} />
                                             <Text style={[styles.btnOutlineText, { color: colors.accent }]}>Itinéraire</Text>
                                         </TouchableOpacity>
@@ -281,22 +315,28 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                 </View>
 
                                 <View style={styles.matchList}>
-                                    {(upcomingMatches.length > 0 ? upcomingMatches.slice(0, 5) : [1,2,3]).map((_, i) => (
-                                        <TouchableOpacity key={i} style={styles.matchItem}>
-                                            <View style={styles.datePill}>
-                                                <Text style={styles.dateMonth}>MARS</Text>
-                                                <Text style={styles.dateDay}>21</Text>
-                                            </View>
-                                            <View style={styles.matchInfo}>
-                                                <View style={styles.matchTitleRow}>
-                                                    <Text style={styles.matchTeams}>Cagliari vs Napoli</Text>
-                                                    {i === 0 && <View style={styles.vedetteTag}><Text style={styles.vedetteText}>VEDETTE</Text></View>}
+                                    {upcomingMatches.length > 0 ? (
+                                        upcomingMatches.slice(0, 5).map((match, i) => (
+                                            <TouchableOpacity key={match.id || i} style={styles.matchItem}>
+                                                <View style={styles.datePill}>
+                                                    <Text style={styles.dateMonth}>{match.month}</Text>
+                                                    <Text style={styles.dateDay}>{match.date}</Text>
                                                 </View>
-                                                <Text style={styles.matchMetaText}>01:30 • Serie A</Text>
-                                            </View>
-                                            <MaterialIcons name="chevron-right" size={24} color="#71717a" />
-                                        </TouchableOpacity>
-                                    ))}
+                                                <View style={styles.matchInfo}>
+                                                    <View style={styles.matchTitleRow}>
+                                                        <Text style={styles.matchTeams}>{match.team1} vs {match.team2}</Text>
+                                                        {i === 0 && <View style={styles.vedetteTag}><Text style={styles.vedetteText}>VEDETTE</Text></View>}
+                                                    </View>
+                                                    <Text style={styles.matchMetaText}>{match.time} • {match.league}</Text>
+                                                </View>
+                                                <MaterialIcons name="chevron-right" size={24} color="#71717a" />
+                                            </TouchableOpacity>
+                                        ))
+                                    ) : (
+                                        <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                                            <Text style={{ color: '#71717a', fontSize: 14 }}>Aucun match prévu prochainement</Text>
+                                        </View>
+                                    )}
                                 </View>
 
                                 <View style={{ height: 40 }} />
