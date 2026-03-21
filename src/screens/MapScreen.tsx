@@ -48,6 +48,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const [venues, setVenues] = useState<Venue[]>([]);
     const [upcomingMatches, setUpcomingMatches] = useState<VenueMatch[]>([]);
     const [hasSearchedArea, setHasSearchedArea] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
     const [currentRegion, setCurrentRegion] = useState<Region>({
         latitude: 48.8566,
         longitude: 2.3522,
@@ -102,6 +103,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     };
 
     const handleSearchArea = async () => {
+        setIsSearching(true);
         try {
             const fetchedVenues = await mobileApi.fetchVenuesInArea(
                 currentRegion.latitude, currentRegion.longitude,
@@ -109,7 +111,11 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
             );
             setVenues(fetchedVenues);
             setHasSearchedArea(true);
-        } catch (error) { console.warn(error); }
+        } catch (error) { 
+            console.warn(error); 
+        } finally {
+            setIsSearching(false);
+        }
     };
 
     // Interpolations
@@ -136,7 +142,10 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                 style={StyleSheet.absoluteFillObject}
                 customMapStyle={DARK_MAP_STYLE}
                 onPress={() => { setSelectedVenue(null); animateTo(0); }}
-                onRegionChangeComplete={setCurrentRegion}
+                onRegionChangeComplete={(region) => {
+                    setCurrentRegion(region);
+                    setHasSearchedArea(false);
+                }}
                 initialRegion={{
                     latitude: 48.8566,
                     longitude: 2.3522,
@@ -162,15 +171,25 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
             {/* Header Overlay */}
             <View style={[styles.headerOverlay, { paddingTop: insets.top + 10 }]}>
                 <View style={styles.headerRow}>
-                    <Text style={styles.headerTitle}>AUTOUR DE MOI</Text>
+                    <View />
                     <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={[styles.fab, { backgroundColor: colors.accent }]}>
                         <MaterialIcons name="tune" size={24} color="#000" />
                     </TouchableOpacity>
                 </View>
                 {!hasSearchedArea && (
-                    <TouchableOpacity style={styles.searchAreaBtn} onPress={handleSearchArea}>
-                        <MaterialIcons name="search" size={18} color="#fff" />
-                        <Text style={styles.searchAreaBtnText}>Rechercher dans cette zone</Text>
+                    <TouchableOpacity 
+                        style={styles.searchAreaBtn} 
+                        onPress={handleSearchArea}
+                        disabled={isSearching}
+                    >
+                        {isSearching ? (
+                            <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                        ) : (
+                            <MaterialIcons name="search" size={18} color="#fff" />
+                        )}
+                        <Text style={styles.searchAreaBtnText}>
+                            {isSearching ? "RECHERCHE EN COURS..." : "RECHERCHER DANS CETTE ZONE"}
+                        </Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -303,8 +322,19 @@ const styles = StyleSheet.create({
     headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     headerTitle: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 1, opacity: 0.8 },
     fab: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', elevation: 5 },
-    searchAreaBtn: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 20, paddingHorizontal: 20, paddingVertical: 12, borderRadius: 25, backgroundColor: 'rgba(28,28,30,0.95)', borderWidth: 1, borderColor: '#2c2c2e' },
-    searchAreaBtnText: { color: '#fff', marginLeft: 8, fontSize: 14, fontWeight: '600' },
+    searchAreaBtn: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        alignSelf: 'center', 
+        marginTop: 12, 
+        paddingHorizontal: 18, 
+        paddingVertical: 10, 
+        borderRadius: 25, 
+        backgroundColor: 'rgba(28,28,30,0.95)', 
+        borderWidth: 1, 
+        borderColor: '#2c2c2e' 
+    },
+    searchAreaBtnText: { color: '#fff', marginLeft: 8, fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
     
     bottomSheet: {
         position: 'absolute',
