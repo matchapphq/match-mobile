@@ -163,15 +163,15 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     });
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle={themeMode === 'dark' ? "light-content" : "dark-content"} />
 
             <MapView
                 ref={mapRef}
                 showsUserLocation={true}
                 provider={PROVIDER_DEFAULT}
                 style={StyleSheet.absoluteFillObject}
-                customMapStyle={DARK_MAP_STYLE}
+                customMapStyle={themeMode === 'dark' ? DARK_MAP_STYLE : []}
                 onPress={() => { setSelectedVenue(null); animateTo(0); setUpcomingMatches([]); }}
                 onRegionChangeComplete={(region) => {
                     setCurrentRegion(region);
@@ -204,22 +204,34 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                 <View style={styles.headerRow}>
                     <View />
                     <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} style={[styles.fab, { backgroundColor: colors.accent }]}>
-                        <MaterialIcons name="tune" size={24} color="#000" />
+                        <MaterialIcons name="tune" size={24} color={themeMode === 'dark' ? "#000" : "#fff"} />
                     </TouchableOpacity>
                 </View>
-                {!hasSearchedArea && (
+                {(!hasSearchedArea || (hasSearchedArea && venues.length === 0)) && (
                     <TouchableOpacity 
-                        style={styles.searchAreaBtn} 
+                        style={[
+                            styles.searchAreaBtn, 
+                            { backgroundColor: themeMode === 'dark' ? 'rgba(28,28,30,0.95)' : 'rgba(255,255,255,0.95)', borderColor: colors.border },
+                            hasSearchedArea && venues.length === 0 && { backgroundColor: 'rgba(239, 68, 68, 0.9)', borderColor: 'rgba(239, 68, 68, 1)' }
+                        ]} 
                         onPress={handleSearchArea}
                         disabled={isSearching}
                     >
                         {isSearching ? (
-                            <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                            <ActivityIndicator size="small" color={themeMode === 'dark' ? "#fff" : colors.primary} style={{ marginRight: 8 }} />
                         ) : (
-                            <MaterialIcons name="search" size={18} color="#fff" />
+                            <MaterialIcons 
+                                name={hasSearchedArea && venues.length === 0 ? "error-outline" : "search"} 
+                                size={18} 
+                                color={hasSearchedArea && venues.length === 0 ? "#fff" : (themeMode === 'dark' ? "#fff" : colors.text)} 
+                            />
                         )}
-                        <Text style={styles.searchAreaBtnText}>
-                            {isSearching ? "RECHERCHE EN COURS..." : "RECHERCHER DANS CETTE ZONE"}
+                        <Text style={[styles.searchAreaBtnText, { color: hasSearchedArea && venues.length === 0 ? "#fff" : (themeMode === 'dark' ? "#fff" : colors.text) }]}>
+                            {isSearching 
+                                ? "RECHERCHE EN COURS..." 
+                                : (hasSearchedArea && venues.length === 0 
+                                    ? "AUCUN ÉTABLISSEMENT TROUVÉ" 
+                                    : "RECHERCHER DANS CETTE ZONE")}
                         </Text>
                     </TouchableOpacity>
                 )}
@@ -233,20 +245,21 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                         { 
                             height: animatedHeight,
                             bottom: 0, 
+                            backgroundColor: colors.card,
                         }
                     ]}
                 >
                     {/* Gesture Interaction Area */}
                     <View {...panResponder.panHandlers} style={styles.dragHandleContainer}>
-                        <View style={styles.dragHandle} />
+                        <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
                     </View>
 
                     {/* 1. COLLAPSED PEEK */}
                     <Animated.View pointerEvents="none" style={[styles.collapsedPeek, { opacity: peekOpacity }]}>
-                        <Text style={styles.collapsedText} numberOfLines={1}>
+                        <Text style={[styles.collapsedText, { color: colors.text }]} numberOfLines={1}>
                             {selectedVenue.name.toUpperCase()} • {selectedVenue.rating} ★ • €€ • {selectedVenue.distance} • <Text style={{ color: colors.accent }}>OUVERT</Text>
                         </Text>
-                        <MaterialIcons name="keyboard-arrow-up" size={20} color="#71717a" />
+                        <MaterialIcons name="keyboard-arrow-up" size={20} color={colors.textSecondary} />
                     </Animated.View>
 
                     {/* 2. SCROLLABLE CONTENT */}
@@ -259,19 +272,19 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                             <View style={styles.sheetInner}>
                                 {/* Header */}
                                 <View style={styles.venueHeader}>
-                                    <Text style={styles.venueTitle}>{selectedVenue.name.toUpperCase()}</Text>
-                                    <Text style={styles.venueSubtitle}>Bar sportif · {selectedVenue.address || 'Paris'}</Text>
+                                    <Text style={[styles.venueTitle, { color: colors.text }]}>{selectedVenue.name.toUpperCase()}</Text>
+                                    <Text style={[styles.venueSubtitle, { color: colors.textSecondary }]}>Bar sportif · {selectedVenue.address || 'Paris'}</Text>
                                     
                                     <View style={styles.metaRow}>
                                         <View style={styles.metaItem}>
                                             <MaterialIcons name="star" size={16} color="#f59e0b" />
-                                            <Text style={styles.metaText}>{selectedVenue.rating} ({selectedVenue.totalReviews || 0})</Text>
+                                            <Text style={[styles.metaText, { color: colors.textSecondary }]}>{selectedVenue.rating} ({selectedVenue.totalReviews || 0})</Text>
                                         </View>
-                                        <Text style={styles.metaDivider}>•</Text>
-                                        <Text style={styles.metaText}>{selectedVenue.priceLevel}</Text>
-                                        <Text style={styles.metaDivider}>•</Text>
-                                        <Text style={styles.metaText}>{selectedVenue.distance}</Text>
-                                        <View style={[styles.statusPill, { backgroundColor: 'rgba(74, 222, 128, 0.1)', marginLeft: 8 }]}>
+                                        <Text style={[styles.metaDivider, { color: colors.border }]}>•</Text>
+                                        <Text style={[styles.metaText, { color: colors.textSecondary }]}>{selectedVenue.priceLevel}</Text>
+                                        <Text style={[styles.metaDivider, { color: colors.border }]}>•</Text>
+                                        <Text style={[styles.metaText, { color: colors.textSecondary }]}>{selectedVenue.distance}</Text>
+                                        <View style={[styles.statusPill, { backgroundColor: `${colors.accent}15`, marginLeft: 8 }]}>
                                             <Text style={[styles.statusText, { color: colors.accent }]}>OUVERT</Text>
                                         </View>
                                     </View>
@@ -282,16 +295,16 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                             style={[styles.btnFilled, { backgroundColor: colors.accent }]}
                                             onPress={() => navigation.navigate('VenueProfile', { venueId: selectedVenue.id })}
                                         >
-                                            <Text style={styles.btnFilledText}>Réserver</Text>
+                                            <Text style={[styles.btnFilledText, { color: themeMode === 'dark' ? '#000' : '#fff' }]}>Réserver</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity 
-                                            style={[styles.btnOutline, { borderColor: '#2c2c2e' }]} 
+                                            style={[styles.btnOutline, { borderColor: colors.border }]} 
                                             onPress={() => openDirections(selectedVenue.latitude, selectedVenue.longitude, selectedVenue.name)}
                                         >
                                             <MaterialIcons name="directions" size={20} color={colors.accent} />
                                             <Text style={[styles.btnOutlineText, { color: colors.accent }]}>Itinéraire</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={styles.btnIcon}>
+                                        <TouchableOpacity style={[styles.btnIcon, { backgroundColor: colors.border }]}>
                                             <MaterialIcons name="phone" size={24} color={colors.accent} />
                                         </TouchableOpacity>
                                     </View>
@@ -304,11 +317,11 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                     <Image source={{ uri: "https://images.unsplash.com/photo-1543007630-9710e4a00a20?q=80&w=400&auto=format&fit=crop" }} style={styles.secThumb} />
                                 </ScrollView>
 
-                                <View style={styles.sectionDivider} />
+                                <View style={[styles.sectionDivider, { backgroundColor: colors.border }]} />
 
                                 {/* Matches List */}
                                 <View style={styles.matchesHeader}>
-                                    <Text style={styles.matchesTitle}>Matchs diffusés ici</Text>
+                                    <Text style={[styles.matchesTitle, { color: colors.text }]}>Matchs diffusés ici</Text>
                                     <TouchableOpacity onPress={() => animateTo(SNAPS.FULL)}>
                                         <Text style={[styles.seeAllBtn, { color: colors.accent }]}>Voir tout</Text>
                                     </TouchableOpacity>
@@ -317,24 +330,24 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                 <View style={styles.matchList}>
                                     {upcomingMatches.length > 0 ? (
                                         upcomingMatches.slice(0, 5).map((match, i) => (
-                                            <TouchableOpacity key={match.id || i} style={styles.matchItem}>
-                                                <View style={styles.datePill}>
-                                                    <Text style={styles.dateMonth}>{match.month}</Text>
-                                                    <Text style={styles.dateDay}>{match.date}</Text>
+                                            <TouchableOpacity key={match.id || i} style={[styles.matchItem, { borderBottomColor: colors.border }]}>
+                                                <View style={[styles.datePill, { backgroundColor: colors.border }]}>
+                                                    <Text style={[styles.dateMonth, { color: colors.textSecondary }]}>{match.month}</Text>
+                                                    <Text style={[styles.dateDay, { color: colors.text }]}>{match.date}</Text>
                                                 </View>
                                                 <View style={styles.matchInfo}>
                                                     <View style={styles.matchTitleRow}>
-                                                        <Text style={styles.matchTeams}>{match.team1} vs {match.team2}</Text>
-                                                        {i === 0 && <View style={styles.vedetteTag}><Text style={styles.vedetteText}>VEDETTE</Text></View>}
+                                                        <Text style={[styles.matchTeams, { color: colors.text }]}>{match.team1} vs {match.team2}</Text>
+                                                        {i === 0 && <View style={[styles.vedetteTag, { backgroundColor: `${colors.text}10` }]}><Text style={[styles.vedetteText, { color: colors.text }]}>VEDETTE</Text></View>}
                                                     </View>
-                                                    <Text style={styles.matchMetaText}>{match.time} • {match.league}</Text>
+                                                    <Text style={[styles.matchMetaText, { color: colors.textSecondary }]}>{match.time} • {match.league}</Text>
                                                 </View>
-                                                <MaterialIcons name="chevron-right" size={24} color="#71717a" />
+                                                <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
                                             </TouchableOpacity>
                                         ))
                                     ) : (
                                         <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-                                            <Text style={{ color: '#71717a', fontSize: 14 }}>Aucun match prévu prochainement</Text>
+                                            <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Aucun match prévu prochainement</Text>
                                         </View>
                                     )}
                                 </View>
