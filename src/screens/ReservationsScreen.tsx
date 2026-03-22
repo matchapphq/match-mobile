@@ -386,9 +386,13 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
             <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
                 {reservationError && <Text style={styles.error}>{reservationError}</Text>}
                 <TouchableOpacity 
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || (currentStep === 2 && !selectedMatchId)}
                     onPress={() => currentStep < 4 ? (setCurrentStep(currentStep + 1), hapticFeedback.medium()) : handleConfirm()} 
-                    style={[styles.cta, { backgroundColor: colors.accent }]}
+                    style={[
+                        styles.cta, 
+                        { backgroundColor: colors.accent },
+                        (currentStep === 2 && !selectedMatchId) && { backgroundColor: colors.surfaceAlt, opacity: 0.5 }
+                    ]}
                 >
                     {isSubmitting ? <ActivityIndicator color="#000" /> : <Text style={styles.ctaText}>{currentStep === 4 ? "Confirmer la réservation" : "Continuer"}</Text>}
                 </TouchableOpacity>
