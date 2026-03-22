@@ -6,20 +6,22 @@ import {
     ScrollView,
     TouchableOpacity,
     TextInput,
-    ImageBackground,
     StatusBar,
     Dimensions,
     ActivityIndicator,
+    Animated,
+    Platform,
+    Linking,
 } from "react-native";
-import { MaterialIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { COLORS } from "../constants/colors";
-import { useStore, transformApiReservation } from "../store/useStore";
+import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { apiService, MatchVenue } from "../services/api";
+import { mobileApi, VenueMatch } from "../services/mobileApi";
 import type { Match, Reservation } from "../types";
 import { hapticFeedback } from "../utils/haptics";
+import { Image } from "expo-image";
 
 const { width } = Dimensions.get("window");
 
@@ -44,21 +46,31 @@ type EnrichedMatch = {
     dateIso: string;
 };
 
-const getArrivalTime = (matchTime: string) => {
-    if (!matchTime) return "--:--";
-    const [hours, minutes] = matchTime.split(":").map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-    date.setMinutes(date.getMinutes() - 30);
-    const h = date.getHours().toString().padStart(2, "0");
-    const m = date.getMinutes().toString().padStart(2, "0");
-    return `${h}:${m}`;
+// Timezone-safe date to ISO string (YYYY-MM-DD)
+const toLocalIsoDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 };
 
-const toIsoDate = (date: Date) => date.toISOString().split("T")[0];
+const getArrivalTime = (matchTime: string) => {
+    if (!matchTime) return "19:30";
+    try {
+        const [hours, minutes] = matchTime.split(":").map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        date.setMinutes(date.getMinutes() - 30);
+        const h = date.getHours().toString().padStart(2, "0");
+        const m = date.getMinutes().toString().padStart(2, "0");
+        return `${h}:${m}`;
+    } catch {
+        return matchTime;
+    }
+};
 
 const weekDays = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
-const months = ["JAN", "FEV", "MAR", "AVR", "MAI", "JUIN", "JUIL", "AOUT", "SEPT", "OCT", "NOV", "DEC"];
+const months = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sept", "Oct", "Nov", "Déc"];
 
 const buildReservationDate = (date: Date): ReservationDate => {
     return {
@@ -66,19 +78,18 @@ const buildReservationDate = (date: Date): ReservationDate => {
         day: date.getDate(),
         month: months[date.getMonth()],
         weekDay: weekDays[date.getDay()],
-        isoDate: toIsoDate(date),
+        isoDate: toLocalIsoDate(date),
     };
 };
 
 const buildNextReservationDates = (numberOfDays: number): ReservationDate[] => {
-    const startDate = new Date();
-    startDate.setHours(0, 0, 0, 0);
-
-    return Array.from({ length: numberOfDays }, (_, index) => {
-        const nextDate = new Date(startDate);
-        nextDate.setDate(startDate.getDate() + index);
-        return buildReservationDate(nextDate);
-    });
+    const dates: ReservationDate[] = [];
+    for (let i = 0; i < numberOfDays; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        dates.push(buildReservationDate(d));
+    }
+    return dates;
 };
 
 const formatFullDateLabel = (reservationDate?: ReservationDate) => {
@@ -86,946 +97,368 @@ const formatFullDateLabel = (reservationDate?: ReservationDate) => {
     return `${reservationDate.weekDay} ${reservationDate.day} ${reservationDate.month}`;
 };
 
-const formatVenueAddress = (venue?: MatchVenue["venue"]) => {
-    if (!venue) return undefined;
-    const parts = [venue.street_address, venue.city].filter(Boolean);
-    return parts.join(", ");
-};
-
 const extractErrorMessage = (error: any) => {
     const apiError = error?.response?.data?.error;
     if (typeof apiError === "string") return apiError;
-    if (error?.message) return error.message;
-    return "Impossible de confirmer la réservation.";
+    return error?.message || "Impossible de confirmer la réservation.";
 };
 
-const FILTERS = [
-    { label: "Tout", icon: "apps", selected: true },
-    { label: "Football", icon: "sports-soccer", selected: false },
-    { label: "Basket", icon: "sports-basketball", selected: false },
-    { label: "Rugby", icon: "sports-rugby", selected: false },
-    { label: "Tennis", icon: "sports-tennis", selected: false },
+const SPORT_FILTERS = [
+    { key: "all", label: "Tout", icon: "apps" },
+    { key: "football", label: "Football", icon: "soccer" },
+    { key: "rugby", label: "Rugby", icon: "rugby" },
+    { key: "basket", label: "Basket", icon: "basketball" },
 ];
 
 const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any }) => {
-    const {
-        colors,
-        computedTheme: themeMode,
-        addReservation,
-        updateReservation,
-        removeReservation,
-        refreshReservations,
-    } = useStore();
+    const { colors, computedTheme: themeMode, refreshReservations } = useStore();
     const insets = useSafeAreaInsets();
     const posthog = usePostHog();
+
+    // Context from navigation
+    const preselectedVenue = route.params?.venue;
+    const preselectedMatchId = route.params?.matchId;
+    const preselectedDateIso = route.params?.matchDateIso;
+
+    // Step state
+    const [currentStep, setCurrentStep] = useState(1);
+    
+    // Form state
     const [guests, setGuests] = useState(4);
     const [specialRequest, setSpecialRequest] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [reservationError, setReservationError] = useState<string | null>(null);
 
+    // Data state
     const [dates, setDates] = useState<ReservationDate[]>([]);
     const [datesLoading, setDatesLoading] = useState(true);
-    const [datesError, setDatesError] = useState<string | null>(null);
-
-    const preselectedDateIsoFromRoute = route.params?.matchDateIso || route.params?.match?.dateIso || null;
-    const [selectedDateIso, setSelectedDateIso] = useState<string | null>(preselectedDateIsoFromRoute);
+    const [selectedDateIso, setSelectedDateIso] = useState<string | null>(preselectedDateIso || null);
 
     const [availableMatches, setAvailableMatches] = useState<EnrichedMatch[]>([]);
     const [matchesLoading, setMatchesLoading] = useState(false);
-    const [matchesError, setMatchesError] = useState<string | null>(null);
-    const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
+    const [selectedMatchId, setSelectedMatchId] = useState<string | null>(preselectedMatchId || null);
+    const [activeSportFilter, setActiveSportFilter] = useState("all");
 
-    const [upcomingMatches, setUpcomingMatches] = useState<Match[]>([]);
-    const venuesCache = useRef<Map<string, MatchVenue[]>>(new Map());
-
-    const preselectedVenue = route.params?.venue;
-    const preselectedMatchIdFromRoute = route.params?.matchId;
-
+    // Memoized selections
     const selectedMatch = useMemo(
         () => availableMatches.find((m) => m.id === selectedMatchId),
         [availableMatches, selectedMatchId],
     );
     const selectedDate = useMemo(() => dates.find((date) => date.isoDate === selectedDateIso), [dates, selectedDateIso]);
+    const arrivalTime = useMemo(() => (selectedMatch ? getArrivalTime(selectedMatch.time) : "19:30"), [selectedMatch]);
 
-    const arrivalTime = useMemo(() => (selectedMatch ? getArrivalTime(selectedMatch.time) : "--:--"), [selectedMatch]);
-
-    const fetchMatchVenues = useCallback(
-        async (matchId: string): Promise<MatchVenue[]> => {
-            if (venuesCache.current.has(matchId)) {
-                return venuesCache.current.get(matchId)!;
-            }
-            const venues = await apiService.getMatchVenues(matchId);
-            venuesCache.current.set(matchId, venues);
-            return venues;
-        },
-        [],
-    );
-
-    const loadMatchesForDate = useCallback(
-        async (dateIso: string) => {
-            setMatchesError(null);
-            setMatchesLoading(true);
-            try {
-                const matchesForDate = upcomingMatches.filter((match) => toIsoDate(match.date) === dateIso);
-                if (matchesForDate.length === 0) {
-                    setAvailableMatches([]);
-                    if (!preselectedMatchIdFromRoute) { // Only reset if not preselected
-                        setSelectedMatchId(null);
-                    }
-                    return;
-                }
-
-                const enriched = await Promise.all(
-                    matchesForDate.map(async (match) => {
-                        try {
-                            const venues = await fetchMatchVenues(match.id);
-                            let venue = venues.find((v) => v.allowsReservations && v.availableCapacity > 0) ?? venues[0];
-
-                            // If preselectedVenue exists, try to find a matching venue
-                            if (preselectedVenue) {
-                                const matchedVenue = venues.find(v => v.venue.id === preselectedVenue.id);
-                                if (matchedVenue) {
-                                    venue = matchedVenue;
-                                }
-                            }
-
-                            if (!venue) return null;
-                            return {
-                                id: match.id,
-                                league: match.competition ?? "Match",
-                                team1: match.homeTeam,
-                                team2: match.awayTeam,
-                                time: match.time,
-                                bgImage: match.thumbnail,
-                                venueMatchId: venue.venueMatchId,
-                                venueName: venue.venue?.name ?? "Venue",
-                                venueAddress: formatVenueAddress(venue.venue),
-                                dateIso,
-                            };
-                        } catch (error) {
-                            console.warn("Failed to load venues for match", match.id, error);
-                            return null;
-                        }
-                    }),
-                );
-
-                const filtered = enriched.filter(Boolean) as EnrichedMatch[];
-                setAvailableMatches(filtered);
-                // If there's a preselectedMatchIdFromRoute, and it's still in the filtered list, keep it selected
-                // Otherwise, reset selectedMatchId only if the current selectedMatchId is not in the filtered list
-                if (preselectedMatchIdFromRoute && filtered.some(m => m.id === preselectedMatchIdFromRoute)) {
-                    setSelectedMatchId(preselectedMatchIdFromRoute);
-                } else if (selectedMatchId && !filtered.some((match) => match.id === selectedMatchId)) {
-                    setSelectedMatchId(null);
-                } else if (!selectedMatchId && filtered.length > 0) { // Automatically select first match if none is selected
-                    setSelectedMatchId(filtered[0].id);
-                }
-            } catch (error) {
-                console.warn("Failed to load matches", error);
-                setMatchesError("Impossible de charger les matchs pour cette date.");
-                setAvailableMatches([]);
-            } finally {
-                setMatchesLoading(false);
-            }
-        },
-        [fetchMatchVenues, upcomingMatches, preselectedVenue, preselectedMatchIdFromRoute, selectedMatchId],
-    );
-
-    const loadUpcomingMatches = useCallback(async () => {
-        setDatesError(null);
-        setDatesLoading(true);
-        try {
-            const results = await apiService.getUpcomingMatches();
-            const sorted = [...results].sort((a, b) => a.date.getTime() - b.date.getTime());
-            setUpcomingMatches(sorted);
-
-            const nextReservationDates = buildNextReservationDates(7);
-            setDates(nextReservationDates);
-
-            let initialDate = nextReservationDates[0]?.isoDate || null;
-            let initialMatchId = null;
-
-            if (
-                preselectedDateIsoFromRoute &&
-                nextReservationDates.some((date) => date.isoDate === preselectedDateIsoFromRoute)
-            ) {
-                initialDate = preselectedDateIsoFromRoute;
-            }
-
-            if (preselectedMatchIdFromRoute) {
-                const preselectedMatch = sorted.find(match => match.id === preselectedMatchIdFromRoute);
-                if (preselectedMatch) {
-                    const preselectedMatchDateIso = toIsoDate(preselectedMatch.date);
-                    if (nextReservationDates.some((date) => date.isoDate === preselectedMatchDateIso)) {
-                        initialDate = preselectedMatchDateIso;
-                        initialMatchId = preselectedMatchIdFromRoute;
-                    }
-                }
-            }
-
-            setSelectedDateIso(initialDate);
-            setSelectedMatchId(initialMatchId); // Set the preselected match ID here
-        } catch (error) {
-            console.warn("Failed to load reservation dates", error);
-            setDates([]);
-            setUpcomingMatches([]);
-            setDatesError("Impossible de charger les dates disponibles.");
-            setSelectedDateIso(null);
-            setSelectedMatchId(null);
-        } finally {
-            setDatesLoading(false);
+    const filteredMatches = useMemo(() => {
+        let list = availableMatches;
+        if (activeSportFilter !== "all") {
+            list = list.filter(m => {
+                const league = m.league?.toLowerCase() || "";
+                if (activeSportFilter === "football") return league.includes("ligue") || league.includes("premier") || league.includes("liga") || league.includes("champions");
+                if (activeSportFilter === "rugby") return league.includes("rugby") || league.includes("top 14");
+                if (activeSportFilter === "basket") return league.includes("nba") || league.includes("basket") || league.includes("euroleague");
+                return true;
+            });
         }
-    }, [preselectedDateIsoFromRoute, preselectedMatchIdFromRoute]);
+        return list;
+    }, [availableMatches, activeSportFilter]);
 
+    // Initialize dates
     useEffect(() => {
-        loadUpcomingMatches();
-    }, [loadUpcomingMatches]);
-
-    useEffect(() => {
+        const nextDates = buildNextReservationDates(14);
+        setDates(nextDates);
+        setDatesLoading(false);
         if (!selectedDateIso) {
+            setSelectedDateIso(nextDates[0].isoDate);
+        }
+    }, []);
+
+    // Load matches when date or venue changes
+    const loadMatches = useCallback(async () => {
+        if (!selectedDateIso || !preselectedVenue) return;
+        
+        setMatchesLoading(true);
+        try {
+            // Fetch matches specifically for this venue
+            const venueDetails = await mobileApi.fetchVenueById(preselectedVenue.id);
+            if (venueDetails && venueDetails.matches) {
+                const matchesForDate = venueDetails.matches.filter(m => m.dateIso === selectedDateIso);
+
+                const enriched: EnrichedMatch[] = matchesForDate.map(m => ({
+                    id: m.id,
+                    league: m.league,
+                    team1: m.team1,
+                    team2: m.team2,
+                    time: m.time,
+                    bgImage: m.bgImage || preselectedVenue.image,
+                    venueMatchId: m.venueMatchId, 
+                    venueName: preselectedVenue.name,
+                    venueAddress: preselectedVenue.address,
+                    dateIso: m.dateIso
+                }));
+                setAvailableMatches(enriched);
+            } else {
+                setAvailableMatches([]);
+            }
+        } catch (error) {
+            console.warn("Failed to load matches for venue", error);
             setAvailableMatches([]);
-            setSelectedMatchId(null);
-            return;
+        } finally {
+            setMatchesLoading(false);
         }
-        loadMatchesForDate(selectedDateIso);
-    }, [loadMatchesForDate, selectedDateIso]);
+    }, [selectedDateIso, preselectedVenue, selectedDate]);
 
-    const handleBack = () => navigation.goBack();
-    const incrementGuests = () => setGuests((prev) => prev + 1);
-    const decrementGuests = () => setGuests((prev) => Math.max(1, prev - 1));
+    useEffect(() => {
+        loadMatches();
+    }, [loadMatches]);
 
-    const toggleMatchSelection = (id: string) => {
-        setSelectedMatchId((prev) => (prev === id ? null : id));
-    };
-
-    const handleRetryDates = () => {
-        loadUpcomingMatches();
-    };
-
-    const handleRetryMatches = () => {
-        if (selectedDateIso) {
-            loadMatchesForDate(selectedDateIso);
+    const handleBack = () => {
+        if (currentStep > 1) {
+            setCurrentStep(currentStep - 1);
+            hapticFeedback.light();
+        } else {
+            navigation.goBack();
         }
     };
 
-    const handleConfirmReservation = useCallback(async () => {
+    const handleConfirm = async () => {
         if (isSubmitting || !selectedMatch) return;
-        setReservationError(null);
         setIsSubmitting(true);
-        const tempId = `temp-${Date.now()}`;
-        const optimisticReservation: Reservation = {
-            id: tempId,
-            venueId: selectedMatch.venueMatchId,
-            venueName: selectedMatch.venueName,
-            venueAddress: selectedMatch.venueAddress,
-            date: selectedDate?.fullDate ?? new Date(),
-            time: selectedMatch.time,
-            numberOfPeople: guests,
-            matchId: selectedMatch.id,
-            matchTitle: `${selectedMatch.team1} vs ${selectedMatch.team2}`,
-            status: "pending",
-            conditions: specialRequest.trim() ? specialRequest.trim() : undefined,
-        };
-        addReservation(optimisticReservation);
+        setReservationError(null);
         try {
             const response = await apiService.createReservation({
                 venueMatchId: selectedMatch.venueMatchId,
                 partySize: guests,
-                specialRequests: specialRequest.trim() ? specialRequest.trim() : undefined,
+                specialRequests: specialRequest.trim() || undefined,
             });
-
-            posthog.capture("reservation_confirmed", {
-                venue_id: selectedMatch.venueMatchId,
-                match_id: selectedMatch.id,
-                party_size: guests,
-                venue_name: selectedMatch.venueName,
-            });
-
             hapticFeedback.success();
-
-            const dateLabel = formatFullDateLabel(selectedDate) || selectedMatch.dateIso;
-            const reference = response.reservation?.id || `#BK-${Date.now()}`;
-            if (response.reservation) {
-                updateReservation(
-                    tempId,
-                    transformApiReservation(response.reservation, response.qrCode),
-                );
-            }
             refreshReservations();
-
-            setIsSubmitting(false);
             navigation.navigate("ReservationSuccess", {
                 venueName: selectedMatch.venueName,
                 address: selectedMatch.venueAddress,
-                dateLabel,
+                dateLabel: formatFullDateLabel(selectedDate),
                 time: selectedMatch.time,
-                guestsLabel: `${guests} ${guests > 1 ? "personnes" : "personne"}`,
+                guestsLabel: `${guests} personnes`,
                 matchTitle: `${selectedMatch.team1} vs ${selectedMatch.team2}`,
-                reference,
+                reference: response.reservation?.id || `#BK-${Date.now()}`,
                 image: selectedMatch.bgImage,
             });
         } catch (error) {
-            posthog.capture("reservation_failed", {
-                venue_id: selectedMatch.venueMatchId,
-                match_id: selectedMatch.id,
-                party_size: guests,
-                reason: extractErrorMessage(error),
-            });
             hapticFeedback.error();
-            removeReservation(tempId);
-            setIsSubmitting(false);
             setReservationError(extractErrorMessage(error));
+        } finally {
+            setIsSubmitting(false);
         }
-    }, [
-        addReservation,
-        guests,
-        isSubmitting,
-        navigation,
-        refreshReservations,
-        removeReservation,
-        selectedDate,
-        selectedMatch,
-        specialRequest,
-        updateReservation,
-        posthog,
-    ]);
+    };
 
-    const confirmDisabled = !selectedMatch || isSubmitting;
+    const renderProgress = () => (
+        <View style={styles.stepper}>
+            {[1, 2, 3, 4].map(s => (
+                <View key={s} style={styles.stepItem}>
+                    <View style={[styles.stepDot, { backgroundColor: s <= currentStep ? colors.accent : colors.surfaceAlt }]} />
+                    {s < 4 && <View style={[styles.stepLine, { backgroundColor: s < currentStep ? colors.accent : colors.surfaceAlt }]} />}
+                </View>
+            ))}
+        </View>
+    );
+
+    const renderContent = () => {
+        if (currentStep === 1) return (
+            <View style={styles.step}>
+                <Text style={[styles.title, { color: colors.text }]}>Quand veux-tu venir ?</Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Choisis ta date de passage chez {preselectedVenue?.name}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateList}>
+                    {dates.map(d => {
+                        const isSel = d.isoDate === selectedDateIso;
+                        return (
+                            <TouchableOpacity key={d.isoDate} onPress={() => setSelectedDateIso(d.isoDate)} style={[styles.datePill, isSel ? { backgroundColor: colors.accent } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
+                                <Text style={[styles.dateWeek, { color: isSel ? '#000' : colors.textSecondary }]}>{d.weekDay.toUpperCase()}</Text>
+                                <Text style={[styles.dateDay, { color: isSel ? '#000' : colors.text }]}>{d.day}</Text>
+                                <Text style={[styles.dateMonth, { color: isSel ? '#000' : colors.textSecondary }]}>{d.month}</Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
+                <View style={[styles.arrivalCard, { backgroundColor: colors.surface }]}>
+                    <View style={styles.arrivalLeft}>
+                        <View style={[styles.iconBox, { backgroundColor: `${colors.accent}20` }]}><MaterialIcons name="access-time" size={24} color={colors.accent} /></View>
+                        <View>
+                            <Text style={[styles.arrivalLabel, { color: colors.text }]}>Arrivée recommandée</Text>
+                            <Text style={[styles.arrivalHint, { color: colors.textSecondary }]}>30 min avant le match</Text>
+                        </View>
+                    </View>
+                    <Text style={[styles.arrivalTimeText, { color: colors.accent }]}>{arrivalTime}</Text>
+                </View>
+            </View>
+        );
+
+        if (currentStep === 2) return (
+            <View style={styles.step}>
+                <Text style={[styles.title, { color: colors.text }]}>Quel match regarder ?</Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Voici ce qui est diffusé ce jour-là</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filters}>
+                    {SPORT_FILTERS.map(f => (
+                        <TouchableOpacity key={f.key} onPress={() => setActiveSportFilter(f.key)} style={[styles.filterChip, activeSportFilter === f.key ? { backgroundColor: colors.accent } : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
+                            <MaterialCommunityIcons name={f.icon as any} size={18} color={activeSportFilter === f.key ? '#000' : colors.textSecondary} />
+                            <Text style={[styles.filterLabel, { color: activeSportFilter === f.key ? '#000' : colors.textSecondary }]}>{f.label}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+                {matchesLoading ? <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} /> : filteredMatches.length > 0 ? (
+                    <View style={styles.matchList}>
+                        {filteredMatches.map(m => {
+                            const isSel = m.id === selectedMatchId;
+                            return (
+                                <TouchableOpacity key={m.id} onPress={() => setSelectedMatchId(isSel ? null : m.id)} style={[styles.matchItem, { backgroundColor: colors.surface }, isSel && { borderColor: colors.accent, borderWidth: 2 }]}>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.matchLeague, { color: colors.accent }]}>{m.league?.toUpperCase()}</Text>
+                                        <Text style={[styles.matchTeams, { color: colors.text }]}>{m.team1} vs {m.team2}</Text>
+                                        <Text style={[styles.matchTime, { color: colors.textSecondary }]}>{m.time}</Text>
+                                    </View>
+                                    {isSel && <MaterialIcons name="check-circle" size={24} color={colors.accent} />}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                ) : (
+                    <View style={styles.empty}>
+                        <MaterialCommunityIcons name="soccer" size={64} color={colors.surfaceAlt} />
+                        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Aucun match prévu à cette date.</Text>
+                        <TouchableOpacity onPress={() => setCurrentStep(1)}><Text style={{ color: colors.accent, fontWeight: '700', marginTop: 10 }}>Changer de date</Text></TouchableOpacity>
+                    </View>
+                )}
+            </View>
+        );
+
+        if (currentStep === 3) return (
+            <View style={styles.step}>
+                <Text style={[styles.title, { color: colors.text }]}>Combien de personnes ?</Text>
+                <View style={[styles.guestCard, { backgroundColor: colors.surface }]}>
+                    <View>
+                        <Text style={[styles.guestTitle, { color: colors.text }]}>Nombre d'invités</Text>
+                        <Text style={[styles.guestSub, { color: colors.textSecondary }]}>{guests > 6 ? "Grande table" : "Table standard"}</Text>
+                    </View>
+                    <View style={styles.counter}>
+                        <TouchableOpacity onPress={() => setGuests(Math.max(1, guests - 1))} style={[styles.countBtn, { backgroundColor: colors.background }]}><MaterialIcons name="remove" size={24} color={colors.text} /></TouchableOpacity>
+                        <Text style={[styles.countText, { color: colors.text }]}>{guests}</Text>
+                        <TouchableOpacity onPress={() => setGuests(guests + 1)} style={[styles.countBtn, { backgroundColor: colors.accent }]}><MaterialIcons name="add" size={24} color="#000" /></TouchableOpacity>
+                    </View>
+                </View>
+                <View style={[styles.note, { backgroundColor: `${colors.accent}10`, borderColor: `${colors.accent}30` }]}>
+                    <MaterialIcons name="info-outline" size={20} color={colors.accent} />
+                    <Text style={[styles.noteText, { color: colors.textSecondary }]}>Note : Pour les groupes de plus de 8 personnes, une empreinte bancaire peut être demandée.</Text>
+                </View>
+                <Text style={[styles.label, { color: colors.text }]}>Demande spéciale (optionnel)</Text>
+                <TextInput value={specialRequest} onChangeText={setSpecialRequest} placeholder="Ex: Près d'un écran..." placeholderTextColor={colors.textMuted} multiline style={[styles.input, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]} />
+            </View>
+        );
+
+        return (
+            <View style={styles.step}>
+                <Text style={[styles.title, { color: colors.text }]}>Récapitulatif</Text>
+                <View style={[styles.recap, { backgroundColor: colors.surface }]}>
+                    <View style={styles.recapTop}>
+                        <Image source={{ uri: selectedMatch?.bgImage || preselectedVenue?.image }} style={styles.recapImg} />
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Text style={[styles.recapVenue, { color: colors.text }]}>{preselectedVenue?.name.toUpperCase()}</Text>
+                            <Text style={[styles.recapAddr, { color: colors.textSecondary }]} numberOfLines={1}>{preselectedVenue?.address}</Text>
+                        </View>
+                    </View>
+                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
+                    <RecapRow icon="event" label="Date" value={formatFullDateLabel(selectedDate)} colors={colors} />
+                    <RecapRow icon="access-time" label="Arrivée" value={arrivalTime} colors={colors} />
+                    <RecapRow icon="sports-soccer" label="Match" value={selectedMatch ? `${selectedMatch.team1} vs ${selectedMatch.team2}` : "Sans match précis"} colors={colors} />
+                    <RecapRow icon="people" label="Invités" value={`${guests} pers.`} colors={colors} isLast />
+                </View>
+            </View>
+        );
+    };
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <StatusBar barStyle={themeMode === 'light' ? 'dark-content' : 'light-content'} backgroundColor={colors.background} />
-
-            {/* Header */}
-            <View style={[styles.header, { paddingTop: insets.top, height: 60 + insets.top, backgroundColor: colors.background }]}>
-                <TouchableOpacity style={styles.headerButton} onPress={handleBack}>
-                    <MaterialIcons name="arrow-back" size={24} color={colors.text} />
-                </TouchableOpacity>
-                <Text style={[styles.headerTitle, { color: colors.text }]}>Réserver une table</Text>
-                <View style={{ width: 48 }} />
+            <StatusBar barStyle={themeMode === 'dark' ? 'light-content' : 'dark-content'} />
+            <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
+                <TouchableOpacity onPress={handleBack} style={styles.backBtn}><MaterialIcons name="close" size={24} color={colors.text} /></TouchableOpacity>
+                {renderProgress()}
+                <View style={{ width: 40 }} />
             </View>
-
-            <ScrollView style={styles.scrollView} contentContainerStyle={{ paddingBottom: 100 }}>
-
-                {/* Date Section */}
-                <View style={styles.section}>
-                    <View style={styles.sectionHeaderRow}>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Date</Text>
-                        <TouchableOpacity style={styles.seeMoreButton} onPress={handleRetryDates}>
-                            <Text style={[styles.seeMoreText, { color: colors.accent }]}>Rafraîchir</Text>
-                            <MaterialIcons name="refresh" size={14} color={colors.accent} />
-                        </TouchableOpacity>
-                    </View>
-
-                    {datesLoading ? (
-                        <View style={styles.stateWrapper}>
-                            <ActivityIndicator color={colors.primary} />
-                            <Text style={[styles.stateText, { color: colors.textSecondary }]}>Chargement des dates...</Text>
-                        </View>
-                    ) : datesError ? (
-                        <View style={styles.stateWrapper}>
-                            <Text style={[styles.stateText, { color: colors.textSecondary }]}>{datesError}</Text>
-                            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={handleRetryDates}>
-                                <MaterialIcons name="refresh" size={18} color={colors.white} />
-                                <Text style={[styles.retryButtonText, { color: colors.white }]}>Réessayer</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ) : (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dateScroll}>
-                            {dates.map((date, index) => {
-                                const isSelected = date.isoDate === selectedDateIso;
-                                return (
-                                    <TouchableOpacity
-                                        key={index}
-                                        style={[
-                                            styles.dateCard,
-                                            isSelected
-                                                ? { backgroundColor: colors.accent, shadowColor: colors.accent, ...styles.dateCardSelected }
-                                                : { backgroundColor: colors.surface, borderColor: colors.border }
-                                        ]}
-                                        onPress={() => setSelectedDateIso(date.isoDate)}
-                                    >
-                                        <Text style={[styles.dateMonth, isSelected ? { color: colors.white } : { color: colors.textSecondary }]}>{date.month}</Text>
-                                        <Text style={[styles.dateDay, isSelected ? { color: colors.white } : { color: colors.text }]}>{date.day}</Text>
-                                        <Text style={[styles.dateWeekDay, isSelected ? { color: colors.white } : { color: colors.textSecondary }]}>{date.weekDay}</Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
-                    )}
-
-                    {/* Filter Pills */}
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-                        {FILTERS.map((filter, index) => (
-                            <TouchableOpacity
-                                key={index}
-                                style={[
-                                    styles.filterChip,
-                                    filter.selected
-                                        ? { backgroundColor: colors.accent, borderColor: colors.accent, borderWidth: 0 }
-                                        : { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }
-                                ]}
-                            >
-                                <MaterialIcons
-                                    name={filter.icon as any}
-                                    size={18}
-                                    color={filter.selected ? colors.white : colors.textSecondary}
-                                />
-                                <Text style={[styles.filterText, filter.selected ? { color: colors.white } : { color: colors.textSecondary }]}>{filter.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                {/* Matchs Section */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { marginBottom: 12, color: colors.text }]}>Matchs diffusés</Text>
-                    {matchesLoading ? (
-                        <View style={styles.stateWrapper}>
-                            <ActivityIndicator color={colors.primary} />
-                            <Text style={[styles.stateText, { color: colors.textSecondary }]}>Chargement des matchs...</Text>
-                        </View>
-                    ) : matchesError ? (
-                        <View style={styles.stateWrapper}>
-                            <Text style={[styles.stateText, { color: colors.textSecondary }]}>{matchesError}</Text>
-                            <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={handleRetryMatches}>
-                                <MaterialIcons name="refresh" size={18} color={colors.white} />
-                                <Text style={[styles.retryButtonText, { color: colors.white }]}>Réessayer</Text>
-                            </TouchableOpacity>
-                        </View>
-                    ) : availableMatches.length === 0 ? (
-                        <Text style={[styles.stateText, { color: colors.textSecondary }]}>Aucun match prévu pour cette date.</Text>
-                    ) : (
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.matchScroll} snapToInterval={296} snapToAlignment="start" decelerationRate="fast">
-                            {availableMatches.map((match) => {
-                                const isSelected = match.id === selectedMatchId;
-                                return (
-                                    <TouchableOpacity
-                                        key={match.id}
-                                        style={[
-                                            styles.matchCard,
-                                            { backgroundColor: colors.surface },
-                                            isSelected ? { borderColor: colors.accent, borderWidth: 2 } : { borderColor: colors.border, borderWidth: 1, opacity: 0.9 }
-                                        ]}
-                                        onPress={() => toggleMatchSelection(match.id)}
-                                    >
-                                        <ImageBackground source={{ uri: match.bgImage }} style={styles.matchImage} imageStyle={{ borderRadius: 12 }}>
-                                            <LinearGradient
-                                                colors={['transparent', 'rgba(0,0,0,0.8)']}
-                                                style={styles.matchGradient}
-                                            />
-                                            <View style={styles.matchContent}>
-                                                <View style={styles.matchLeagueContainer}>
-                                                    <Text style={styles.matchLeague}>{match.league}</Text>
-                                                </View>
-                                                <Text style={styles.matchTeams}>{match.team1} vs {match.team2}</Text>
-                                            </View>
-                                            <View style={[styles.matchTimeBadge, { backgroundColor: colors.accent }]}>
-                                                <Text style={styles.matchTimeText}>{match.time}</Text>
-                                            </View>
-                                        </ImageBackground>
-
-                                        <View style={[styles.matchFooter, isSelected ? { backgroundColor: colors.accent10 } : { backgroundColor: 'transparent' }]}>
-                                            <View style={styles.matchStatusRow}>
-                                                <MaterialIcons
-                                                    name={isSelected ? "check-circle" : "sports-soccer"}
-                                                    size={18}
-                                                    color={isSelected ? colors.accent : colors.textSecondary}
-                                                />
-                                                <Text style={[styles.matchStatusText, isSelected ? { color: colors.accent } : { color: colors.textSecondary }]}>
-                                                    {isSelected ? "Sélectionné" : "Réserver"}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </ScrollView>
-                    )}
-                </View>
-
-                <View style={styles.section}>
-                    <View style={[styles.arrivalCard, { backgroundColor: colors.surface, borderColor: colors.accent20, borderWidth: 1, padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-                        <View style={styles.arrivalInfo}>
-                            <View style={[styles.arrivalIconBox, { backgroundColor: colors.accent10 }]}>
-                                <MaterialIcons name="access-time" size={20} color={colors.accent} />
-                            </View>
-                            <View>
-                                <Text style={[styles.arrivalLabel, { color: colors.text }]}>Heure d'arrivée</Text>
-                                <Text style={[styles.arrivalSubLabel, { color: colors.textSecondary }]}>30 min avant le match</Text>
-                            </View>
-                        </View>
-                        <Text style={[styles.arrivalTime, { color: colors.accent }]}>{arrivalTime}</Text>
-                    </View>
-                </View>
-
-                {/* Guest Counter */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Nombre d'invités</Text>
-                    <View style={[styles.guestCard, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, padding: 16, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }]}>
-                        <View>
-                            <Text style={[styles.guestLabel, { color: colors.text, fontSize: 16, fontWeight: 'bold' }]}>Personnes</Text>
-                            <Text style={[styles.guestSubLabel, { color: colors.textSecondary, fontSize: 13 }]}>Table standard</Text>
-                        </View>
-                        <View style={styles.counterContainer}>
-                            <TouchableOpacity style={[styles.counterButton, { backgroundColor: colors.surfaceAlt }]} onPress={decrementGuests}>
-                                <MaterialIcons name="remove" size={20} color={colors.text} />
-                            </TouchableOpacity>
-                            <Text style={[styles.guestCount, { color: colors.text, fontSize: 18, fontWeight: 'bold', marginHorizontal: 16 }]}>{guests}</Text>
-                            <TouchableOpacity style={[styles.counterButton, { backgroundColor: colors.primary }]} onPress={incrementGuests}>
-                                <MaterialIcons name="add" size={20} color={colors.white} />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Info Note */}
-                <View style={[styles.infoNote, { backgroundColor: colors.accent10, padding: 12, borderRadius: 12, flexDirection: 'row', gap: 10 }]}>
-                    <MaterialIcons name="info" size={20} color={colors.accent} style={{ marginTop: 2 }} />
-                    <Text style={[styles.infoNoteText, { color: colors.textSecondary, flex: 1, fontSize: 13, lineHeight: 18 }]}>
-                        <Text style={{ fontWeight: 'bold', color: colors.accent }}>Note: </Text>
-                        Pour les groupes de plus de 8 personnes, un dépôt de garantie de 10€ par personne est requis.
-                    </Text>
-                </View>
-
-                {/* Special Request */}
-                <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Demande spéciale</Text>
-                    <TextInput
-                        style={[styles.textArea, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border, borderWidth: 1, borderRadius: 12, padding: 12, height: 100 }]}
-                        placeholder="Ex: Une table près de l'écran, accès PMR..."
-                        placeholderTextColor={colors.textMuted}
-                        multiline
-                        textAlignVertical="top"
-                        value={specialRequest}
-                        onChangeText={setSpecialRequest}
-                    />
-                </View>
-
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+                {renderContent()}
             </ScrollView>
-
-            {/* Bottom Footer */}
-            <View style={[styles.footer, { paddingBottom: insets.bottom + 16, backgroundColor: colors.background, paddingHorizontal: 16, borderTopWidth: 1, borderTopColor: colors.border }]}>
-                <TouchableOpacity
-                    style={[styles.confirmButton, (isSubmitting || confirmDisabled) && styles.confirmButtonDisabled, { backgroundColor: confirmDisabled ? colors.surfaceAlt : colors.primary }]}
-                    onPress={handleConfirmReservation}
-                    disabled={confirmDisabled}
-                    activeOpacity={0.85}
+            <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+                {reservationError && <Text style={styles.error}>{reservationError}</Text>}
+                <TouchableOpacity 
+                    disabled={isSubmitting}
+                    onPress={() => currentStep < 4 ? (setCurrentStep(currentStep + 1), hapticFeedback.medium()) : handleConfirm()} 
+                    style={[styles.cta, { backgroundColor: colors.accent }]}
                 >
-                    {isSubmitting ? (
-                        <View style={styles.confirmLoadingRow}>
-                            <ActivityIndicator color={colors.white} />
-                            <Text style={[styles.confirmButtonText, { color: colors.white }]}>Confirmation...</Text>
-                        </View>
-                    ) : (
-                        <>
-                            <Text style={[styles.confirmButtonText, { color: confirmDisabled ? colors.textMuted : colors.white }]}>
-                                {selectedMatch ? "Confirmer la réservation" : "Sélectionne un match"}
-                            </Text>
-                            {selectedMatch ? <MaterialIcons name="arrow-forward" size={20} color={colors.white} /> : null}
-                        </>
-                    )}
+                    {isSubmitting ? <ActivityIndicator color="#000" /> : <Text style={styles.ctaText}>{currentStep === 4 ? "Confirmer la réservation" : "Continuer"}</Text>}
                 </TouchableOpacity>
-                {reservationError ? <Text style={styles.errorText}>{reservationError}</Text> : null}
             </View>
         </View>
     );
 };
 
+const RecapRow = ({ icon, label, value, colors, isLast }: any) => (
+    <View style={[styles.row, !isLast && { marginBottom: 12 }]}>
+        <View style={styles.rowL}><MaterialIcons name={icon} size={18} color={colors.textSecondary} /><Text style={{ color: colors.textSecondary, marginLeft: 8 }}>{label}</Text></View>
+        <Text style={{ color: colors.text, fontWeight: '700' }}>{value}</Text>
+    </View>
+);
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: COLORS.background,
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        backgroundColor: COLORS.background,
-        zIndex: 10,
-    },
-    headerButton: {
-        width: 48,
-        height: 48,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 24,
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: COLORS.white,
-    },
-    scrollView: {
-        flex: 1,
-        paddingHorizontal: 16,
-    },
-    section: {
-        marginBottom: 24,
-    },
-    sectionHeaderRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
-    sectionTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: COLORS.white,
-        marginBottom: 12,
-    },
-    seeMoreButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    seeMoreText: {
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-
-    // Dates
-    dateScroll: {
-        gap: 12,
-        paddingBottom: 4,
-    },
-    dateCard: {
-        width: 72,
-        height: 84,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 2,
-        borderWidth: 1,
-    },
-    dateCardSelected: {
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
-        borderWidth: 0,
-    },
-    confirmButtonDisabled: {
-        opacity: 0.7,
-    },
-    confirmLoadingRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    errorText: {
-        color: "#ff6b6b",
-        fontSize: 14,
-        marginTop: 12,
-        textAlign: "center",
-    },
-    dateCardUnselected: {
-        // Removed static colors, handled inline
-    },
-    dateMonth: {
-        fontSize: 12,
-        fontWeight: '600',
-        textTransform: 'uppercase',
-    },
-    dateDay: {
-        fontSize: 24,
-        fontWeight: 'bold',
-    },
-    dateWeekDay: {
-        fontSize: 12,
-        fontWeight: '500',
-    },
-    textWhite: { color: COLORS.white },
-    textSecondary: { color: COLORS.textSecondary },
-
-    // Filters
-    filterScroll: {
-        gap: 12,
-        marginTop: 16,
-        paddingVertical: 4,
-    },
-    filterChip: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 99,
-    },
-    filterChipSelected: {
-        // dynamic
-    },
-    filterChipUnselected: {
-        // dynamic
-    },
-    filterText: {
-        fontSize: 14,
-        fontWeight: '600',
-    },
-
-    // Matches
-    matchScroll: {
-        gap: 16,
-        paddingRight: 16,
-    },
-    matchCard: {
-        width: 280,
-        borderRadius: 16,
-        overflow: 'hidden',
-    },
-    matchCardSelected: {
-        // borderColor handled dynamically
-    },
-    matchCardUnselected: {
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        opacity: 0.9,
-    },
-    matchImage: {
-        height: 128,
-        width: '100%',
-        justifyContent: 'space-between',
-        padding: 12,
-    },
-    matchGradient: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: '60%',
-        borderRadius: 12,
-    },
-    matchContent: {
-        justifyContent: 'flex-end',
-        flex: 1,
-    },
-    matchLeagueContainer: {
-        marginBottom: 4,
-    },
-    matchLeague: {
-        color: COLORS.white,
-        fontSize: 10,
-        fontWeight: 'bold',
-        textTransform: 'uppercase',
-        opacity: 0.9,
-    },
-    matchTeams: {
-        color: COLORS.white,
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    matchTimeBadge: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        backgroundColor: COLORS.primary,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-    },
-    matchTimeText: {
-        color: COLORS.white,
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    matchFooter: {
-        padding: 12,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-    },
-    matchFooterSelected: {
-        // backgroundColor handled dynamically
-    },
-    matchFooterUnselected: {
-        backgroundColor: 'transparent',
-    },
-    matchStatusRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    matchStatusText: {
-        fontSize: 14,
-        fontWeight: '600',
-    },
-
-    // Arrival
-    arrivalCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        borderRadius: 16,
-        borderWidth: 1,
-    },
-    arrivalInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    arrivalIconBox: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: COLORS.primary10,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    arrivalLabel: {
-        color: COLORS.white,
-        fontSize: 14,
-        fontWeight: 'bold',
-    },
-    arrivalSubLabel: {
-        color: COLORS.textSecondary,
-        fontSize: 12,
-    },
-    arrivalTime: {
-        color: COLORS.primary,
-        fontSize: 20,
-        fontWeight: 'bold',
-    },
-
-    // Guests
-    guestCard: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: COLORS.surface,
-        padding: 16,
-        borderRadius: 16,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-    },
-    guestLabel: {
-        color: COLORS.white,
-        fontSize: 16,
-        fontWeight: '500',
-    },
-    guestSubLabel: {
-        color: COLORS.textSecondary,
-        fontSize: 14,
-    },
-    counterContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-    },
-    counterButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: COLORS.background,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    guestCount: {
-        color: COLORS.white,
-        fontSize: 24,
-        fontWeight: 'bold',
-        width: 24,
-        textAlign: 'center',
-    },
-
-    // Note
-    infoNote: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        gap: 12,
-        backgroundColor: COLORS.surfaceAlt,
-        borderWidth: 1,
-        borderColor: COLORS.primary25,
-        padding: 16,
-        borderRadius: 16,
-        marginBottom: 24,
-    },
-    infoNoteText: {
-        flex: 1,
-        color: COLORS.textSecondary,
-        fontSize: 12,
-        lineHeight: 18,
-    },
-
-    // Input
-    textArea: {
-        backgroundColor: COLORS.surface,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: COLORS.border,
-        padding: 16,
-        height: 100,
-        color: COLORS.white,
-        fontSize: 14,
-    },
-
-    // Footer
-    footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        borderTopWidth: 1,
-        padding: 16,
-        alignItems: 'center',
-    },
-    confirmButton: {
-        backgroundColor: COLORS.primary,
-        width: '100%',
-        height: 56,
-        borderRadius: 16,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        shadowColor: COLORS.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    confirmButtonText: {
-        color: COLORS.white,
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    stateWrapper: {
-        width: '100%',
-        minHeight: 120,
-        borderRadius: 18,
-        borderWidth: 1,
-        borderColor: COLORS.divider,
-        backgroundColor: COLORS.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 16,
-        gap: 12,
-    },
-    stateText: {
-        color: COLORS.textSecondary,
-        fontSize: 14,
-        textAlign: 'center',
-    },
-    retryButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingHorizontal: 18,
-        paddingVertical: 10,
-        borderRadius: 999,
-        backgroundColor: COLORS.primary,
-    },
-    retryButtonText: {
-        color: COLORS.white,
-        fontWeight: '700',
-        fontSize: 13,
-    },
+    container: { flex: 1 },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20 },
+    backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+    stepper: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    stepItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    stepDot: { width: 8, height: 8, borderRadius: 4 },
+    stepLine: { width: 20, height: 2, borderRadius: 1 },
+    scroll: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 120 },
+    step: { flex: 1 },
+    title: { fontSize: 26, fontWeight: '900', marginBottom: 8 },
+    subtitle: { fontSize: 15, fontWeight: '500', marginBottom: 24 },
+    dateList: { gap: 12, paddingBottom: 10 },
+    datePill: { width: 75, height: 95, borderRadius: 20, alignItems: 'center', justifyContent: 'center', gap: 4 },
+    dateWeek: { fontSize: 10, fontWeight: '800' },
+    dateDay: { fontSize: 24, fontWeight: '900' },
+    dateMonth: { fontSize: 11, fontWeight: '700' },
+    arrivalCard: { marginTop: 32, borderRadius: 24, padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    arrivalLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    iconBox: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+    arrivalLabel: { fontSize: 14, fontWeight: '700' },
+    arrivalHint: { fontSize: 12, fontWeight: '500' },
+    arrivalTimeText: { fontSize: 22, fontWeight: '900' },
+    filters: { gap: 10, marginBottom: 24 },
+    filterChip: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, gap: 8 },
+    filterLabel: { fontSize: 13, fontWeight: '700' },
+    matchList: { gap: 12 },
+    matchItem: { borderRadius: 20, padding: 16, borderWidth: 2, borderColor: 'transparent', flexDirection: 'row', alignItems: 'center' },
+    matchLeague: { fontSize: 10, fontWeight: '800', marginBottom: 4 },
+    matchTeams: { fontSize: 16, fontWeight: '700', marginBottom: 2 },
+    matchTime: { fontSize: 12, fontWeight: '500' },
+    empty: { alignItems: 'center', justifyContent: 'center', marginTop: 40 },
+    emptyText: { fontSize: 14, fontWeight: '500', textAlign: 'center' },
+    guestCard: { borderRadius: 24, padding: 24, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+    guestTitle: { fontSize: 16, fontWeight: '800' },
+    guestSub: { fontSize: 13, fontWeight: '500' },
+    counter: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+    countBtn: { width: 44, height: 44, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+    countText: { fontSize: 22, fontWeight: '900' },
+    note: { padding: 16, borderRadius: 20, borderWidth: 1, flexDirection: 'row', gap: 12, marginBottom: 32 },
+    noteText: { flex: 1, fontSize: 13, lineHeight: 18, fontWeight: '500' },
+    label: { fontSize: 15, fontWeight: '800', marginBottom: 12 },
+    input: { borderRadius: 20, padding: 16, fontSize: 14, borderWidth: 1, height: 100, textAlignVertical: 'top' },
+    recap: { borderRadius: 28, padding: 20 },
+    recapTop: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+    recapImg: { width: 50, height: 50, borderRadius: 12 },
+    recapVenue: { fontSize: 16, fontWeight: '900' },
+    recapAddr: { fontSize: 12, fontWeight: '500' },
+    divider: { height: 1, marginVertical: 16 },
+    row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    rowL: { flexDirection: 'row', alignItems: 'center' },
+    footer: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: 24 },
+    cta: { height: 60, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+    ctaText: { color: '#000', fontSize: 16, fontWeight: '900' },
+    error: { color: '#ff4b4b', fontSize: 12, textAlign: 'center', marginBottom: 12, fontWeight: '700' },
 });
 
 export default ReservationsScreen;

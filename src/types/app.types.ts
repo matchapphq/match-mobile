@@ -42,14 +42,16 @@ export interface Venue {
     averageFood?: number;
     averageValue?: number;
 }
-
 export interface VenueMatch {
     id: string;
+    venueMatchId: string;
     date: string;
     month: string;
+    dateIso: string;
     league: string;
     team1: string;
     team2: string;
+...
     time: string;
     team1Color: string;
     team2Color: string;

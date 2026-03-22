@@ -43,14 +43,20 @@ const transformApiVenue = (apiVenue: any): Venue => ({
 
 // Transform API match to VenueMatch format
 const transformApiMatch = (apiMatch: any): VenueMatch => {
-    const scheduledAt = new Date(apiMatch.scheduled_at || apiMatch.date);
+    const scheduledAtRaw = apiMatch.scheduled_at || apiMatch.date;
+    const scheduledAt = new Date(scheduledAtRaw);
     const homeTeam = apiMatch.homeTeam?.name || apiMatch.homeTeam || "Home";
     const awayTeam = apiMatch.awayTeam?.name || apiMatch.awayTeam || "Away";
     
+    // Timezone-safe ISO date (YYYY-MM-DD)
+    const dateIso = `${scheduledAt.getFullYear()}-${String(scheduledAt.getMonth() + 1).padStart(2, '0')}-${String(scheduledAt.getDate()).padStart(2, '0')}`;
+
     return {
         id: apiMatch.id,
+        venueMatchId: apiMatch.venue_match?.id || apiMatch.id,
         date: scheduledAt.getDate().toString(),
         month: scheduledAt.toLocaleDateString("fr-FR", { month: "short" }).toUpperCase(),
+        dateIso,
         league: apiMatch.league?.name || apiMatch.competition || "Ligue",
         team1: homeTeam,
         team2: awayTeam,
