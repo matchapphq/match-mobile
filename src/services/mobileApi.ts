@@ -43,14 +43,20 @@ const transformApiVenue = (apiVenue: any): Venue => ({
 
 // Transform API match to VenueMatch format
 const transformApiMatch = (apiMatch: any): VenueMatch => {
-    const scheduledAt = new Date(apiMatch.scheduled_at || apiMatch.date);
+    const scheduledAtRaw = apiMatch.scheduled_at || apiMatch.date;
+    const scheduledAt = new Date(scheduledAtRaw);
     const homeTeam = apiMatch.homeTeam?.name || apiMatch.homeTeam || "Home";
     const awayTeam = apiMatch.awayTeam?.name || apiMatch.awayTeam || "Away";
     
+    // Timezone-safe ISO date (YYYY-MM-DD)
+    const dateIso = `${scheduledAt.getFullYear()}-${String(scheduledAt.getMonth() + 1).padStart(2, '0')}-${String(scheduledAt.getDate()).padStart(2, '0')}`;
+
     return {
         id: apiMatch.id,
+        venueMatchId: apiMatch.venue_match?.id || apiMatch.id,
         date: scheduledAt.getDate().toString(),
         month: scheduledAt.toLocaleDateString("fr-FR", { month: "short" }).toUpperCase(),
+        dateIso,
         league: apiMatch.league?.name || apiMatch.competition || "Ligue",
         team1: homeTeam,
         team2: awayTeam,
@@ -411,19 +417,63 @@ export const mobileApi = {
 
     async fetchMatchesForDate(dateIso: string): Promise<VenueMatch[]> {
         try {
-            // Fetch upcoming matches and filter by date
+            // Fetch upcoming matches because apiService doesn't expose a raw 'get'
             const apiMatches = await apiService.getUpcomingMatches();
             const targetDate = new Date(dateIso).toDateString();
-            
+
             const filtered = apiMatches.filter((match: any) => {
-                const matchDate = new Date(match.date).toDateString();
+                const matchDateRaw = match.scheduled_at || match.date;
+                const matchDate = new Date(matchDateRaw).toDateString();
                 return matchDate === targetDate;
             });
-            
+
             return filtered.map(transformApiMatch);
         } catch (error) {
             console.warn("API fetchMatchesForDate failed", error);
             return [];
+        }
+    },
+    async fetchTeams(filters?: { sport?: string, country?: string, leagueId?: string, query?: string }): Promise<Team[]> {
+        try {
+            const teams = await apiService.getTeams(filters);
+            return teams.map((t: any) => ({
+                id: t.id,
+                name: t.name,
+                logo_url: t.logo_url || t.logo,
+                league: t.league?.name || "Football",
+                country: t.country?.name || t.country || "France",
+                sport: t.sport || "football",
+                is_followed: t.is_followed ?? false,
+            }));
+        } catch (error) {
+            console.warn("API fetchTeams failed", error);
+            return [];
+        }
+    },
+
+    async fetchTeamDetails(teamId: string): Promise<{
+        team: Team;
+        upcoming_matches: SearchMatchResult[];
+        best_bars: SearchResult[];
+    } | null> {
+        try {
+            const data = await apiService.getTeamDetails(teamId);
+            return {
+                team: {
+                    id: data.team.id,
+                    name: data.team.name,
+                    logo_url: data.team.logo_url || data.team.logo,
+                    league: data.team.league?.name || "Football",
+                    country: data.team.country?.name || data.team.country || "France",
+                    sport: data.team.sport || "football",
+                    is_followed: data.team.is_followed ?? false,
+                },
+                upcoming_matches: (data.upcoming_matches || []).map(transformToSearchMatch),
+                best_bars: (data.best_bars || []).map(transformToSearchResult),
+            };
+        } catch (error) {
+            console.warn("API fetchTeamDetails failed", error);
+            return null;
         }
     },
 

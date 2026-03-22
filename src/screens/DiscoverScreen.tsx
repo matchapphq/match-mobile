@@ -135,44 +135,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 </View>
             </View>
 
-            {/* Teams Section */}
-            <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: colors.text }]}>Tes Équipes</Text>
-            </View>
-            {hasTeams ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.teamsContent}>
-                    {discoveryHome.followed_teams.map((team: any) => (
-                        <TouchableOpacity key={team.id} style={styles.teamContainer} onPress={() => team.live_match_id && navigation.navigate("MatchDetail", { matchId: team.live_match_id })}>
-                            <View style={[styles.teamAvatarContainer, { backgroundColor: colors.surface, borderColor: team.is_live ? colors.accent : colors.border }]}>
-                                <View style={[styles.teamAvatarInner, { backgroundColor: isLightTheme ? colors.background : "#2a2a30" }]}>
-                                    {team.logo_url ? <Image source={{ uri: team.logo_url }} style={styles.teamLogo} /> : <MaterialCommunityIcons name="soccer" size={24} color={team.is_live ? colors.accent : colors.textMuted} />}
-                                </View>
-                                {team.is_live && <View style={styles.liveLabel}><Text style={styles.liveLabelText}>LIVE</Text></View>}
-                            </View>
-                            <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={1}>{team.name}</Text>
-                        </TouchableOpacity>
-                    ))}
-                    <TouchableOpacity style={styles.addTeamContainer} onPress={() => navigation.navigate("EditProfile")}>
-                        <View style={[styles.addTeamCircle, { borderColor: colors.border }]}><MaterialIcons name="add" size={24} color={colors.textMuted} /></View>
-                        <Text style={[styles.addTeamText, { color: colors.textMuted }]}>Ajouter</Text>
-                    </TouchableOpacity>
-                </ScrollView>
-            ) : (
-                <View style={styles.emptyTeamsContainer}>
-                    <View style={[styles.emptyTeamsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <MaterialIcons name="star-outline" size={32} color={colors.accent} />
-                        <View style={styles.emptyTeamsContent}>
-                            <Text style={[styles.emptyTeamsTitle, { color: colors.text }]}>Suis tes équipes favorites</Text>
-                            <Text style={[styles.emptyTeamsSubtitle, { color: colors.textMuted }]}>Ne rate plus aucun match en direct.</Text>
-                        </View>
-                        <TouchableOpacity style={[styles.emptyTeamsAction, { backgroundColor: colors.accent10 }]} onPress={() => navigation.navigate("EditProfile")}>
-                            <Text style={[styles.emptyTeamsActionText, { color: colors.accent }]}>Configurer</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            )}
-
-            {/* Competitions Section */}
+            {/* Popular Competitions Section */}
             <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Compétitions populaires</Text>
             </View>
@@ -193,6 +156,58 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                     </TouchableOpacity>
                 ))}
             </ScrollView>
+
+            {/* Teams Section */}
+            <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Tes Équipes</Text>
+            </View>
+            <View style={styles.fixedRowContainer}>
+                <TouchableOpacity style={styles.fixedAddContainer} onPress={() => navigation.navigate("TeamsConfiguration")}>
+                    <View style={[styles.addTeamCircle, { borderColor: colors.border, borderStyle: 'dashed' }]}><MaterialIcons name="add" size={24} color={colors.textMuted} /></View>
+                    <Text style={[styles.addTeamText, { color: colors.textMuted }]}>Ajouter</Text>
+                </TouchableOpacity>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fixedRowScrollContent} style={{ flex: 1 }}>
+                    {discoveryHome.followed_teams?.map((team: any) => (
+                        <TouchableOpacity key={team.id} style={styles.teamContainer} onPress={() => navigation.navigate("TeamDetail", { teamId: team.id })}>
+                            <View style={[styles.teamAvatarContainer, { backgroundColor: colors.surface, borderColor: team.is_live ? colors.accent : colors.border }]}>
+                                <View style={[styles.teamAvatarInner, { backgroundColor: isLightTheme ? colors.background : "#2a2a30" }]}>
+                                    {team.logo_url ? <Image source={{ uri: team.logo_url }} style={styles.teamLogo} /> : <MaterialCommunityIcons name="soccer" size={24} color={team.is_live ? colors.accent : colors.textMuted} />}
+                                </View>
+                                {team.is_live && <View style={styles.liveLabel}><Text style={styles.liveLabelText}>LIVE</Text></View>}
+                            </View>
+                            <Text style={[styles.teamName, { color: colors.text }]} numberOfLines={1}>{team.name}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
+
+            {/* Competitions Section */}
+            <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: colors.text }]}>Compétitions suivies</Text>
+            </View>
+            <View style={styles.fixedRowContainer}>
+                <TouchableOpacity style={styles.fixedAddContainer} onPress={() => navigation.navigate("Competitions")}>
+                    <View style={[styles.addTeamCircle, { borderColor: colors.border, borderStyle: 'dashed' }]}><MaterialIcons name="add" size={24} color={colors.textMuted} /></View>
+                    <Text style={[styles.addTeamText, { color: colors.textMuted }]}>Ajouter</Text>
+                </TouchableOpacity>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.fixedRowScrollContent} style={{ flex: 1 }}>
+                    {discoveryHome.followed_leagues?.map((comp: any, idx: number) => (
+                        <TouchableOpacity 
+                            key={comp.id || idx} 
+                            style={styles.compContainer} 
+                            onPress={() => navigation.navigate("CompetitionDetails", { 
+                                competitionId: comp.id,
+                                competitionName: comp.name 
+                            })}
+                        >
+                            <View style={[styles.compIconCircle, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                                {comp.logo_url ? <Image source={{ uri: comp.logo_url }} style={styles.compLogo} /> : <MaterialIcons name="emoji-events" size={20} color={colors.accent} />}
+                            </View>
+                            <Text style={[styles.compName, { color: colors.textMuted }]} numberOfLines={2}>{comp.name}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+            </View>
 
             {/* Recently Viewed */}
             <View style={styles.sectionHeader}>
@@ -377,6 +392,9 @@ const styles = StyleSheet.create({
         marginBottom: 12 
     },
     sectionTitle: { fontSize: 15, fontWeight: "bold", letterSpacing: 0.2 },
+    fixedRowContainer: { flexDirection: "row", alignItems: "center", paddingLeft: 20 },
+    fixedAddContainer: { alignItems: "center", width: 60, marginRight: 15 },
+    fixedRowScrollContent: { paddingRight: 20, gap: 15, paddingBottom: 5 },
     teamsContent: { paddingHorizontal: 20, gap: 15, paddingBottom: 5 },
     teamContainer: { alignItems: "center", width: 65 },
     teamAvatarContainer: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, alignItems: "center", justifyContent: "center", marginBottom: 4 },

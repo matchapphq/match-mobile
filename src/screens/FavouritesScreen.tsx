@@ -26,7 +26,7 @@ type FavoriteTab = 'all' | 'venues' | 'teams' | 'leagues' | 'restaurants';
 const FavouritesScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
-    const { colors, computedTheme: themeMode, toggleFavourite } = useStore();
+    const { colors, computedTheme: themeMode, toggleFavourite, toggleTeamFollow, discoveryHome } = useStore();
     const isLightTheme = themeMode === "light";
 
     const [isLoading, setIsLoading] = useState(true);
@@ -34,18 +34,17 @@ const FavouritesScreen = () => {
     const [activeTab, setActiveTab] = useState<FavoriteTab>('all');
 
     const [favoriteVenues, setFavoriteVenues] = useState<any[]>([]);
-    const [followedTeams, setFollowedTeams] = useState<any[]>([]);
     const [followedLeagues, setFollowedLeagues] = useState<any[]>([]);
+
+    const followedTeams = discoveryHome.followed_teams;
 
     const fetchData = async () => {
         try {
-            const [venues, teams, leagues] = await Promise.all([
+            const [venues, leagues] = await Promise.all([
                 apiService.getFavoriteVenues(),
-                apiService.getFollowedTeams(),
                 apiService.getFollowedLeagues(),
             ]);
             setFavoriteVenues(venues);
-            setFollowedTeams(teams);
             setFollowedLeagues(leagues);
         } catch (error) {
             console.warn('Failed to load favourites', error);
@@ -72,14 +71,9 @@ const FavouritesScreen = () => {
         setFavoriteVenues(prev => prev.filter(v => (v.venue_id || v.id) !== venueId));
     };
 
-    const handleToggleTeamFollow = async (teamId: string) => {
+    const handleToggleTeamFollow = async (team: any) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        try {
-            await apiService.toggleTeamFollow(teamId);
-            setFollowedTeams(prev => prev.filter(t => t.id !== teamId));
-        } catch (error) {
-            console.error("Error toggling team follow:", error);
-        }
+        await toggleTeamFollow(team);
     };
 
     const handleToggleLeagueFollow = async (leagueId: string) => {
@@ -196,14 +190,18 @@ const FavouritesScreen = () => {
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                     <Text style={[styles.sectionTitle, { color: colors.text }]}>Équipes suivies</Text>
-                    <TouchableOpacity onPress={() => navigation.navigate('EditProfile')}>
+                    <TouchableOpacity onPress={() => navigation.navigate('TeamsConfiguration')}>
                         <Text style={[styles.seeAllText, { color: colors.primary }]}>Gérer</Text>
                     </TouchableOpacity>
                 </View>
                 <View style={styles.teamsList}>
                     {followedTeams.map((team) => (
-                        <TouchableOpacity key={team.id} style={[styles.teamItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <View style={[styles.teamLogoContainer, { backgroundColor: colors.surfaceAlt }]}>
+                        <TouchableOpacity 
+                            key={team.id || team.team_id} 
+                            style={[styles.teamItem, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                            onPress={() => navigation.navigate('TeamDetail', { teamId: team.id })}
+                        >
+                            <View style={[styles.teamLogoContainer, { backgroundColor: "#fff" }]}>
                                 {team.logo_url ? (
                                     <Image source={{ uri: team.logo_url }} style={styles.teamLogo} />
                                 ) : (
@@ -212,9 +210,9 @@ const FavouritesScreen = () => {
                             </View>
                             <View style={styles.teamInfo}>
                                 <Text style={[styles.teamName, { color: colors.text }]}>{team.name}</Text>
-                                <Text style={[styles.teamLeague, { color: colors.textMuted }]}>{team.league?.name || "Football"}</Text>
+                                <Text style={[styles.teamLeague, { color: colors.textMuted }]}>{team.league?.name || team.league || "Football"}</Text>
                             </View>
-                            <TouchableOpacity onPress={() => handleToggleTeamFollow(team.id)}>
+                            <TouchableOpacity onPress={() => handleToggleTeamFollow(team)}>
                                 <MaterialIcons name="favorite" size={24} color={colors.primary} />
                             </TouchableOpacity>
                         </TouchableOpacity>

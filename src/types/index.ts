@@ -95,6 +95,7 @@ export interface Reservation {
     status: "pending" | "confirmed" | "cancelled";
     conditions?: string;
     qrCode?: string;
+    reference?: string;
 }
 
 export interface Notification {

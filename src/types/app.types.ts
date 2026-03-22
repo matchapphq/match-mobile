@@ -1,5 +1,15 @@
 // match-mobile/src/types/app.types.ts
 
+export interface Team {
+    id: string;
+    name: string;
+    logo_url: string;
+    league: string;
+    country: string;
+    sport: string;
+    is_followed: boolean;
+}
+
 export interface UserProfile {
     name: string;
     email: string;
@@ -32,14 +42,16 @@ export interface Venue {
     averageFood?: number;
     averageValue?: number;
 }
-
 export interface VenueMatch {
     id: string;
+    venueMatchId: string;
     date: string;
     month: string;
+    dateIso: string;
     league: string;
     team1: string;
     team2: string;
+...
     time: string;
     team1Color: string;
     team2Color: string;

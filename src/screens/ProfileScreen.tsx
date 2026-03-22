@@ -75,7 +75,7 @@ const SECTION_DATA: { title: string; rows: SectionRow[] }[] = [
       { icon: 'language', color: '#818cf8', label: 'Langue', meta: 'Français' },
       { icon: 'dark-mode', color: '#a78bfa', label: 'Thème' },
       { icon: 'notifications', color: '#fb923c', label: 'Notifications', toggle: true },
-      { icon: 'vibration', color: '#34d399', label: 'Haptique', toggle: true },
+      { icon: 'vibration', color: '#34d399', label: 'Vibration', toggle: true },
     ],
   },
   {
@@ -179,6 +179,7 @@ const ProfileScreen = () => {
     name: userData
       ? [userData.first_name, userData.last_name].filter(Boolean).join(' ') || userData.username || userData.email || 'Utilisateur'
       : DEFAULT_PROFILE.name,
+    username: userData?.username,
     email: userData?.email || DEFAULT_PROFILE.email,
     badgeLabel: 'Fan',
     avatar: userData?.avatar || DEFAULT_PROFILE.avatar,
@@ -219,7 +220,7 @@ const ProfileScreen = () => {
         platform: Platform.OS,
         os_version: Platform.Version,
         device_model: Platform.select({ ios: 'iPhone', android: 'Android' }),
-        app_version: '2.4.0',
+        app_version: '0.9.5',
         user_id: userData?.id,
         timestamp: new Date().toISOString(),
       };
@@ -337,7 +338,7 @@ const ProfileScreen = () => {
                 {section.rows.map((row, index) => {
                   const isLast = index === section.rows.length - 1;
                   if (row.toggle) {
-                    const isHapticToggle = row.label === 'Haptique';
+                    const isHapticToggle = row.label === 'Vibration';
                     const isEnabled = isHapticToggle ? hapticsEnabled : pushNotificationsEnabled;
 
                     return (
