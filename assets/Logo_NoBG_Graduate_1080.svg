@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Calque_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 1080 1080">
+  <!-- Generator: Adobe Illustrator 29.1.0, SVG Export Plug-In . SVG Version: 2.1.0 Build 142)  -->
+  <defs>
+    <style>
+      .st0 {
+        fill: none;
+      }
+
+      .st1 {
+        clip-path: url(#clippath-1);
+      }
+
+      .st2 {
+        clip-path: url(#clippath-3);
+      }
+
+      .st3 {
+        clip-path: url(#clippath-2);
+      }
+
+      .st4 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <polygon class="st0" points="717.7 279.9 567.1 452.6 525.9 281 414.1 472.4 504.4 451.1 257.5 743.7 382.4 743.7 443 557.2 521.7 686.6 714.2 470.6 640.6 743.2 800.2 743.7 898.1 279.9 717.7 279.9"/>
+    </clipPath>
+    <clipPath id="clippath-1">
+      <rect class="st0" x="252.5" y="274.9" width="650.7" height="473.8"/>
+    </clipPath>
+    <clipPath id="clippath-2">
+      <path class="st0" d="M295.4,558.2l207.3-277.4-168.5-.9-2,6.2h0c-2.1,5.6-4.7,15.7-6,19.9-33.4,108.3-63.5,218-94.8,326.9l-39,131.5c-.3,1-.6,2.1-1,3.1l-.2.7-9.4,31.8,210.3-273.5-96.8,31.6Z"/>
+    </clipPath>
+    <clipPath id="clippath-3">
+      <rect class="st0" x="176.9" y="274.9" width="330.8" height="530.2"/>
+    </clipPath>
+  </defs>
+  <g class="st4">
+    <g class="st1">
+      <image width="1357" height="988" transform="translate(252 274.6) scale(.5)" xlink:href="Logo_NoBG_Graduate_1080-1.png"/>
+    </g>
+  </g>
+  <g class="st3">
+    <g class="st2">
+      <image width="690" height="1106" transform="translate(176.6 274.6) scale(.5)" xlink:href="Logo_NoBG_Graduate_1080-2.png"/>
+    </g>
+  </g>
+</svg>
