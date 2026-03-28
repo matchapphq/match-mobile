@@ -10,9 +10,11 @@ import {
     TextInput,
     StatusBar,
     RefreshControl,
+    Modal,
+    Share,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, { 
     useSharedValue, 
@@ -22,6 +24,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useStore } from "../store/useStore";
 import { useFocusEffect } from "@react-navigation/native";
+import Svg, { Circle } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
 
@@ -37,7 +40,8 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
     
     const isLightTheme = themeMode === "light";
     const [refreshing, setRefreshing] = useState(false);
-    const [activeTab, setActiveTab] = useState<"for_you" | "feed">("for_you");
+    const [activeTab, setActiveTab] = useState<"for_you" | "feed" | "challenge">("for_you");
+    const [isLeaderboardVisible, setLeaderboardVisible] = useState(false);
     
     // Animation logic
     const scrollX = useSharedValue(0);
@@ -64,12 +68,21 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         onScroll: (event) => {
             scrollX.value = event.contentOffset.x;
         },
+        onMomentumScrollEnd: (event) => {
+            const index = Math.round(event.contentOffset.x / width);
+            if (index === 0) setActiveTab("for_you");
+            else if (index === 1) setActiveTab("feed");
+            else if (index === 2) setActiveTab("challenge");
+        }
     });
 
-    const handleTabPress = (tab: "for_you" | "feed") => {
+    const handleTabPress = (tab: "for_you" | "feed" | "challenge") => {
         setActiveTab(tab);
+        let x = 0;
+        if (tab === "feed") x = width;
+        else if (tab === "challenge") x = width * 2;
         scrollViewRef.current?.scrollTo({ 
-            x: tab === "for_you" ? 0 : width, 
+            x, 
             animated: true 
         });
     };
@@ -77,14 +90,14 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
     const underlineStyle = useAnimatedStyle(() => {
         const translateX = interpolate(
             scrollX.value,
-            [0, width],
-            [0, 100] // Roughly the distance between the starts of the two labels
+            [0, width, width * 2],
+            [0, 100, 185] 
         );
         
         const underlineWidth = interpolate(
             scrollX.value,
-            [0, width],
-            [70, 45] // Adjust based on "Pour toi" vs "Feed" text length
+            [0, width, width * 2],
+            [70, 45, 75]
         );
 
         return {
@@ -112,6 +125,66 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
     };
 
     const bannerToDisplay = activeBanner || defaultBanner;
+
+    const handleShareRank = async () => {
+        try {
+            await Share.share({
+                message: "Je suis rang #3 sur le Challenge Bêta Match ! ⚽️ Rejoins l'aventure.",
+            });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const renderLeaderboardModal = () => (
+        <Modal
+            visible={isLeaderboardVisible}
+            animationType="slide"
+            presentationStyle="pageSheet"
+            onRequestClose={() => setLeaderboardVisible(false)}
+        >
+            <View style={[styles.modalContainer, { backgroundColor: '#0b0b0f' }]}>
+                <View style={styles.modalHeader}>
+                    <TouchableOpacity onPress={() => setLeaderboardVisible(false)} style={styles.closeButton}>
+                        <MaterialIcons name="close" size={28} color="white" />
+                    </TouchableOpacity>
+                    <Text style={styles.modalTitle}>CLASSEMENT BÊTA</Text>
+                    <TouchableOpacity onPress={handleShareRank} style={styles.shareButton}>
+                        <MaterialIcons name="share" size={24} color="#00FF00" />
+                    </TouchableOpacity>
+                </View>
+
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScrollContent}>
+                    <View style={styles.rewardBanner}>
+                        <FontAwesome5 name="tshirt" size={24} color="#00FF00" />
+                        <Text style={styles.rewardText}>Objectif Top 25: Maillot offert ! 🎁</Text>
+                    </View>
+
+                    {[
+                        { rank: 1, name: 'Paul', buts: 245, visites: 18, avatar: 'https://i.pravatar.cc/150?u=1' },
+                        { rank: 2, name: 'Sofiane', buts: 212, visites: 14, avatar: 'https://i.pravatar.cc/150?u=2' },
+                        { rank: 3, name: 'Toi (Lucas)', buts: 187, visites: 12, isUser: true, avatar: 'https://i.pravatar.cc/150?u=3' },
+                        { rank: 4, name: 'Marie', buts: 156, visites: 9, avatar: 'https://i.pravatar.cc/150?u=4' },
+                        { rank: 5, name: 'Thomas', buts: 132, visites: 11, avatar: 'https://i.pravatar.cc/150?u=5' },
+                    ].map((item, idx) => (
+                        <View key={idx} style={[
+                            styles.leaderboardRow, 
+                            item.isUser && { backgroundColor: 'rgba(0, 255, 0, 0.1)', borderRadius: 16 }
+                        ]}>
+                            <Text style={[styles.modalRank, { color: item.rank <= 3 ? '#00FF00' : 'white' }]}>#{item.rank}</Text>
+                            <Image source={{ uri: item.avatar }} style={styles.modalAvatar} />
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.modalName, { color: 'white' }]}>{item.name}</Text>
+                                <Text style={styles.modalStats}>{item.visites} visites • {item.buts} buts</Text>
+                            </View>
+                            {item.rank === 1 && <FontAwesome5 name="crown" size={14} color="#FFD700" />}
+                        </View>
+                    ))}
+                    <Text style={styles.modalFooterNote}>Règles vérifiées - Anti-fraude active</Text>
+                </ScrollView>
+            </View>
+        </Modal>
+    );
 
     const renderForYou = () => (
         <View style={styles.tabContent}>
@@ -284,6 +357,74 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         </View>
     );
 
+    const renderChallenge = () => (
+        <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+            <View style={styles.challengeHero}>
+                <Text style={styles.challengeHeroTitle}>Challenge Bêta Match 🏆</Text>
+                <View style={styles.statusRow}>
+                    <View style={styles.rankPill}><Text style={styles.rankValue}>#3</Text><Text style={styles.rankEmoji}>🥉</Text></View>
+                    <View style={styles.butsColumn}><Text style={styles.butsCountLarge}>187</Text><Text style={styles.butsLabelLarge}>BUTS</Text></View>
+                    <View style={styles.progressCircle}>
+                        <Svg width={70} height={70} viewBox="0 0 100 100">
+                            <Circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="none" />
+                            <Circle cx="50" cy="50" r="45" stroke="#00FF00" strokeWidth="8" fill="none" strokeDasharray="210" strokeDashoffset="46" strokeLinecap="round" transform="rotate(-90 50 50)" />
+                        </Svg>
+                        <Text style={styles.progressTextSmall}>78%</Text>
+                    </View>
+                </View>
+                <Text style={styles.rewardPreview}>Prochain: Voucher 20€ 🎫 • Vers le top 1</Text>
+            </View>
+
+            <View style={styles.sectionHeaderChallenge}><Text style={styles.challengeSectionTitle}>Classement live</Text></View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.top5Carousel}>
+                {[
+                    { rank: 1, name: 'Paul', buts: 245, v: 18, avatar: 'https://i.pravatar.cc/150?u=1' },
+                    { rank: 2, name: 'Sofiane', buts: 212, v: 14, avatar: 'https://i.pravatar.cc/150?u=2' },
+                    { rank: 3, name: 'Toi', buts: 187, v: 12, avatar: 'https://i.pravatar.cc/150?u=3', isUser: true },
+                    { rank: 4, name: 'Marie', buts: 156, v: 9, avatar: 'https://i.pravatar.cc/150?u=4' },
+                    { rank: 5, name: 'Thomas', buts: 132, v: 11, avatar: 'https://i.pravatar.cc/150?u=5' },
+                ].map((player, idx) => (
+                    <View key={idx} style={[styles.playerCard, player.isUser && { borderColor: '#00FF00', borderWidth: 1, backgroundColor: 'rgba(0,255,0,0.05)' }]}>
+                        <Text style={styles.cardRank}>#{player.rank}</Text>
+                        <Image source={{ uri: player.avatar }} style={styles.cardAvatar} />
+                        <Text style={styles.cardName} numberOfLines={1}>{player.name}</Text>
+                        <Text style={styles.cardButs}>{player.buts} buts</Text>
+                        <View style={styles.cardVisits}>
+                            <MaterialIcons name="location-on" size={10} color="rgba(255,255,255,0.4)" />
+                            <Text style={styles.cardVisitsText}>{player.v} visites</Text>
+                        </View>
+                    </View>
+                ))}
+            </ScrollView>
+            <TouchableOpacity style={styles.fullLeaderboardBtnLarge} onPress={() => setLeaderboardVisible(true)}>
+                <Text style={styles.fullLeaderboardBtnText}>Classement complet →</Text>
+            </TouchableOpacity>
+
+            <View style={styles.sectionHeaderChallenge}><Text style={styles.challengeSectionTitle}>Gagne + buts maintenant</Text></View>
+            <View style={styles.actionsContainerChallenge}>
+                {[
+                    { icon: 'people', label: 'Parrainer', buts: '+10' },
+                    { icon: 'qr-code-scanner', label: 'Scanner QR', buts: '+10' },
+                    { icon: 'star-outline', label: 'Avis lieu', buts: '+3-5' },
+                    { icon: 'flash-on', label: 'Streak actif', buts: '+1/j' },
+                    { icon: 'bug-report', label: 'Bug réel', buts: '+10' },
+                    { icon: 'add-location-alt', label: 'Nouveau lieu', buts: '+10' },
+                ].map((action, idx) => (
+                    <TouchableOpacity key={idx} style={styles.actionPillChallenge}>
+                        <MaterialIcons name={action.icon as any} size={20} color="#00FF00" />
+                        <Text style={styles.actionLabelChallenge}>{action.label}</Text>
+                        <Text style={styles.actionBonusChallenge}>{action.buts}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+            <View style={styles.antiFraudPill}>
+                <MaterialIcons name="verified-user" size={12} color="rgba(255,255,255,0.3)" />
+                <Text style={styles.antiFraudText}>Règles vérifiées - Anti-fraude</Text>
+            </View>
+            <View style={{ height: 150 }} />
+        </ScrollView>
+    );
+
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
             <StatusBar barStyle={isLightTheme ? "dark-content" : "light-content"} />
@@ -298,6 +439,9 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                         <TouchableOpacity style={[styles.tabItem, styles.feedTabItem]} onPress={() => handleTabPress("feed")}>
                             <Text style={[styles.tabText, { color: activeTab === "feed" ? colors.text : colors.textMuted }]}>Feed</Text>
                             <View style={styles.newBadge}><Text style={styles.newBadgeText}>New</Text></View>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.tabItem} onPress={() => handleTabPress("challenge")}>
+                            <Text style={[styles.tabText, { color: activeTab === "challenge" ? colors.text : colors.textMuted }]}>Challenge</Text>
                         </TouchableOpacity>
                         <Animated.View style={[styles.activeTabUnderline, { backgroundColor: colors.accent }, underlineStyle]} />
                     </View>
@@ -347,7 +491,13 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                         {renderFeed()}
                         <View style={{ height: 100 }} />
                     </ScrollView>
+
+                    <View style={{ width }}>
+                        {renderChallenge()}
+                    </View>
                 </Animated.ScrollView>
+
+                {renderLeaderboardModal()}
             </SafeAreaView>
         </View>
     );
@@ -357,7 +507,6 @@ const styles = StyleSheet.create({
     container: { flex: 1 },
     safeArea: { flex: 1 },
     fixedHeader: { paddingBottom: 10 },
-    header: { paddingHorizontal: 20, marginTop: 10, marginBottom: 10 },
     headerTabs: { flexDirection: "row", alignItems: "center", gap: 20, paddingHorizontal: 20, position: "relative" },
     tabItem: { paddingVertical: 8, minWidth: 80 },
     feedTabItem: { flexDirection: "row", alignItems: "center", gap: 6 },
@@ -395,7 +544,6 @@ const styles = StyleSheet.create({
     fixedRowContainer: { flexDirection: "row", alignItems: "center", paddingLeft: 20 },
     fixedAddContainer: { alignItems: "center", width: 60, marginRight: 15 },
     fixedRowScrollContent: { paddingRight: 20, gap: 15, paddingBottom: 5 },
-    teamsContent: { paddingHorizontal: 20, gap: 15, paddingBottom: 5 },
     teamContainer: { alignItems: "center", width: 65 },
     teamAvatarContainer: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, alignItems: "center", justifyContent: "center", marginBottom: 4 },
     teamAvatarInner: { width: 48, height: 48, borderRadius: 24, alignItems: "center", justifyContent: "center", overflow: "hidden" },
@@ -403,16 +551,8 @@ const styles = StyleSheet.create({
     liveLabel: { position: "absolute", bottom: -2, backgroundColor: "#e11d48", paddingHorizontal: 4, paddingVertical: 1, borderRadius: 4, borderWidth: 1.5, borderColor: "#0b0b0f" },
     liveLabelText: { color: "white", fontSize: 7, fontWeight: "bold" },
     teamName: { fontSize: 9, fontWeight: "500", textAlign: "center" },
-    addTeamContainer: { alignItems: "center", width: 60 },
     addTeamCircle: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center", marginBottom: 4 },
     addTeamText: { fontSize: 9, fontWeight: "500" },
-    emptyTeamsContainer: { paddingHorizontal: 20, marginBottom: 10 },
-    emptyTeamsCard: { flexDirection: "row", alignItems: "center", padding: 16, borderRadius: 20, borderWidth: 1, gap: 12 },
-    emptyTeamsContent: { flex: 1, gap: 2 },
-    emptyTeamsTitle: { fontSize: 13, fontWeight: "700" },
-    emptyTeamsSubtitle: { fontSize: 11, lineHeight: 15 },
-    emptyTeamsAction: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10 },
-    emptyTeamsActionText: { fontSize: 11, fontWeight: "700" },
     competitionsContent: { paddingHorizontal: 20, gap: 15, paddingBottom: 5 },
     compContainer: { alignItems: "center", width: 70 },
     compIconCircle: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, alignItems: "center", justifyContent: "center", marginBottom: 6, overflow: "hidden" },
@@ -444,15 +584,56 @@ const styles = StyleSheet.create({
     timePill: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, borderWidth: 1 },
     timeText: { fontSize: 9, fontWeight: "bold" },
     seeAllText: { fontSize: 12, fontWeight: "700", textTransform: "uppercase", letterSpacing: 0.5 },
-    moreMatchesButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", paddingVertical: 12, marginTop: 8, borderWidth: 1, borderStyle: "dashed", borderRadius: 14, gap: 4 },
-    moreMatchesText: { fontSize: 12, fontWeight: "600" },
     comingSoonContainer: { paddingHorizontal: 20, paddingVertical: 40, alignItems: "center" },
     comingSoonCard: { padding: 30, borderRadius: 32, borderWidth: 1, alignItems: "center", width: "100%", gap: 15 },
     comingSoonIconCircle: { width: 80, height: 80, borderRadius: 40, alignItems: "center", justifyContent: "center", marginBottom: 10 },
     comingSoonTitle: { fontSize: 22, fontWeight: "bold", textAlign: "center" },
-    comingSoonSubtitle: { fontSize: 14, textAlign: "center", lineHeight: 22, paddingHorizontal: 10 },
+    comingSoonSubtitle: { fontSize: 14, textAlign: "center", lineHeight: 22 },
     notifyButton: { paddingHorizontal: 25, paddingVertical: 15, borderRadius: 16, marginTop: 15 },
     notifyButtonText: { color: "white", fontSize: 15, fontWeight: "bold" },
+    
+    // Challenge Tab
+    challengeHero: { paddingHorizontal: 20, marginTop: 10 },
+    challengeHeroTitle: { color: 'white', fontSize: 28, fontWeight: '900', marginBottom: 20 },
+    statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    rankPill: { width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(0,255,0,0.15)', borderWidth: 2, borderColor: '#00FF00', alignItems: 'center', justifyContent: 'center' },
+    rankValue: { color: '#00FF00', fontSize: 24, fontWeight: '900' },
+    rankEmoji: { fontSize: 16, position: 'absolute', bottom: -4, right: -4 },
+    butsColumn: { alignItems: 'center' },
+    butsCountLarge: { color: 'white', fontSize: 48, fontWeight: '900', lineHeight: 54 },
+    butsLabelLarge: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '800' },
+    progressCircle: { alignItems: 'center', justifyContent: 'center' },
+    progressTextSmall: { position: 'absolute', color: '#00FF00', fontSize: 14, fontWeight: '900' },
+    rewardPreview: { color: '#00FF00', fontSize: 12, fontWeight: 'bold', marginTop: 16, textAlign: 'center' },
+    sectionHeaderChallenge: { paddingHorizontal: 20, marginTop: 32, marginBottom: 16 },
+    challengeSectionTitle: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+    top5Carousel: { paddingLeft: 20, gap: 12, paddingRight: 20 },
+    playerCard: { width: 110, padding: 12, backgroundColor: '#1c1c21', borderRadius: 20, alignItems: 'center', gap: 4 },
+    cardRank: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold', alignSelf: 'flex-start' },
+    cardAvatar: { width: 44, height: 44, borderRadius: 22, marginVertical: 4 },
+    cardName: { color: 'white', fontSize: 12, fontWeight: '700' },
+    cardButs: { color: '#00FF00', fontSize: 12, fontWeight: '900' },
+    cardVisits: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+    cardVisitsText: { color: 'rgba(255,255,255,0.4)', fontSize: 9 },
+    fullLeaderboardBtnLarge: { marginTop: 16, marginHorizontal: 20, backgroundColor: '#1c1c21', paddingVertical: 14, borderRadius: 16, alignItems: 'center' },
+    fullLeaderboardBtnText: { color: '#00FF00', fontWeight: 'bold', fontSize: 14 },
+    actionsContainerChallenge: { paddingHorizontal: 20, gap: 10 },
+    actionPillChallenge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1c1c21', padding: 16, borderRadius: 20, gap: 12 },
+    actionLabelChallenge: { flex: 1, color: 'white', fontSize: 14, fontWeight: '700' },
+    actionBonusChallenge: { color: '#00FF00', fontSize: 14, fontWeight: '900' },
+    antiFraudPill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 24, gap: 6, backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
+    antiFraudText: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 'bold' },
+    modalContainer: { flex: 1 },
+    modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
+    modalTitle: { color: 'white', fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+    modalScrollContent: { padding: 20 },
+    rewardBanner: { backgroundColor: 'rgba(0, 255, 0, 0.15)', flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 20, gap: 16, marginBottom: 24 },
+    rewardText: { color: '#00FF00', fontWeight: 'bold', fontSize: 15 },
+    modalRow: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', gap: 16 },
+    modalRank: { width: 40, fontSize: 18, fontWeight: '900' },
+    modalAvatar: { width: 44, height: 44, borderRadius: 22 },
+    modalStats: { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+    modalFooterNote: { textAlign: 'center', color: 'rgba(255, 255, 255, 0.2)', fontSize: 11, marginTop: 40, marginBottom: 60 },
 });
 
 export default DiscoverScreen;
