@@ -12,6 +12,7 @@ import {
     RefreshControl,
     Modal,
     Share,
+    Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
@@ -24,7 +25,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { useStore } from "../store/useStore";
 import { useFocusEffect } from "@react-navigation/native";
-import Svg, { Circle } from "react-native-svg";
 
 const { width } = Dimensions.get("window");
 
@@ -51,7 +51,6 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         fetchDiscoveryHome();
     }, []);
 
-    // Refresh history in background when screen is focused (e.g. coming back from VenueDetails)
     useFocusEffect(
         useCallback(() => {
             refreshDiscoveryHome();
@@ -81,30 +80,29 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         let x = 0;
         if (tab === "feed") x = width;
         else if (tab === "challenge") x = width * 2;
-        scrollViewRef.current?.scrollTo({ 
-            x, 
-            animated: true 
-        });
+        scrollViewRef.current?.scrollTo({ x, animated: true });
     };
 
     const underlineStyle = useAnimatedStyle(() => {
         const translateX = interpolate(
             scrollX.value,
             [0, width, width * 2],
-            [0, 105, 212] // Shifted left to cover the 'C'
+            [0, 105, 212] 
         );
-
+        
         const underlineWidth = interpolate(
             scrollX.value,
             [0, width, width * 2],
-            [70, 70, 85] // Reduced width to end at the 'e'
+            [70, 70, 85]
         );
 
         return {
             transform: [{ translateX }],
             width: underlineWidth,
         };
-    });    const getInitials = (name: string) => {
+    });
+
+    const getInitials = (name: string) => {
         if (!name) return "T";
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     };
@@ -127,7 +125,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
     const handleShareRank = async () => {
         try {
             await Share.share({
-                message: "Je suis rang #3 sur le Challenge Bêta Match ! ⚽️ Rejoins l'aventure.",
+                message: "Je suis rang #4 sur le Challenge Bêta Match ! ⚽️ Rejoins l'aventure.",
             });
         } catch (error) {
             console.error(error);
@@ -135,50 +133,34 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
     };
 
     const renderLeaderboardModal = () => (
-        <Modal
-            visible={isLeaderboardVisible}
-            animationType="slide"
-            presentationStyle="pageSheet"
-            onRequestClose={() => setLeaderboardVisible(false)}
-        >
-            <View style={[styles.modalContainer, { backgroundColor: '#0b0b0f' }]}>
-                <View style={styles.modalHeader}>
-                    <TouchableOpacity onPress={() => setLeaderboardVisible(false)} style={styles.closeButton}>
-                        <MaterialIcons name="close" size={28} color="white" />
-                    </TouchableOpacity>
-                    <Text style={styles.modalTitle}>CLASSEMENT BÊTA</Text>
-                    <TouchableOpacity onPress={handleShareRank} style={styles.shareButton}>
-                        <MaterialIcons name="share" size={24} color="#00FF00" />
-                    </TouchableOpacity>
+        <Modal visible={isLeaderboardVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setLeaderboardVisible(false)}>
+            <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                    <TouchableOpacity onPress={() => setLeaderboardVisible(false)}><MaterialIcons name="close" size={28} color={colors.text} /></TouchableOpacity>
+                    <Text style={[styles.modalTitle, { color: colors.text }]}>CLASSEMENT BÊTA</Text>
+                    <TouchableOpacity onPress={handleShareRank}><MaterialIcons name="share" size={24} color={colors.accent} /></TouchableOpacity>
                 </View>
-
                 <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScrollContent}>
-                    <View style={styles.rewardBanner}>
-                        <FontAwesome5 name="tshirt" size={24} color="#00FF00" />
-                        <Text style={styles.rewardText}>Objectif Top 25: Maillot offert ! 🎁</Text>
-                    </View>
-
+                    <LinearGradient colors={[colors.accent20, 'transparent']} style={[styles.podiumGradient, { backgroundColor: colors.surface }]}>
+                        <FontAwesome5 name="medal" size={24} color={colors.accent} />
+                        <Text style={[styles.podiumText, { color: colors.accent }]}>Top 3 Podium Rewards</Text>
+                    </LinearGradient>
                     {[
-                        { rank: 1, name: 'Paul', buts: 245, visites: 18, avatar: 'https://i.pravatar.cc/150?u=1' },
-                        { rank: 2, name: 'Sofiane', buts: 212, visites: 14, avatar: 'https://i.pravatar.cc/150?u=2' },
-                        { rank: 3, name: 'Toi (Lucas)', buts: 187, visites: 12, isUser: true, avatar: 'https://i.pravatar.cc/150?u=3' },
-                        { rank: 4, name: 'Marie', buts: 156, visites: 9, avatar: 'https://i.pravatar.cc/150?u=4' },
-                        { rank: 5, name: 'Thomas', buts: 132, visites: 11, avatar: 'https://i.pravatar.cc/150?u=5' },
+                        { rank: 1, name: 'Paul', buts: 245, v: 18, avatar: 'https://i.pravatar.cc/150?u=1' },
+                        { rank: 2, name: 'Sofiane', buts: 212, v: 14, avatar: 'https://i.pravatar.cc/150?u=2' },
+                        { rank: 3, name: 'Marie', buts: 195, v: 9, avatar: 'https://i.pravatar.cc/150?u=4' },
+                        { rank: 4, name: 'Lucas (Toi)', buts: 187, v: 12, isUser: true, avatar: 'https://i.pravatar.cc/150?u=3' },
+                        { rank: 5, name: 'Thomas', buts: 132, v: 11, avatar: 'https://i.pravatar.cc/150?u=5' },
                     ].map((item, idx) => (
-                        <View key={idx} style={[
-                            styles.leaderboardRow, 
-                            item.isUser && { backgroundColor: 'rgba(0, 255, 0, 0.1)', borderRadius: 16 }
-                        ]}>
-                            <Text style={[styles.modalRank, { color: item.rank <= 3 ? '#00FF00' : 'white' }]}>#{item.rank}</Text>
+                        <View key={idx} style={[styles.leaderboardRow, { borderBottomColor: colors.border }, item.isUser && { backgroundColor: colors.accent10, borderRadius: 16 }]}>
+                            <Text style={[styles.modalRank, { color: item.rank <= 3 ? colors.accent : colors.textMuted }]}>#{item.rank}</Text>
                             <Image source={{ uri: item.avatar }} style={styles.modalAvatar} />
                             <View style={{ flex: 1 }}>
-                                <Text style={[styles.modalName, { color: 'white' }]}>{item.name}</Text>
-                                <Text style={styles.modalStats}>{item.visites} visites • {item.buts} buts</Text>
+                                <Text style={{ color: colors.text, fontWeight: '700' }}>{item.name}</Text>
+                                <Text style={{ color: colors.textMuted, fontSize: 12 }}>{item.visites || 0} visites • {item.buts} buts</Text>
                             </View>
-                            {item.rank === 1 && <FontAwesome5 name="crown" size={14} color="#FFD700" />}
                         </View>
                     ))}
-                    <Text style={styles.modalFooterNote}>Règles vérifiées - Anti-fraude active</Text>
                 </ScrollView>
             </View>
         </Modal>
@@ -186,12 +168,11 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
 
     const renderForYou = () => (
         <View style={styles.tabContent}>
-            {/* Main Banner */}
             <View style={[styles.bannerContainer, { backgroundColor: colors.surface }]}>
                 <Image source={{ uri: bannerToDisplay.image_url }} style={styles.bannerImage} />
                 <LinearGradient colors={["transparent", "rgba(0,0,0,0.85)"]} style={styles.bannerOverlay} />
                 <View style={styles.bannerContent}>
-                    <View style={[styles.bannerBadge, { backgroundColor: bannerToDisplay.isGeneric ? colors.accent : "rgba(255,255,255,0.2)" }]}>
+                    <View style={[styles.bannerBadge, { backgroundColor: colors.accent }]}>
                         <Text style={styles.bannerBadgeText}>{bannerToDisplay.isGeneric ? "À DÉCOUVRIR" : "COMPÉTITION"}</Text>
                     </View>
                     <Text style={styles.bannerTitle}>{bannerToDisplay.title}</Text>
@@ -206,7 +187,6 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 </View>
             </View>
 
-            {/* Popular Competitions Section */}
             <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Compétitions populaires</Text>
             </View>
@@ -228,7 +208,6 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 ))}
             </ScrollView>
 
-            {/* Teams Section */}
             <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Tes Équipes</Text>
             </View>
@@ -252,7 +231,6 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 </ScrollView>
             </View>
 
-            {/* Competitions Section */}
             <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Compétitions suivies</Text>
             </View>
@@ -280,7 +258,6 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 </ScrollView>
             </View>
 
-            {/* Recently Viewed */}
             <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Récemment vus</Text>
                 {hasHistory && <TouchableOpacity onPress={clearDiscoveryHistory}><Text style={[styles.clearText, { color: colors.textMuted }]}>Effacer</Text></TouchableOpacity>}
@@ -309,7 +286,6 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 </View>
             )}
 
-            {/* Upcoming Matches */}
             <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Matchs à venir</Text>
                 <TouchableOpacity onPress={() => navigation.navigate("Search")}><Text style={[styles.seeAllText, { color: colors.accent }]}>Voir tout</Text></TouchableOpacity>
@@ -357,69 +333,74 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
 
     const renderChallenge = () => (
         <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-            <View style={styles.challengeHero}>
-                <Text style={styles.challengeHeroTitle}>Challenge Bêta Match 🏆</Text>
-                <View style={styles.statusRow}>
-                    <View style={styles.rankPill}><Text style={styles.rankValue}>#3</Text><Text style={styles.rankEmoji}>🥉</Text></View>
-                    <View style={styles.butsColumn}><Text style={styles.butsCountLarge}>187</Text><Text style={styles.butsLabelLarge}>BUTS</Text></View>
-                    <View style={styles.progressCircle}>
-                        <Svg width={70} height={70} viewBox="0 0 100 100">
-                            <Circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.1)" strokeWidth="8" fill="none" />
-                            <Circle cx="50" cy="50" r="45" stroke="#00FF00" strokeWidth="8" fill="none" strokeDasharray="210" strokeDashoffset="46" strokeLinecap="round" transform="rotate(-90 50 50)" />
-                        </Svg>
-                        <Text style={styles.progressTextSmall}>78%</Text>
+            {/* Compact Hero Banner */}
+            <View style={[styles.challengeHeroCard, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
+                <LinearGradient colors={[colors.accent, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.challengeSliver} />
+                <View style={styles.challengeHeroContent}>
+                    <Text style={[styles.challengeHeroTitle, { color: colors.text }]}>Challenge Bêta</Text>
+                    <View style={styles.heroStatPills}>
+                        <View style={[styles.rankPillMinimal, { backgroundColor: colors.accent10, borderColor: colors.accent }]}>
+                            <Text style={[styles.rankPillText, { color: colors.accent }]}>#4</Text>
+                        </View>
+                        <View style={[styles.butsPillMinimal, { backgroundColor: colors.surfaceAlt }]}>
+                            <Text style={[styles.butsPillText, { color: colors.text }]}>187 buts</Text>
+                        </View>
+                    </View>
+                    <View style={[styles.progressTrackCompact, { backgroundColor: colors.border }]}>
+                        <View style={[styles.progressFillCompact, { backgroundColor: colors.accent, width: '72%' }]} />
+                    </View>
+                    <View style={styles.progressLabelsCompact}>
+                        <Text style={[styles.progressLabelText, { color: colors.accent }]}>72% vers reward</Text>
+                        <Text style={[styles.rewardTierText, { color: colors.textMuted }]}>Rewards top 25</Text>
                     </View>
                 </View>
-                <Text style={styles.rewardPreview}>Prochain: Voucher 20€ 🎫 • Vers le top 1</Text>
             </View>
 
-            <View style={styles.sectionHeaderChallenge}><Text style={styles.challengeSectionTitle}>Classement live</Text></View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.top5Carousel}>
+            {/* Scrollable Leaderboard */}
+            <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.text }]}>Classement actuel</Text></View>
+            <View style={styles.leaderboardListCompact}>
                 {[
                     { rank: 1, name: 'Paul', buts: 245, v: 18, avatar: 'https://i.pravatar.cc/150?u=1' },
                     { rank: 2, name: 'Sofiane', buts: 212, v: 14, avatar: 'https://i.pravatar.cc/150?u=2' },
-                    { rank: 3, name: 'Toi', buts: 187, v: 12, avatar: 'https://i.pravatar.cc/150?u=3', isUser: true },
-                    { rank: 4, name: 'Marie', buts: 156, v: 9, avatar: 'https://i.pravatar.cc/150?u=4' },
+                    { rank: 3, name: 'Marie', buts: 195, v: 9, avatar: 'https://i.pravatar.cc/150?u=4' },
+                    { rank: 4, name: 'Toi (Lucas)', buts: 187, v: 12, isUser: true, avatar: 'https://i.pravatar.cc/150?u=3' },
                     { rank: 5, name: 'Thomas', buts: 132, v: 11, avatar: 'https://i.pravatar.cc/150?u=5' },
+                    { rank: 6, name: 'Julie', buts: 118, v: 7, avatar: 'https://i.pravatar.cc/150?u=6' },
                 ].map((player, idx) => (
-                    <View key={idx} style={[styles.playerCard, player.isUser && { borderColor: '#00FF00', borderWidth: 1, backgroundColor: 'rgba(0,255,0,0.05)' }]}>
-                        <Text style={styles.cardRank}>#{player.rank}</Text>
-                        <Image source={{ uri: player.avatar }} style={styles.cardAvatar} />
-                        <Text style={styles.cardName} numberOfLines={1}>{player.name}</Text>
-                        <Text style={styles.cardButs}>{player.buts} buts</Text>
-                        <View style={styles.cardVisits}>
-                            <MaterialIcons name="location-on" size={10} color="rgba(255,255,255,0.4)" />
-                            <Text style={styles.cardVisitsText}>{player.v} visites</Text>
+                    <TouchableOpacity key={idx} style={[styles.playerRowCompact, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }, player.isUser && { borderColor: colors.accent, backgroundColor: colors.accent05 }]}>
+                        <Image source={{ uri: player.avatar }} style={styles.playerAvatarCompact} />
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.playerNameCompact, { color: colors.text }]}>{player.name}</Text>
+                            <Text style={[styles.playerVisitsCompact, { color: colors.textMuted }]}>{player.v} visites</Text>
                         </View>
-                    </View>
+                        <Text style={[styles.playerButsCompact, { color: colors.accent }]}>{player.buts} buts</Text>
+                    </TouchableOpacity>
                 ))}
-            </ScrollView>
-            <TouchableOpacity style={styles.fullLeaderboardBtnLarge} onPress={() => setLeaderboardVisible(true)}>
-                <Text style={styles.fullLeaderboardBtnText}>Classement complet →</Text>
-            </TouchableOpacity>
+                <TouchableOpacity onPress={() => setLeaderboardVisible(true)}>
+                    <Text style={[styles.leaderboardFullLink, { color: colors.accent }]}>Load more / Full view →</Text>
+                </TouchableOpacity>
+            </View>
 
-            <View style={styles.sectionHeaderChallenge}><Text style={styles.challengeSectionTitle}>Gagne + buts maintenant</Text></View>
-            <View style={styles.actionsContainerChallenge}>
+            {/* Action Grid */}
+            <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.text }]}>Gagne + buts maintenant</Text></View>
+            <View style={styles.actionGridCompact}>
                 {[
-                    { icon: 'people', label: 'Parrainer', buts: '+10' },
-                    { icon: 'qr-code-scanner', label: 'Scanner QR', buts: '+10' },
-                    { icon: 'star-outline', label: 'Avis lieu', buts: '+3-5' },
-                    { icon: 'flash-on', label: 'Streak actif', buts: '+1/j' },
-                    { icon: 'bug-report', label: 'Bug réel', buts: '+10' },
-                    { icon: 'add-location-alt', label: 'Nouveau lieu', buts: '+10' },
+                    { label: 'Parrainer', bonus: '+10' },
+                    { label: 'Scanner', bonus: '+10' },
+                    { label: 'Avis', bonus: '+3-5' },
+                    { label: 'Daily', bonus: '+1' },
+                    { label: 'Bug', bonus: '+10' },
+                    { label: 'Lieu', bonus: '+10' },
                 ].map((action, idx) => (
-                    <TouchableOpacity key={idx} style={styles.actionPillChallenge}>
-                        <MaterialIcons name={action.icon as any} size={20} color="#00FF00" />
-                        <Text style={styles.actionLabelChallenge}>{action.label}</Text>
-                        <Text style={styles.actionBonusChallenge}>{action.buts}</Text>
+                    <TouchableOpacity key={idx} style={[styles.actionPillGrid, { borderColor: colors.accent }]}>
+                        <Text style={[styles.actionLabelGrid, { color: colors.text }]}>{action.label}</Text>
+                        <Text style={[styles.actionBonusGrid, { color: colors.accent }]}>{action.bonus}</Text>
                     </TouchableOpacity>
                 ))}
             </View>
-            <View style={styles.antiFraudPill}>
-                <MaterialIcons name="verified-user" size={12} color="rgba(255,255,255,0.3)" />
-                <Text style={styles.antiFraudText}>Règles vérifiées - Anti-fraude</Text>
-            </View>
-            <View style={{ height: 150 }} />
+            <Text style={[styles.rulesFooterCompact, { color: colors.textMuted }]}>1/lieu/jour - Vérifié auto</Text>
+            
+            <View style={{ height: 120 }} />
         </ScrollView>
     );
 
@@ -428,7 +409,6 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
             <StatusBar barStyle={isLightTheme ? "dark-content" : "light-content"} />
             <SafeAreaView edges={["top"]} style={styles.safeArea}>
                 
-                {/* Fixed Header Section */}
                 <View style={styles.fixedHeader}>
                     <View style={styles.headerTabs}>
                         <TouchableOpacity style={styles.tabItem} onPress={() => handleTabPress("for_you")}>
@@ -452,49 +432,25 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                     <View style={styles.searchContainer}>
                         <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                             <MaterialIcons name="search" size={22} color={colors.textMuted} style={styles.searchIcon} />
-                            <TextInput
-                                placeholder="Rechercher un bar, un plat..."
-                                placeholderTextColor={colors.textMuted}
-                                style={[styles.searchInput, { color: colors.text }]}
-                                onFocus={() => navigation.navigate("Search")}
-                            />
+                            <TextInput placeholder="Rechercher un bar, un plat..." placeholderTextColor={colors.textMuted} style={[styles.searchInput, { color: colors.text }]} onFocus={() => navigation.navigate("Search")} />
                         </View>
                         <TouchableOpacity style={styles.mapButton} onPress={() => navigation.navigate("Map")}><MaterialIcons name="map" size={24} color={colors.text} /></TouchableOpacity>
                     </View>
                 </View>
 
-                {/* Horizontal Sliding Pager */}
-                <Animated.ScrollView
-                    ref={scrollViewRef}
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    onScroll={scrollHandler}
-                    scrollEventThrottle={16}
-                    bounces={false}
-                >
-                    <ScrollView 
-                        style={{ width }} 
-                        showsVerticalScrollIndicator={false}
-                        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
-                    >
+                <Animated.ScrollView ref={scrollViewRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onScroll={scrollHandler} scrollEventThrottle={16} bounces={false}>
+                    <ScrollView style={{ width }} showsVerticalScrollIndicator={false} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}>
                         {renderForYou()}
                         <View style={{ height: 100 }} />
                     </ScrollView>
-
-                    <ScrollView 
-                        style={{ width }} 
-                        showsVerticalScrollIndicator={false}
-                    >
+                    <ScrollView style={{ width }} showsVerticalScrollIndicator={false}>
                         {renderFeed()}
                         <View style={{ height: 100 }} />
                     </ScrollView>
-
                     <View style={{ width }}>
                         {renderChallenge()}
                     </View>
                 </Animated.ScrollView>
-
                 {renderLeaderboardModal()}
             </SafeAreaView>
         </View>
@@ -530,15 +486,13 @@ const styles = StyleSheet.create({
     bannerSubtitle: { color: "rgba(255,255,255,0.8)", fontSize: 11, marginTop: 2 },
     bannerCTA: { alignSelf: "flex-end", paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 4 },
     bannerCTAText: { color: "white", fontSize: 11, fontWeight: "bold" },
-    sectionHeader: { 
-        flexDirection: "row", 
-        justifyContent: "space-between", 
-        alignItems: "center", 
-        paddingHorizontal: 20, 
-        marginTop: 24, 
-        marginBottom: 12 
-    },
+    sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, marginTop: 24, marginBottom: 12 },
     sectionTitle: { fontSize: 15, fontWeight: "bold", letterSpacing: 0.2 },
+    competitionsContent: { paddingHorizontal: 20, gap: 15, paddingBottom: 5 },
+    compContainer: { alignItems: "center", width: 70 },
+    compIconCircle: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, alignItems: "center", justifyContent: "center", marginBottom: 6, overflow: "hidden" },
+    compLogo: { width: 32, height: 32, resizeMode: "contain" },
+    compName: { fontSize: 9, fontWeight: "bold", textAlign: "center", textTransform: "uppercase" },
     fixedRowContainer: { flexDirection: "row", alignItems: "center", paddingLeft: 20 },
     fixedAddContainer: { alignItems: "center", width: 60, marginRight: 15 },
     fixedRowScrollContent: { paddingRight: 20, gap: 15, paddingBottom: 5 },
@@ -551,11 +505,6 @@ const styles = StyleSheet.create({
     teamName: { fontSize: 9, fontWeight: "500", textAlign: "center" },
     addTeamCircle: { width: 56, height: 56, borderRadius: 28, borderWidth: 2, borderStyle: "dashed", alignItems: "center", justifyContent: "center", marginBottom: 4 },
     addTeamText: { fontSize: 9, fontWeight: "500" },
-    competitionsContent: { paddingHorizontal: 20, gap: 15, paddingBottom: 5 },
-    compContainer: { alignItems: "center", width: 70 },
-    compIconCircle: { width: 52, height: 52, borderRadius: 26, borderWidth: 1, alignItems: "center", justifyContent: "center", marginBottom: 6, overflow: "hidden" },
-    compLogo: { width: 32, height: 32, resizeMode: "contain" },
-    compName: { fontSize: 9, fontWeight: "bold", textAlign: "center", textTransform: "uppercase" },
     recentContent: { paddingHorizontal: 20, gap: 15, paddingBottom: 5 },
     recentCard: { width: width * 0.72, borderRadius: 20, padding: 12, flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1 },
     recentImage: { width: 64, height: 64, borderRadius: 14 },
@@ -590,48 +539,43 @@ const styles = StyleSheet.create({
     notifyButton: { paddingHorizontal: 25, paddingVertical: 15, borderRadius: 16, marginTop: 15 },
     notifyButtonText: { color: "white", fontSize: 15, fontWeight: "bold" },
     
-    // Challenge Tab
-    challengeHero: { paddingHorizontal: 20, marginTop: 10 },
-    challengeHeroTitle: { color: 'white', fontSize: 28, fontWeight: '900', marginBottom: 20 },
-    statusRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    rankPill: { width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(0,255,0,0.15)', borderWidth: 2, borderColor: '#00FF00', alignItems: 'center', justifyContent: 'center' },
-    rankValue: { color: '#00FF00', fontSize: 24, fontWeight: '900' },
-    rankEmoji: { fontSize: 16, position: 'absolute', bottom: -4, right: -4 },
-    butsColumn: { alignItems: 'center' },
-    butsCountLarge: { color: 'white', fontSize: 48, fontWeight: '900', lineHeight: 54 },
-    butsLabelLarge: { color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: '800' },
-    progressCircle: { alignItems: 'center', justifyContent: 'center' },
-    progressTextSmall: { position: 'absolute', color: '#00FF00', fontSize: 14, fontWeight: '900' },
-    rewardPreview: { color: '#00FF00', fontSize: 12, fontWeight: 'bold', marginTop: 16, textAlign: 'center' },
-    sectionHeaderChallenge: { paddingHorizontal: 20, marginTop: 32, marginBottom: 16 },
-    challengeSectionTitle: { color: 'white', fontSize: 16, fontWeight: 'bold' },
-    top5Carousel: { paddingLeft: 20, gap: 12, paddingRight: 20 },
-    playerCard: { width: 110, padding: 12, backgroundColor: '#1c1c21', borderRadius: 20, alignItems: 'center', gap: 4 },
-    cardRank: { color: 'rgba(255,255,255,0.4)', fontSize: 10, fontWeight: 'bold', alignSelf: 'flex-start' },
-    cardAvatar: { width: 44, height: 44, borderRadius: 22, marginVertical: 4 },
-    cardName: { color: 'white', fontSize: 12, fontWeight: '700' },
-    cardButs: { color: '#00FF00', fontSize: 12, fontWeight: '900' },
-    cardVisits: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-    cardVisitsText: { color: 'rgba(255,255,255,0.4)', fontSize: 9 },
-    fullLeaderboardBtnLarge: { marginTop: 16, marginHorizontal: 20, backgroundColor: '#1c1c21', paddingVertical: 14, borderRadius: 16, alignItems: 'center' },
-    fullLeaderboardBtnText: { color: '#00FF00', fontWeight: 'bold', fontSize: 14 },
-    actionsContainerChallenge: { paddingHorizontal: 20, gap: 10 },
-    actionPillChallenge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#1c1c21', padding: 16, borderRadius: 20, gap: 12 },
-    actionLabelChallenge: { flex: 1, color: 'white', fontSize: 14, fontWeight: '700' },
-    actionBonusChallenge: { color: '#00FF00', fontSize: 14, fontWeight: '900' },
-    antiFraudPill: { flexDirection: 'row', alignItems: 'center', alignSelf: 'center', marginTop: 24, gap: 6, backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
-    antiFraudText: { color: 'rgba(255,255,255,0.3)', fontSize: 10, fontWeight: 'bold' },
+    // Modern Challenge Styles
+    challengeHeroCard: { width: width - 40, height: 180, alignSelf: 'center', borderRadius: 24, overflow: 'hidden', marginBottom: 25 },
+    challengeSliver: { height: 4, width: '100%' },
+    challengeHeroContent: { padding: 20, flex: 1 },
+    challengeHeroTitle: { color: 'white', fontSize: 22, fontWeight: '900', letterSpacing: -0.5 },
+    heroStatPills: { flexDirection: 'row', gap: 10, marginTop: 15 },
+    rankPillMinimal: { backgroundColor: 'rgba(0, 255, 0, 0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100, borderWidth: 1, borderColor: '#00FF00' },
+    rankPillText: { color: '#00FF00', fontWeight: 'bold' },
+    butsPillMinimal: { backgroundColor: 'rgba(255, 255, 255, 0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 100 },
+    butsPillText: { color: 'white', fontWeight: 'bold' },
+    progressTrackCompact: { height: 6, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: 3, marginTop: 25, overflow: 'hidden' },
+    progressFillCompact: { height: '100%', backgroundColor: '#00FF00' },
+    progressLabelsCompact: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+    progressLabelText: { color: '#00FF00', fontSize: 10, fontWeight: 'bold' },
+    rewardTierText: { color: 'rgba(255, 255, 255, 0.4)', fontSize: 10 },
+    leaderboardListCompact: { paddingHorizontal: 20, gap: 12 },
+    playerRowCompact: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 20, backgroundColor: '#1c1c21', gap: 14 },
+    playerRowUserCompact: { borderWidth: 1, borderColor: 'rgba(0, 255, 0, 0.3)', shadowColor: '#00FF00', shadowOpacity: 0.1, shadowRadius: 10, elevation: 5 },
+    playerAvatarCompact: { width: 44, height: 44, borderRadius: 22 },
+    playerNameCompact: { color: 'white', fontSize: 14, fontWeight: '700' },
+    playerVisitsCompact: { color: 'rgba(255, 255, 255, 0.4)', fontSize: 11 },
+    playerButsCompact: { color: '#00FF00', fontSize: 14, fontWeight: '900' },
+    leaderboardFullLink: { color: '#00FF00', fontSize: 13, fontWeight: 'bold', alignSelf: 'center', marginTop: 10 },
+    actionGridCompact: { paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 5 },
+    actionPillGrid: { width: (width - 60) / 3, borderWidth: 1, borderColor: '#00FF00', borderRadius: 100, paddingVertical: 10, alignItems: 'center', gap: 2 },
+    actionLabelGrid: { color: 'white', fontSize: 11, fontWeight: '600' },
+    actionBonusGrid: { color: '#00FF00', fontSize: 11, fontWeight: 'bold' },
+    rulesFooterCompact: { color: 'rgba(255, 255, 255, 0.3)', fontSize: 10, textAlign: 'center', marginTop: 20 },
     modalContainer: { flex: 1 },
     modalHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' },
-    modalTitle: { color: 'white', fontSize: 14, fontWeight: '900', letterSpacing: 1 },
+    modalTitle: { color: 'white', fontSize: 14, fontWeight: '900' },
     modalScrollContent: { padding: 20 },
-    rewardBanner: { backgroundColor: 'rgba(0, 255, 0, 0.15)', flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 20, gap: 16, marginBottom: 24 },
-    rewardText: { color: '#00FF00', fontWeight: 'bold', fontSize: 15 },
-    modalRow: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', gap: 16 },
+    podiumGradient: { flexDirection: 'row', alignItems: 'center', padding: 20, borderRadius: 20, gap: 12, marginBottom: 20 },
+    podiumText: { color: '#00FF00', fontWeight: 'bold' },
+    leaderboardRow: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)', gap: 16 },
     modalRank: { width: 40, fontSize: 18, fontWeight: '900' },
     modalAvatar: { width: 44, height: 44, borderRadius: 22 },
-    modalStats: { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
-    modalFooterNote: { textAlign: 'center', color: 'rgba(255, 255, 255, 0.2)', fontSize: 11, marginTop: 40, marginBottom: 60 },
 });
 
 export default DiscoverScreen;
