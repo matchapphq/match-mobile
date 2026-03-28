@@ -91,22 +91,20 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         const translateX = interpolate(
             scrollX.value,
             [0, width, width * 2],
-            [0, 100, 185] 
+            [0, 105, 212] // Shifted left to cover the 'C'
         );
-        
+
         const underlineWidth = interpolate(
             scrollX.value,
             [0, width, width * 2],
-            [70, 45, 75]
+            [70, 70, 85] // Reduced width to end at the 'e'
         );
 
         return {
             transform: [{ translateX }],
             width: underlineWidth,
         };
-    });
-
-    const getInitials = (name: string) => {
+    });    const getInitials = (name: string) => {
         if (!name) return "T";
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     };
