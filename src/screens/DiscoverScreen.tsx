@@ -36,6 +36,11 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         fetchDiscoveryHome,
         refreshDiscoveryHome,
         clearDiscoveryHistory,
+        challengeStatus,
+        challengeLeaderboard,
+        fetchChallengeStatus,
+        fetchChallengeLeaderboard,
+        isChallengeLoading
     } = useStore();
     
     const isLightTheme = themeMode === "light";
@@ -49,12 +54,18 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
 
     useEffect(() => {
         fetchDiscoveryHome();
+        fetchChallengeStatus();
+        fetchChallengeLeaderboard();
     }, []);
 
     useFocusEffect(
         useCallback(() => {
             refreshDiscoveryHome();
-        }, [])
+            if (activeTab === "challenge") {
+                fetchChallengeStatus();
+                fetchChallengeLeaderboard();
+            }
+        }, [activeTab])
     );
 
     const onRefresh = useCallback(async () => {
@@ -123,48 +134,59 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
     const bannerToDisplay = activeBanner || defaultBanner;
 
     const handleShareRank = async () => {
+        const rank = challengeStatus?.data?.rank || 0;
         try {
             await Share.share({
-                message: "Je suis rang #4 sur le Challenge Bêta Match ! ⚽️ Rejoins l'aventure.",
+                message: `Je suis rang #${rank} sur le Challenge Bêta Match ! ⚽️ Rejoins l'aventure.`,
             });
         } catch (error) {
             console.error(error);
         }
     };
 
-    const renderLeaderboardModal = () => (
-        <Modal visible={isLeaderboardVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setLeaderboardVisible(false)}>
-            <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                <View style={[styles.modalHeader, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
-                    <TouchableOpacity onPress={() => setLeaderboardVisible(false)}><MaterialIcons name="close" size={28} color={colors.text} /></TouchableOpacity>
-                    <Text style={[styles.modalTitle, { color: colors.text }]}>CLASSEMENT BÊTA</Text>
-                    <TouchableOpacity onPress={handleShareRank}><MaterialIcons name="share" size={24} color={colors.accent} /></TouchableOpacity>
-                </View>
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScrollContent}>
-                    <LinearGradient colors={[colors.accent20, 'transparent']} style={[styles.podiumGradient, { backgroundColor: colors.surface }]}>
-                        <FontAwesome5 name="medal" size={24} color={colors.accent} />
-                        <Text style={[styles.podiumText, { color: colors.accent }]}>Top 3 Podium Rewards</Text>
-                    </LinearGradient>
-                    {[
-                        { rank: 1, name: 'Paul', buts: 245, v: 18, avatar: 'https://i.pravatar.cc/150?u=1' },
-                        { rank: 2, name: 'Sofiane', buts: 212, v: 14, avatar: 'https://i.pravatar.cc/150?u=2' },
-                        { rank: 3, name: 'Marie', buts: 195, v: 9, avatar: 'https://i.pravatar.cc/150?u=4' },
-                        { rank: 4, name: 'Lucas (Toi)', buts: 187, v: 12, isUser: true, avatar: 'https://i.pravatar.cc/150?u=3' },
-                        { rank: 5, name: 'Thomas', buts: 132, v: 11, avatar: 'https://i.pravatar.cc/150?u=5' },
-                    ].map((item, idx) => (
-                        <View key={idx} style={[styles.leaderboardRow, { borderBottomColor: colors.border }, item.isUser && { backgroundColor: colors.accent10, borderRadius: 16 }]}>
-                            <Text style={[styles.modalRank, { color: item.rank <= 3 ? colors.accent : colors.textMuted }]}>#{item.rank}</Text>
-                            <Image source={{ uri: item.avatar }} style={styles.modalAvatar} />
-                            <View style={{ flex: 1 }}>
-                                <Text style={{ color: colors.text, fontWeight: '700' }}>{item.name}</Text>
-                                <Text style={{ color: colors.textMuted, fontSize: 12 }}>{item.visites || 0} visites • {item.buts} buts</Text>
+    const handleChallengeAction = (action: string) => {
+        if (action === "Scanner") {
+            alert("Montrez votre QR code de profil au barman pour gagner des buts !");
+        } else if (action === "Parrainer") {
+            navigation.navigate("Profile"); // Or dedicated referral screen
+        } else if (action === "Bug") {
+            // Show bug report modal
+            alert("Rapport de bug : Envoyez un mail à beta@match-app.fr");
+        } else {
+            alert(`Action ${action} bientôt disponible.`);
+        }
+    };
+
+    const renderLeaderboardModal = () => {
+        const leaderboardData = challengeLeaderboard?.data || [];
+        return (
+            <Modal visible={isLeaderboardVisible} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setLeaderboardVisible(false)}>
+                <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                    <View style={[styles.modalHeader, { borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+                        <TouchableOpacity onPress={() => setLeaderboardVisible(false)}><MaterialIcons name="close" size={28} color={colors.text} /></TouchableOpacity>
+                        <Text style={[styles.modalTitle, { color: colors.text }]}>CLASSEMENT BÊTA</Text>
+                        <TouchableOpacity onPress={handleShareRank}><MaterialIcons name="share" size={24} color={colors.accent} /></TouchableOpacity>
+                    </View>
+                    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.modalScrollContent}>
+                        <LinearGradient colors={[colors.accent20, 'transparent']} style={[styles.podiumGradient, { backgroundColor: colors.surface }]}>
+                            <FontAwesome5 name="medal" size={24} color={colors.accent} />
+                            <Text style={[styles.podiumText, { color: colors.accent }]}>Top 3 Podium Rewards</Text>
+                        </LinearGradient>
+                        {leaderboardData.map((item: any, idx: number) => (
+                            <View key={idx} style={[styles.leaderboardRow, { borderBottomColor: colors.border }, item.isUser && { backgroundColor: colors.accent10, borderRadius: 16 }]}>
+                                <Text style={[styles.modalRank, { color: item.rank <= 3 ? colors.accent : colors.textMuted }]}>#{item.rank}</Text>
+                                <Image source={{ uri: item.avatarUrl || 'https://i.pravatar.cc/150?u=' + item.userId }} style={styles.modalAvatar} />
+                                <View style={{ flex: 1 }}>
+                                    <Text style={{ color: colors.text, fontWeight: '700' }}>{item.name} {item.isUser ? '(Toi)' : ''}</Text>
+                                    <Text style={{ color: colors.textMuted, fontSize: 12 }}>{item.visites || 0} visites • {item.buts} buts</Text>
+                                </View>
                             </View>
-                        </View>
-                    ))}
-                </ScrollView>
-            </View>
-        </Modal>
-    );
+                        ))}
+                    </ScrollView>
+                </View>
+            </Modal>
+        );
+    };
 
     const renderForYou = () => (
         <View style={styles.tabContent}>
@@ -331,78 +353,76 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         </View>
     );
 
-    const renderChallenge = () => (
-        <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
-            {/* Compact Hero Banner */}
-            <View style={[styles.challengeHeroCard, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
-                <LinearGradient colors={[colors.accent, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.challengeSliver} />
-                <View style={styles.challengeHeroContent}>
-                    <Text style={[styles.challengeHeroTitle, { color: colors.text }]}>Challenge Bêta</Text>
-                    <View style={styles.heroStatPills}>
-                        <View style={[styles.rankPillMinimal, { backgroundColor: colors.accent10, borderColor: colors.accent }]}>
-                            <Text style={[styles.rankPillText, { color: colors.accent }]}>#4</Text>
+    const renderChallenge = () => {
+        const status = challengeStatus?.data || { rank: '?', totalButs: 0, nextMilestone: { progress: 0, label: 'Reward top 25' } };
+        const leaderboardData = challengeLeaderboard?.data?.slice(0, 6) || [];
+
+        return (
+            <ScrollView style={styles.tabContent} showsVerticalScrollIndicator={false}>
+                {/* Compact Hero Banner */}
+                <View style={[styles.challengeHeroCard, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }]}>
+                    <LinearGradient colors={[colors.accent, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.challengeSliver} />
+                    <View style={styles.challengeHeroContent}>
+                        <Text style={[styles.challengeHeroTitle, { color: colors.text }]}>Challenge Bêta</Text>
+                        <View style={styles.heroStatPills}>
+                            <View style={[styles.rankPillMinimal, { backgroundColor: colors.accent10, borderColor: colors.accent }]}>
+                                <Text style={[styles.rankPillText, { color: colors.accent }]}>#{status.rank}</Text>
+                            </View>
+                            <View style={[styles.butsPillMinimal, { backgroundColor: colors.surfaceAlt }]}>
+                                <Text style={[styles.butsPillText, { color: colors.text }]}>{status.totalButs} buts</Text>
+                            </View>
                         </View>
-                        <View style={[styles.butsPillMinimal, { backgroundColor: colors.surfaceAlt }]}>
-                            <Text style={[styles.butsPillText, { color: colors.text }]}>187 buts</Text>
+                        <View style={[styles.progressTrackCompact, { backgroundColor: colors.border }]}>
+                            <View style={[styles.progressFillCompact, { backgroundColor: colors.accent, width: `${status.nextMilestone?.progress || 0}%` }]} />
                         </View>
-                    </View>
-                    <View style={[styles.progressTrackCompact, { backgroundColor: colors.border }]}>
-                        <View style={[styles.progressFillCompact, { backgroundColor: colors.accent, width: '72%' }]} />
-                    </View>
-                    <View style={styles.progressLabelsCompact}>
-                        <Text style={[styles.progressLabelText, { color: colors.accent }]}>72% vers reward</Text>
-                        <Text style={[styles.rewardTierText, { color: colors.textMuted }]}>Rewards top 25</Text>
+                        <View style={styles.progressLabelsCompact}>
+                            <Text style={[styles.progressLabelText, { color: colors.accent }]}>{status.nextMilestone?.progress || 0}% vers reward</Text>
+                            <Text style={[styles.rewardTierText, { color: colors.textMuted }]}>{status.nextMilestone?.label || 'Rewards top 25'}</Text>
+                        </View>
                     </View>
                 </View>
-            </View>
 
-            {/* Scrollable Leaderboard */}
-            <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.text }]}>Classement actuel</Text></View>
-            <View style={styles.leaderboardListCompact}>
-                {[
-                    { rank: 1, name: 'Paul', buts: 245, v: 18, avatar: 'https://i.pravatar.cc/150?u=1' },
-                    { rank: 2, name: 'Sofiane', buts: 212, v: 14, avatar: 'https://i.pravatar.cc/150?u=2' },
-                    { rank: 3, name: 'Marie', buts: 195, v: 9, avatar: 'https://i.pravatar.cc/150?u=4' },
-                    { rank: 4, name: 'Toi (Lucas)', buts: 187, v: 12, isUser: true, avatar: 'https://i.pravatar.cc/150?u=3' },
-                    { rank: 5, name: 'Thomas', buts: 132, v: 11, avatar: 'https://i.pravatar.cc/150?u=5' },
-                    { rank: 6, name: 'Julie', buts: 118, v: 7, avatar: 'https://i.pravatar.cc/150?u=6' },
-                ].map((player, idx) => (
-                    <TouchableOpacity key={idx} style={[styles.playerRowCompact, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }, player.isUser && { borderColor: colors.accent, backgroundColor: colors.accent05 }]}>
-                        <Image source={{ uri: player.avatar }} style={styles.playerAvatarCompact} />
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.playerNameCompact, { color: colors.text }]}>{player.name}</Text>
-                            <Text style={[styles.playerVisitsCompact, { color: colors.textMuted }]}>{player.v} visites</Text>
-                        </View>
-                        <Text style={[styles.playerButsCompact, { color: colors.accent }]}>{player.buts} buts</Text>
+                {/* Scrollable Leaderboard */}
+                <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.text }]}>Classement actuel</Text></View>
+                <View style={styles.leaderboardListCompact}>
+                    {leaderboardData.map((player: any, idx: number) => (
+                        <TouchableOpacity key={idx} style={[styles.playerRowCompact, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }, player.isUser && { borderColor: colors.accent, backgroundColor: colors.accent05 }]}>
+                            <Image source={{ uri: player.avatarUrl || 'https://i.pravatar.cc/150?u=' + player.userId }} style={styles.playerAvatarCompact} />
+                            <View style={{ flex: 1 }}>
+                                <Text style={[styles.playerNameCompact, { color: colors.text }]}>{player.name} {player.isUser ? '(Toi)' : ''}</Text>
+                                <Text style={[styles.playerVisitsCompact, { color: colors.textMuted }]}>{player.visites || 0} visites</Text>
+                            </View>
+                            <Text style={[styles.playerButsCompact, { color: colors.accent }]}>{player.buts} buts</Text>
+                        </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity onPress={() => setLeaderboardVisible(true)}>
+                        <Text style={[styles.leaderboardFullLink, { color: colors.accent }]}>Voir le classement complet →</Text>
                     </TouchableOpacity>
-                ))}
-                <TouchableOpacity onPress={() => setLeaderboardVisible(true)}>
-                    <Text style={[styles.leaderboardFullLink, { color: colors.accent }]}>Load more / Full view →</Text>
-                </TouchableOpacity>
-            </View>
+                </View>
 
-            {/* Action Grid */}
-            <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.text }]}>Gagne + buts maintenant</Text></View>
-            <View style={styles.actionGridCompact}>
-                {[
-                    { label: 'Parrainer', bonus: '+10' },
-                    { label: 'Scanner', bonus: '+10' },
-                    { label: 'Avis', bonus: '+3-5' },
-                    { label: 'Daily', bonus: '+1' },
-                    { label: 'Bug', bonus: '+10' },
-                    { label: 'Lieu', bonus: '+10' },
-                ].map((action, idx) => (
-                    <TouchableOpacity key={idx} style={[styles.actionPillGrid, { borderColor: colors.accent }]}>
-                        <Text style={[styles.actionLabelGrid, { color: colors.text }]}>{action.label}</Text>
-                        <Text style={[styles.actionBonusGrid, { color: colors.accent }]}>{action.bonus}</Text>
-                    </TouchableOpacity>
-                ))}
-            </View>
-            <Text style={[styles.rulesFooterCompact, { color: colors.textMuted }]}>1/lieu/jour - Vérifié auto</Text>
-            
-            <View style={{ height: 120 }} />
-        </ScrollView>
-    );
+                {/* Action Grid */}
+                <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.text }]}>Gagne + buts maintenant</Text></View>
+                <View style={styles.actionGridCompact}>
+                    {[
+                        { label: 'Parrainer', bonus: '+10' },
+                        { label: 'Scanner', bonus: '+10' },
+                        { label: 'Avis', bonus: '+3-5' },
+                        { label: 'Daily', bonus: '+1' },
+                        { label: 'Bug', bonus: '+10' },
+                        { label: 'Lieu', bonus: '+10' },
+                    ].map((action, idx) => (
+                        <TouchableOpacity key={idx} style={[styles.actionPillGrid, { borderColor: colors.accent }]} onPress={() => handleChallengeAction(action.label)}>
+                            <Text style={[styles.actionLabelGrid, { color: colors.text }]}>{action.label}</Text>
+                            <Text style={[styles.actionBonusGrid, { color: colors.accent }]}>{action.bonus}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+                <Text style={[styles.rulesFooterCompact, { color: colors.textMuted }]}>1/lieu/jour - Vérifié auto</Text>
+                
+                <View style={{ height: 120 }} />
+            </ScrollView>
+        );
+    };
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>

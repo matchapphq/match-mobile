@@ -222,14 +222,14 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             <Text style={[styles.actionLabel, { color: colors.text }]}>Matchs</Text>
                         </TouchableOpacity>
                         <View style={[styles.actionSeparator, { backgroundColor: colors.border }]} />
-                        <TouchableOpacity style={styles.actionItem} onPress={openDirections}>
-                            <MaterialIcons name="directions" size={24} color={colors.accent} />
-                            <Text style={[styles.actionLabel, { color: colors.text }]}>Itinéraire</Text>
-                        </TouchableOpacity>
-                        <View style={[styles.actionSeparator, { backgroundColor: colors.border }]} />
                         <TouchableOpacity style={styles.actionItem} onPress={() => Linking.openURL('tel:+33000000000')}>
                             <MaterialIcons name="phone" size={24} color={colors.accent} />
                             <Text style={[styles.actionLabel, { color: colors.text }]}>Appeler</Text>
+                        </TouchableOpacity>
+                        <View style={[styles.actionSeparator, { backgroundColor: colors.border }]} />
+                        <TouchableOpacity style={styles.actionItem} onPress={openDirections}>
+                            <MaterialIcons name="directions" size={24} color={colors.accent} />
+                            <Text style={[styles.actionLabel, { color: colors.text }]}>Itinéraire</Text>
                         </TouchableOpacity>
                     </View>
 
