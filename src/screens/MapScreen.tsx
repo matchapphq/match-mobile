@@ -39,7 +39,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     const SNAPS = useMemo(() => ({
         HIDDEN: 0,
         COLLAPSED: TAB_BAR_TOTAL_HEIGHT + 60, // Peak summary above the pill
-        HALF: windowHeight * 0.6,
+        HALF: windowHeight * 0.40,
         FULL: windowHeight - insets.top,
     }), [windowHeight, insets, TAB_BAR_TOTAL_HEIGHT]);
 
@@ -250,7 +250,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                     ]}
                 >
                     {/* Gesture Interaction Area */}
-                    <View {...panResponder.panHandlers} style={styles.dragHandleContainer}>
+                    <View style={styles.dragHandleContainer}>
                         <View style={[styles.dragHandle, { backgroundColor: colors.border }]} />
                     </View>
 
