@@ -25,6 +25,10 @@ export const useNotifications = () => {
             screen: 'Reservations',
             params: { reservationId: data.reservationId }
         });
+      } else if (data?.type === 'upcoming_match' && data?.matchId) {
+        navigation.navigate('MatchDetail', {
+            matchId: data.matchId
+        });
       }
     });
 
