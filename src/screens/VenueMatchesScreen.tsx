@@ -150,7 +150,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                                 <TouchableOpacity 
                                     key={match.id} 
                                     style={[styles.matchCard, { backgroundColor: colors.surface }]}
-                                    onPress={() => navigation.navigate('MatchDetail', { matchId: match.id })}
+                                    onPress={() => navigation.navigate('MatchDetail', { matchId: match.id, source: 'venue_agenda' })}
                                 >
                                     <View style={styles.cardHeader}>
                                         <Image source={{ uri: match.team1Logo }} style={styles.leagueIcon} contentFit="contain" />

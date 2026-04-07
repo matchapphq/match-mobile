@@ -207,6 +207,10 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
     }, [selectedDateIso, preselectedVenue, selectedDate]);
 
     useEffect(() => {
+        posthog.capture("booking_started", {
+            venue_id: preselectedVenue?.id,
+            match_id: preselectedMatchId,
+        });
         loadMatches();
     }, [loadMatches]);
 
@@ -231,6 +235,21 @@ const ReservationsScreen = ({ navigation, route }: { navigation: any; route: any
             });
             hapticFeedback.success();
             refreshReservations();
+
+            const { reservations } = useStore.getState();
+            posthog.capture("booking_confirmed", {
+                reservation_id: response.reservation?.id,
+                venue_id: selectedMatch.venueId,
+                match_id: selectedMatch.id,
+                party_size: guests,
+            });
+
+            // Update user properties in PostHog
+            posthog.identify(useStore.getState().user?.id || "", {
+                total_bookings_count: (reservations?.length || 0) + 1,
+                last_booking_date: new Date().toISOString(),
+            });
+
             navigation.navigate("ReservationSuccess", {
                 venueName: selectedMatch.venueName,
                 address: selectedMatch.venueAddress,

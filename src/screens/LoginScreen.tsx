@@ -22,6 +22,7 @@ import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { useAppleAuth } from "../hooks/useAppleAuth";
 import { hashId } from "../utils/analytics";
 import { hapticFeedback } from "../utils/haptics";
+import { analytics } from "../services/analytics";
 
 const LoginScreen = () => {
     const navigation = useNavigation<any>();
@@ -42,25 +43,13 @@ const LoginScreen = () => {
         const success = await login(email, password);
         if (!success) {
             hapticFeedback.error();
-            posthog?.capture("login_failed", { method: 'email' });
+            analytics.track("login_failed", { method: 'email' });
             const storeError = useStore.getState().error;
             Alert.alert("Erreur", storeError || "Identifiants incorrects");
             return;
         }
 
-        // Identify user in PostHog with HASHED ID for GDPR
-        const userData = useStore.getState().user;
-        const actualUser = userData?.user ?? userData;
-        
-        if (actualUser?.id) {
-            const anonymousId = await hashId(actualUser.id);
-            posthog?.identify(anonymousId, {
-                user_tier: (actualUser as { tier?: string }).tier || "standard",
-                is_authenticated: true,
-            });
-            posthog?.capture("login_success", { method: 'email' });
-            hapticFeedback.success();
-        }
+        hapticFeedback.success();
         
         // Navigation is handled automatically by AppNavigator's conditional rendering
     };

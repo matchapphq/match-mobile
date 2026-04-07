@@ -768,8 +768,9 @@ const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
     );
 };
 
-const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
+const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget"> & { onboardingStartTime: number }> = ({
     navigation,
+    onboardingStartTime,
 }) => {
     const { colors } = useStore();
     const styles = getOnboardingStyles(colors);
@@ -789,20 +790,11 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
         const payload = buildRequestPayload();
         const success = await signup(payload);
         if (success) {
-            // Identify user in PostHog after successful signup with HASHED ID
-            const newUser = useStore.getState().user;
-            const userData = newUser?.user ?? newUser;
-            if (userData?.id) {
-                const anonymousId = await hashId(userData.id);
-                posthog?.identify(anonymousId, {
-                    fav_sports: data.fav_sports,
-                    budget: data.budget,
-                    is_authenticated: true,
-                });
-                analytics.capture("signup_success");
-                hapticFeedback.success();
-            }
-            
+            const duration = Math.floor((Date.now() - onboardingStartTime) / 1000);
+            analytics.track("onboarding_completed", {
+                duration_seconds: duration,
+            });
+            hapticFeedback.success();
             reset();
             // Navigation is handled automatically by AppNavigator's conditional rendering
         } else {
@@ -866,6 +858,12 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
 };
 
 const OnboardingScreen = () => {
+    const startTime = React.useRef(Date.now());
+
+    useEffect(() => {
+        analytics.track('onboarding_started');
+    }, []);
+
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen
@@ -898,8 +896,9 @@ const OnboardingScreen = () => {
             />
             <Stack.Screen
                 name="OnboardingBudget"
-                component={BudgetStepScreen}
-            />
+            >
+                {(props) => <BudgetStepScreen {...props} onboardingStartTime={startTime.current} />}
+            </Stack.Screen>
         </Stack.Navigator>
     );
 };

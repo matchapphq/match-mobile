@@ -57,7 +57,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
             const newState = !isFavourite;
             hapticFeedback.light();
             await toggleFavourite(venueId);
-            posthog?.capture(newState ? 'favourite_added' : 'favourite_removed', {
+            posthog?.capture(newState ? 'favorite_added' : 'favorite_removed', {
                 venue_id: venueId,
                 venue_name: venue?.name ?? "",
             });
@@ -80,8 +80,13 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
             setIsLoading(true);
             const data = venueId ? await mobileApi.fetchVenueById(venueId) : null;
             setVenue(data ?? null);
-            if (venueId) {
+            if (venueId && data) {
                 recordVenueView(venueId);
+                posthog?.capture("venue_viewed", {
+                    venue_id: venueId,
+                    venue_name: data.name,
+                    source: route.params?.source || "unknown",
+                });
             }
         } catch (err) {
             console.warn('Failed to load venue', err);

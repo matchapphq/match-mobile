@@ -233,8 +233,9 @@ const ProfileScreen = () => {
       });
 
       if (success) {
-        posthog?.capture('bug_report_sent', {
+        posthog?.capture('bug_reported', {
           description_length: bugContent.length,
+          category: 'general',
           platform: metadata.platform,
         });
         Alert.alert('Merci !', 'Votre rapport de bug a été envoyé avec succès.');

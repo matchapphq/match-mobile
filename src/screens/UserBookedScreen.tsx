@@ -173,10 +173,11 @@ const UserBookedScreen = () => {
     const success = await cancelReservationApi(bookingId);
     
     if (success) {
-      posthog?.capture('reservation_cancelled', {
+      posthog?.capture('booking_cancelled', {
         reservation_id: bookingId,
         venue_name: cancelModalBooking.venue,
         match_title: cancelModalBooking.match,
+        reason: "user_request"
       });
     }
     
