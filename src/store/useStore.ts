@@ -12,6 +12,7 @@ import {
 } from "../types";
 import { apiService, ApiReservation, setAuthFailureHandler } from "../services/api";
 import { tokenStorage } from "../utils/tokenStorage";
+import { setAnalyticsConsentPreference } from "../services/posthogClient";
 
 // Transform API reservation to mobile Reservation type
 export const transformApiReservation = (
@@ -1186,6 +1187,7 @@ export const useStore = create<AppState>((set, get) => ({
             console.error("Logout API error:", error);
         }
 
+        await setAnalyticsConsentPreference(false);
         posthog?.reset();
 
         set({
@@ -1228,6 +1230,7 @@ export const useStore = create<AppState>((set, get) => ({
 const clearClientAuthState = async () => {
     const { posthog } = await import("../services/analytics");
 
+    await setAnalyticsConsentPreference(false);
     posthog?.reset();
 
     useStore.setState({
