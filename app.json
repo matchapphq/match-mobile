@@ -1,59 +1,59 @@
 {
-  "expo": {
-    "name": "Match",
-    "slug": "match",
-    "scheme": "com.matchapps.match",
-    "version": "0.9.7",
-    "orientation": "portrait",
-    "icon": "./assets/logo_app.png",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.matchapps.match",
-      "usesAppleSignIn": true,
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSLocationWhenInUseUsageDescription": "Match utilise votre position pour trouver les bars diffusant des matchs près de vous.",
-        "NSPhotoLibraryUsageDescription": "Match a besoin d'accéder à vos photos pour vous permettre de personnaliser votre profil.",
-        "NSCameraUsageDescription": "Match a besoin d'accéder à votre appareil photo pour vous permettre de prendre une photo de profil."
-      }
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/logo_app.png",
-        "backgroundColor": "#ffffff"
-      },
-      "privacy": "https://matchapphq.github.io/match-privacy/",
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.matchapps.match",
-      "notification": {
+    "expo": {
+        "name": "Match",
+        "slug": "match",
+        "scheme": "com.matchapps.match",
+        "version": "0.9.7",
+        "orientation": "portrait",
         "icon": "./assets/logo_app.png",
-        "color": "#96DB1F"
-      }
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "extra": {
-      "apiBase": "https://api.matchapp.fr/api",
-      "eas": {
-        "projectId": "b0afe468-de21-49eb-b749-5e26c466e72f"
-      }
-    },
-    "plugins": [
-      "expo-localization",
-      "expo-apple-authentication",
-      "expo-font",
-      "expo-image",
-      "expo-secure-store",
-      "expo-web-browser"
-    ]
-  }
+        "userInterfaceStyle": "automatic",
+        "newArchEnabled": true,
+        "splash": {
+            "image": "./assets/splash-icon.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#ffffff"
+        },
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.matchapps.match",
+            "usesAppleSignIn": true,
+            "infoPlist": {
+                "ITSAppUsesNonExemptEncryption": false,
+                "NSLocationWhenInUseUsageDescription": "Match utilise votre position pour trouver les bars diffusant des matchs près de vous.",
+                "NSPhotoLibraryUsageDescription": "Match a besoin d'accéder à vos photos pour vous permettre de personnaliser votre profil.",
+                "NSCameraUsageDescription": "Match a besoin d'accéder à votre appareil photo pour vous permettre de prendre une photo de profil."
+            }
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/logo_app.png",
+                "backgroundColor": "#ffffff"
+            },
+            "privacy": "https://matchapphq.github.io/match-privacy/",
+            "edgeToEdgeEnabled": true,
+            "predictiveBackGestureEnabled": false,
+            "package": "com.matchapps.match",
+            "notification": {
+                "icon": "./assets/logo_app.png",
+                "color": "#96DB1F"
+            }
+        },
+        "web": {
+            "favicon": "./assets/favicon.png"
+        },
+        "extra": {
+            "apiBase": "https://api.matchapp.fr/api",
+            "eas": {
+                "projectId": "b0afe468-de21-49eb-b749-5e26c466e72f"
+            }
+        },
+        "plugins": [
+            "expo-localization",
+            "expo-apple-authentication",
+            "expo-font",
+            "expo-image",
+            "expo-secure-store",
+            "expo-web-browser"
+        ]
+    }
 }

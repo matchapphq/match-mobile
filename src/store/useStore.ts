@@ -90,6 +90,20 @@ interface AppState {
     hapticsEnabled: boolean;
     isOffline: boolean;
 
+    // Challenge Bêta
+    challengeStatus: {
+        rank: number;
+        totalButs: number;
+        streakDays: number;
+        nextMilestone: {
+            target: number;
+            progress: number;
+            label: string;
+        };
+    } | null;
+    challengeLeaderboard: any[];
+    isChallengeLoading: boolean;
+
     // Filters
     filters: {
         sports: string[];
@@ -197,6 +211,13 @@ interface AppState {
     signup: (data: any) => Promise<boolean>;
     refreshReservations: () => Promise<void>;
 
+    // Challenge Actions
+    fetchChallengeStatus: () => Promise<void>;
+    fetchChallengeLeaderboard: () => Promise<void>;
+    submitScan: (venueId: string, location?: { latitude: number, longitude: number }) => Promise<{ success: boolean, message: string }>;
+    submitBugReport: (data: any) => Promise<void>;
+    submitVenueSuggestion: (data: any) => Promise<void>;
+
     // Loading states
     isLoading: boolean;
     error: string | null;
@@ -230,6 +251,12 @@ export const useStore = create<AppState>((set, get) => ({
     pushNotificationsEnabled: false,
     hapticsEnabled: true,
     isOffline: false,
+
+    // Challenge Bêta initial state
+    challengeStatus: null,
+    challengeLeaderboard: [],
+    isChallengeLoading: false,
+
     filters: {
         sports: [],
         ambiance: [],
@@ -1108,6 +1135,47 @@ export const useStore = create<AppState>((set, get) => ({
 
     clearNotifications: () => {
         set({ notifications: [], unreadNotificationCount: 0 });
+    },
+
+    // Challenge Actions Implementation
+    fetchChallengeStatus: async () => {
+        try {
+            const response = await apiService.get("/challenge/status");
+            set({ challengeStatus: response });
+        } catch (error) {
+            console.error("Failed to fetch challenge status:", error);
+        }
+    },
+
+    fetchChallengeLeaderboard: async () => {
+        try {
+            const response = await apiService.get("/challenge/leaderboard");
+            set({ challengeLeaderboard: response });
+        } catch (error) {
+            console.error("Failed to fetch challenge leaderboard:", error);
+        }
+    },
+
+    submitScan: async (venueId, location) => {
+        try {
+            const response = await apiService.post("/challenge/scan", {
+                venueId,
+                latitude: location?.latitude?.toString(),
+                longitude: location?.longitude?.toString()
+            });
+            await get().fetchChallengeStatus();
+            return { success: true, message: response.message || "Scan réussi" };
+        } catch (error: any) {
+            return { success: false, message: error.response?.data?.message || "Échec du scan" };
+        }
+    },
+
+    submitBugReport: async (data) => {
+        await apiService.post("/challenge/bug-report", data);
+    },
+
+    submitVenueSuggestion: async (data) => {
+        await apiService.post("/challenge/venue-suggestion", data);
     },
 
     logout: async () => {

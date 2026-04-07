@@ -815,6 +815,14 @@ export const apiService = {
     },
 
     /**
+     * Generic GET request
+     */
+    get: async (url: string, config?: any) => {
+        const response = await api.get(url, config);
+        return response.data;
+    },
+
+    /**
      * Generic POST request
      */
     post: async (url: string, data?: any) => {
