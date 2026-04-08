@@ -133,9 +133,9 @@ const NameStepScreen: React.FC<StepScreenProps<"OnboardingName">> = ({
         <OnboardingLayout
             step={1}
             title={
-                <>
+                <Text style={{ fontSize: 32, fontWeight: "700" }}>
                     Parlons de <Text style={accent}>toi</Text>
-                </>
+                </Text>
             }
             subtitle="Dis-nous comment tu t'appelles pour personnaliser ton expérience sur Match."
             canContinue={canContinue}
@@ -521,10 +521,10 @@ const SportsStepScreen: React.FC<StepScreenProps<"OnboardingSports">> = ({
         <OnboardingLayout
             step={5}
             title={
-                <>
+                <Text style={{ fontSize: 32, fontWeight: "700" }}>
                     Quels sports {"\n"}
                     <Text style={accent}>t'intéressent ?</Text>
-                </>
+                </Text>
             }
             subtitle="Sélectionne tes favoris pour personnaliser ton flux et trouver les meilleurs bars."
             canContinue={canContinue}
@@ -686,10 +686,10 @@ const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
         <OnboardingLayout
             step={7}
             title={
-                <>
+                <Text style={{ fontSize: 32, fontWeight: "700" }}>
                     Quel est votre {"\n"}
                     <Text style={accent}>style ?</Text>
-                </>
+                </Text>
             }
             subtitle="Choisis l'ambiance qui correspond à ton envie du moment."
             canContinue={canContinue}
@@ -810,7 +810,11 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget"> & { onboard
     return (
         <OnboardingLayout
             step={8}
-            title={<>Quel est {"\n"}votre budget ?</>}
+            title={
+                <Text style={{ fontSize: 32, fontWeight: "700" }}>
+                    Quel est {"\n"}votre budget ?
+                </Text>
+            }
             subtitle="Nous trouverons les bars qui correspondent à tes attentes."
             canContinue={Boolean(data.budget) && !isLoading}
             nextLabel={isLoading ? "Connexion..." : "Terminer"}

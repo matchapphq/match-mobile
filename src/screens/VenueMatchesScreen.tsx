@@ -174,7 +174,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                     ))
                 ) : (
                     <View style={styles.emptyContainer}>
-                        <MaterialCommunityIcons name="filter-variant-remove" size={64} color={colors.surface} />
+                        <MaterialCommunityIcons name="filter-off-outline" size={64} color={colors.surface} />
                         <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun match trouvé</Text>
                         <TouchableOpacity onPress={() => setActiveFilter('all')} style={styles.resetBtn}>
                             <Text style={[styles.resetText, { color: colors.accent }]}>Réinitialiser les filtres</Text>

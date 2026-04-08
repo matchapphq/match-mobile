@@ -104,6 +104,17 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
         navigation.goBack();
     };
 
+    const handleCall = (phone: string) => {
+        const url = `tel:${phone}`;
+        Linking.canOpenURL(url).then(supported => {
+            if (supported) {
+                Linking.openURL(url);
+            } else {
+                console.warn('Phone call not supported on this device/simulator');
+            }
+        });
+    };
+
     const openDirections = () => {
         if (!venue) return;
         const lat = venue.latitude;
@@ -227,7 +238,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             <Text style={[styles.actionLabel, { color: colors.text }]}>Matchs</Text>
                         </TouchableOpacity>
                         <View style={[styles.actionSeparator, { backgroundColor: colors.border }]} />
-                        <TouchableOpacity style={styles.actionItem} onPress={() => Linking.openURL('tel:+33000000000')}>
+                        <TouchableOpacity style={styles.actionItem} onPress={() => handleCall('+33000000000')}>
                             <MaterialIcons name="phone" size={24} color={colors.accent} />
                             <Text style={[styles.actionLabel, { color: colors.text }]}>Appeler</Text>
                         </TouchableOpacity>
@@ -272,7 +283,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             </ScrollView>
                         ) : (
                             <View style={[styles.emptyMatches, { borderColor: colors.border }]}>
-                                <MaterialCommunityIcons name="soccer-off" size={32} color={colors.textSecondary} />
+                                <MaterialCommunityIcons name="soccer" size={32} color={colors.textSecondary} />
                                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Aucun match prévu pour l'instant.</Text>
                             </View>
                         )}
