@@ -23,18 +23,13 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
-import { COLORS } from '../constants/colors';
+import { COLORS, ThemeColors } from '../constants/colors';
 import { useStore } from '../store/useStore';
 import { apiService } from '../services/api';
 import { usePostHog } from 'posthog-react-native';
 import CancelReservationModal from '../components/CancelReservationModal';
 
 const { width } = Dimensions.get('window');
-
-// Design Tokens
-const BG_DARK = '#0D0D0D';
-const ACCENT_GREEN = '#00FF00';
-const TEXT_MUTED = '#808080';
 
 type FilterType = 'all' | 'confirmed' | 'pending' | 'cancelled';
 
@@ -66,7 +61,7 @@ const FILTERS: { label: string; value: FilterType }[] = [
 /**
  * Filter Pill Component with Spring Animation
  */
-const FilterPill = ({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) => {
+const FilterPill = ({ label, active, onPress, colors }: { label: string; active: boolean; onPress: () => void; colors: ThemeColors }) => {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -80,12 +75,14 @@ const FilterPill = ({ label, active, onPress }: { label: string; active: boolean
     >
       <Animated.View style={[
         styles.filterPill,
-        active ? styles.filterPillActive : styles.filterPillInactive,
+        active 
+          ? { backgroundColor: colors.accent } 
+          : { backgroundColor: colors.surfaceAlt, borderWidth: 1, borderColor: colors.border },
         animatedStyle
       ]}>
         <Text style={[
           styles.filterPillText,
-          active ? styles.filterPillTextActive : styles.filterPillTextInactive
+          active ? { color: colors.textInverse } : { color: colors.textMuted }
         ]}>
           {label}
         </Text>
@@ -155,7 +152,7 @@ const HeroTicketCard = ({
  * SECONDARY CARD: For other upcoming bookings
  * Slimmer, more compact format
  */
-const SecondaryUpcomingCard = ({ booking, onTicket, colors }: { booking: BookingCard; onTicket: (b: BookingCard) => void; colors: any }) => (
+const SecondaryUpcomingCard = ({ booking, onTicket, colors }: { booking: BookingCard; onTicket: (b: BookingCard) => void; colors: ThemeColors }) => (
   <TouchableOpacity 
     style={[styles.secondaryCard, { backgroundColor: colors.card }]} 
     onPress={() => onTicket(booking)}
@@ -163,12 +160,12 @@ const SecondaryUpcomingCard = ({ booking, onTicket, colors }: { booking: Booking
   >
     <View style={styles.secondaryLeft}>
       <Text style={[styles.secondaryVenue, { color: colors.text }]} numberOfLines={1}>{booking.venue}</Text>
-      <Text style={styles.secondaryMatch} numberOfLines={1}>{booking.match}</Text>
+      <Text style={[styles.secondaryMatch, { color: colors.primary }]} numberOfLines={1}>{booking.match}</Text>
       <Text style={[styles.secondaryDate, { color: colors.textMuted }]}>{booking.dateShort} • {booking.time}</Text>
     </View>
     <View style={styles.secondaryRight}>
-      <View style={[styles.miniStatusBadge, { backgroundColor: booking.status === 'confirmed' ? ACCENT_GREEN + '15' : '#f59e0b15' }]}>
-        <Text style={[styles.miniStatusText, { color: booking.status === 'confirmed' ? ACCENT_GREEN : '#f59e0b' }]}>
+      <View style={[styles.miniStatusBadge, { backgroundColor: booking.status === 'confirmed' ? colors.accent15 : '#f59e0b15' }]}>
+        <Text style={[styles.miniStatusText, { color: booking.status === 'confirmed' ? colors.accent : '#f59e0b' }]}>
           {booking.status === 'confirmed' ? 'Confirmé' : 'Attente'}
         </Text>
       </View>
@@ -303,8 +300,8 @@ const UserBookedScreen = () => {
   }, [bookings, selectedFilter, searchQuery]);
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={themeMode === 'dark' ? "light-content" : "dark-content"} />
       
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 10, borderBottomColor: colors.border }]}>
@@ -335,16 +332,16 @@ const UserBookedScreen = () => {
         {/* Filters */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
           {FILTERS.map((f) => (
-            <FilterPill key={f.value} label={f.label} active={selectedFilter === f.value} onPress={() => setSelectedFilter(f.value)} />
+            <FilterPill key={f.value} label={f.label} active={selectedFilter === f.value} onPress={() => setSelectedFilter(f.value)} colors={colors} />
           ))}
         </ScrollView>
       </View>
 
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.background }]}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={ACCENT_GREEN} />}
+        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} />}
       >
         {/* HERO SECTION */}
         {hero ? (
@@ -365,7 +362,7 @@ const UserBookedScreen = () => {
           <View style={styles.emptyHero}>
             <MaterialIcons name="calendar-today" size={48} color={colors.border} />
             <Text style={[styles.emptyHeroTitle, { color: colors.textMuted }]}>Aucune réservation à venir</Text>
-            <TouchableOpacity style={styles.emptyHeroCTA} onPress={() => navigation.navigate('Tab', { screen: 'Discover' })}>
+            <TouchableOpacity style={[styles.emptyHeroCTA, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('Tab', { screen: 'Discover' })}>
               <Text style={styles.emptyHeroCTAText}>Trouver un bar</Text>
             </TouchableOpacity>
           </View>
@@ -387,7 +384,7 @@ const UserBookedScreen = () => {
            style={[styles.findMoreBtn, { borderColor: colors.border }]}
            onPress={() => navigation.navigate('Tab', { screen: 'Discover' })}
          >
-           <MaterialIcons name="add" size={20} color={ACCENT_GREEN} />
+           <MaterialIcons name="add" size={20} color={colors.primary} />
            <Text style={[styles.findMoreText, { color: colors.textSecondary }]}>Trouver un autre bar</Text>
          </TouchableOpacity>
         )}
@@ -480,14 +477,14 @@ const UserBookedScreen = () => {
         reservation={cancelModalBooking as any}
         onClose={() => setCancelModalBooking(null)}
         onConfirmCancel={handleConfirmCancel}
-        primaryColor={ACCENT_GREEN}
+        primaryColor={colors.primary}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: BG_DARK },
+  root: { flex: 1 },
   header: { paddingBottom: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   headerTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 24 },
   headerTitle: { fontSize: 15, fontWeight: '800', letterSpacing: 1 },
@@ -498,11 +495,7 @@ const styles = StyleSheet.create({
   
   filterContainer: { paddingHorizontal: 20, gap: 10, paddingBottom: 4 },
   filterPill: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20, minWidth: 80, alignItems: 'center' },
-  filterPillActive: { backgroundColor: ACCENT_GREEN },
-  filterPillInactive: { backgroundColor: '#141414', borderWidth: 1, borderColor: '#222' },
   filterPillText: { fontSize: 13, fontWeight: '700' },
-  filterPillTextActive: { color: '#000' },
-  filterPillTextInactive: { color: '#888' },
 
   container: { flex: 1 },
   scrollContent: { padding: 20, gap: 24 },
@@ -535,7 +528,7 @@ const styles = StyleSheet.create({
   secondaryCard: { borderRadius: 16, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   secondaryLeft: { flex: 1, gap: 2 },
   secondaryVenue: { fontSize: 15, fontWeight: '700' },
-  secondaryMatch: { fontSize: 13, fontWeight: '600', color: ACCENT_GREEN },
+  secondaryMatch: { fontSize: 13, fontWeight: '600' },
   secondaryDate: { fontSize: 12, marginTop: 2 },
   secondaryRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   miniStatusBadge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
@@ -559,7 +552,7 @@ const styles = StyleSheet.create({
   findMoreText: { fontSize: 14, fontWeight: '600' },
   emptyHero: { alignItems: 'center', paddingVertical: 60, gap: 16 },
   emptyHeroTitle: { fontSize: 16, fontWeight: '700' },
-  emptyHeroCTA: { backgroundColor: ACCENT_GREEN, paddingHorizontal: 28, paddingVertical: 12, borderRadius: 30 },
+  emptyHeroCTA: { paddingHorizontal: 28, paddingVertical: 12, borderRadius: 30 },
   emptyHeroCTAText: { color: '#000', fontSize: 14, fontWeight: '800' },
   emptyPastText: { fontSize: 12, textAlign: 'center', marginTop: 10 },
 
