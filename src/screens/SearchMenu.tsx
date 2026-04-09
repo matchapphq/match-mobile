@@ -615,7 +615,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                         <>
                                             {activeTab === "all" && (
                                                 <View style={[styles.sectionHeaderRow, { marginTop: 32 }]}>
-                                                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Lieux & Bars</Text>
+                                                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Lieux</Text>
                                                     {venueResults.length > 2 && (
                                                         <TouchableOpacity onPress={() => setActiveTab("venues")}>
                                                             <Text style={[styles.sectionAction, { color: colors.accent }]}>Voir tout</Text>
@@ -692,8 +692,8 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                 ) : (
                                                     <EmptyState
                                                         icon="storefront"
-                                                        title="Aucun bar trouvé"
-                                                        description="Nous n'avons pas trouvé de bar correspondant à ta recherche."
+                                                        title="Aucun lieu trouvé"
+                                                        description="Nous n'avons pas trouvé de lieu correspondant à ta recherche."
                                                         style={{ paddingVertical: 40 }}
                                                     />
                                                 )}

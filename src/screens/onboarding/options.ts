@@ -26,7 +26,7 @@ export const MOOD_OPTIONS: MoodOption[] = [
 ];
 
 export const VENUE_OPTIONS: VenueOption[] = [
-    { id: "bar", label: "Bar Sportif", icon: "sports-bar", subtitle: "Pour l'ambiance et les boissons" },
+    { id: "bar", label: "Lieu sportif", icon: "sports-bar", subtitle: "Pour l'ambiance et les boissons" },
     { id: "restaurant", label: "Restaurant", icon: "restaurant", subtitle: "Pour un bon repas devant le match" },
     { id: "fastfood", label: "Snack / Fast-Food", icon: "fastfood", subtitle: "Pour manger vite sans rater l'action" },
 ];

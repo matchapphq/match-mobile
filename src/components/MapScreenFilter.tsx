@@ -33,7 +33,7 @@ export type FilterSelections = {
 
 export const DEFAULT_FILTER_SELECTIONS: FilterSelections = {
     sports: ["football"],
-    venues: ["bar"],
+    venues: ["bar", "restaurant", "fastfood"],
     ambiances: ["ultra"],
     budget: "standard",
 };

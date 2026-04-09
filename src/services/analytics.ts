@@ -1,6 +1,5 @@
 import Constants from 'expo-constants';
 import { posthogClient } from './posthogClient';
-import PostHog from 'posthog-react-native';
 import { Platform } from 'react-native';
 
 export const posthog = posthogClient;

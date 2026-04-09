@@ -90,7 +90,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
             }
         } catch (err) {
             console.warn('Failed to load venue', err);
-            setError("Impossible de charger les informations de ce bar.");
+            setError("Impossible de charger les informations de ce lieu.");
         } finally {
             setIsLoading(false);
         }
@@ -151,7 +151,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
     if (error || !venue) {
         return (
             <View style={[styles.container, styles.centerState, { backgroundColor: colors.background }]}>
-                <Text style={[styles.stateText, { color: colors.textSecondary }]}>{error ?? "Ce bar n'est pas disponible."}</Text>
+                <Text style={[styles.stateText, { color: colors.textSecondary }]}>{error ?? "Ce lieu n'est pas disponible."}</Text>
                 <TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.accent }]} onPress={loadVenue}>
                     <Text style={{ color: '#000', fontWeight: 'bold' }}>Réessayer</Text>
                 </TouchableOpacity>
@@ -214,7 +214,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                         <View style={styles.glassChipsRow}>
                             <Text style={[styles.glassChip, { color: colors.textSecondary }]}>★ {venue.rating || "0.0"}</Text>
                             <View style={styles.dotSeparator} />
-                            <Text style={[styles.glassChip, { color: colors.textSecondary }]}>Bar sportif</Text>
+                            <Text style={[styles.glassChip, { color: colors.textSecondary }]}>Lieu sportif</Text>
                             <View style={styles.dotSeparator} />
                             <Text style={[styles.glassChip, { color: colors.textSecondary }]}>{venue.priceLevel}</Text>
                             <View style={styles.dotSeparator} />
@@ -252,7 +252,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                     {/* Matches Preview Carousel */}
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Ce bar diffuse</Text>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Ce lieu diffuse</Text>
                             <TouchableOpacity onPress={() => navigation.navigate('VenueMatches', { venueId: venue.id, venueName: venue.name })}>
                                 <Text style={[styles.ghostBtn, { color: colors.textSecondary }]}>Voir tous les matchs</Text>
                             </TouchableOpacity>
@@ -326,9 +326,9 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                     {/* Help Support */}
                     <View style={[styles.helpCard, { backgroundColor: colors.surface }]}>
                         <Text style={[styles.helpTitle, { color: colors.text }]}>Besoin d'aide ?</Text>
-                        <Text style={[styles.helpText, { color: colors.textSecondary }]}>Des questions sur ce bar ou votre réservation ?</Text>
+                        <Text style={[styles.helpText, { color: colors.textSecondary }]}>Des questions sur ce lieu ou votre réservation ?</Text>
                         <TouchableOpacity style={[styles.contactBtn, { borderColor: colors.accent }]}>
-                            <Text style={[styles.contactBtnText, { color: colors.accent }]}>Contacter le bar</Text>
+                            <Text style={[styles.contactBtnText, { color: colors.accent }]}>Contacter le lieu</Text>
                         </TouchableOpacity>
                     </View>
                 </View>

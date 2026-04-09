@@ -39,7 +39,7 @@ const VenueReviewsScreen = ({ navigation, route }: { navigation: any; route: any
     const { colors, computedTheme: themeMode } = useStore();
     const insets = useSafeAreaInsets();
     const venueId: string = route?.params?.venueId;
-    const venueName: string = route?.params?.venueName || 'Bar';
+    const venueName: string = route?.params?.venueName || 'Lieu';
     const venue: any = route?.params?.venue;
     
     const [isLoading, setIsLoading] = useState(true);

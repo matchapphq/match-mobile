@@ -195,10 +195,10 @@ const TeamDetailScreen = () => {
                     </View>
                 </View>
 
-                {/* Section 2: Bars qui diffusent le plus */}
+                {/* Section 2: Lieux qui diffusent le plus */}
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Bars qui diffusent le plus cette équipe</Text>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Lieux qui diffusent le plus cette équipe</Text>
                     </View>
                     
                     {bestBars.length > 0 ? (
@@ -251,7 +251,7 @@ const TeamDetailScreen = () => {
                         </ScrollView>
                     ) : (
                         <Text style={[styles.emptyText, { color: colors.textMuted, paddingHorizontal: 20 }]}>
-                            Aucun bar trouvé pour le moment.
+                            Aucun lieu trouvé pour le moment.
                         </Text>
                     )}
                 </View>

@@ -526,7 +526,7 @@ const SportsStepScreen: React.FC<StepScreenProps<"OnboardingSports">> = ({
                     <Text style={accent}>t'intéressent ?</Text>
                 </Text>
             }
-            subtitle="Sélectionne tes favoris pour personnaliser ton flux et trouver les meilleurs bars."
+            subtitle="Sélectionne tes favoris pour personnaliser ton flux et trouver les meilleurs lieux."
             canContinue={canContinue}
             onNext={() => {
                 posthog.capture("onboarding_step_completed", { step_name: "sports" });
@@ -815,7 +815,7 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget"> & { onboard
                     Quel est {"\n"}votre budget ?
                 </Text>
             }
-            subtitle="Nous trouverons les bars qui correspondent à tes attentes."
+            subtitle="Nous trouverons les lieux qui correspondent à tes attentes."
             canContinue={Boolean(data.budget) && !isLoading}
             nextLabel={isLoading ? "Connexion..." : "Terminer"}
             error={submissionError}

@@ -19,7 +19,7 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSLocationWhenInUseUsageDescription": "Match utilise votre position pour trouver les bars diffusant des matchs près de vous.",
+        "NSLocationWhenInUseUsageDescription": "Match utilise votre position pour trouver les lieux diffusant des matchs près de vous.",
         "NSPhotoLibraryUsageDescription": "Match a besoin d'accéder à vos photos pour vous permettre de personnaliser votre profil.",
         "NSCameraUsageDescription": "Match a besoin d'accéder à votre appareil photo pour vous permettre de prendre une photo de profil."
       },

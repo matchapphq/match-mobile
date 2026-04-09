@@ -20,6 +20,26 @@ import {
     generateDates,
 } from "../lib/mockData";
 
+const normalizeVenueLabel = (value: string): string => {
+    const normalized = value.trim().toLowerCase();
+
+    switch (normalized) {
+        case "bar":
+            return "Lieu";
+        case "bars":
+            return "Lieux";
+        case "bar sportif":
+            return "Lieu sportif";
+        case "bars sportifs":
+            return "Lieux sportifs";
+        default:
+            return value;
+    }
+};
+
+const normalizeVenueLabels = (values: string[] | undefined, fallback: string[]): string[] =>
+    (values && values.length > 0 ? values : fallback).map(normalizeVenueLabel);
+
 // Transform API venue to MobileApi Venue format
 const transformApiVenue = (apiVenue: any): Venue => ({
     id: apiVenue.id,
@@ -31,7 +51,7 @@ const transformApiVenue = (apiVenue: any): Venue => ({
     image: apiVenue.cover_image_url || apiVenue.photos?.[0]?.url || apiVenue.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
     rating: Number(apiVenue.average_rating ?? apiVenue.rating ?? 4.5),
     totalReviews: Number(apiVenue.total_reviews ?? 0),
-    tags: apiVenue.amenities || apiVenue.tags || ["Bar sportif"],
+    tags: normalizeVenueLabels(apiVenue.amenities || apiVenue.tags, ["Lieu sportif"]),
     priceLevel: apiVenue.price_range || apiVenue.priceLevel || "€€",
     isOpen: true,
     matches: [],
@@ -108,7 +128,7 @@ const transformToSearchMatch = (apiMatch: any): SearchMatchResult => {
 const transformToSearchResult = (apiVenue: any): SearchResult => ({
     id: apiVenue.id,
     name: apiVenue.name,
-    tag: apiVenue.type || "Bar",
+    tag: normalizeVenueLabel(apiVenue.type || "Lieu"),
     distance: apiVenue.distance !== undefined && apiVenue.distance !== null ? `${Number(apiVenue.distance).toFixed(1)} km` : "",
     isLive: false,
     image: apiVenue.cover_image_url || apiVenue.photos?.[0]?.url || apiVenue.image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
@@ -569,7 +589,7 @@ export const mobileApi = {
                     : "N/A",
                 image: mv.venue?.image_url || mv.venue?.cover_image_url || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800",
                 rating: Number(mv.venue?.rating ?? 4.5),
-                tags: ["Bar sportif", "Diffuse ce match"],
+                tags: ["Lieu sportif", "Diffuse ce match"],
                 priceLevel: "€€",
                 isOpen: true,
                 matches: [],

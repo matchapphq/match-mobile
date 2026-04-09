@@ -161,7 +161,7 @@ export const mockVenues: Venue[] = [
 ];
 
 export const mockSearchTrends: SearchTrend[] = [
-    { icon: "deck", label: "Bars avec terrasse" },
+    { icon: "deck", label: "Lieux avec terrasse" },
     { icon: "celebration", label: "Happy Hour" },
     { icon: "sports-soccer", label: "PSG vs OM" },
     { icon: "sports-basketball", label: "NBA Nights" },
@@ -274,7 +274,7 @@ export const mockFaqItems: FaqItem[] = [
         id: "faq-1",
         question: "Comment réserver une table ?",
         answer:
-            "Accédez à la page du bar, sélectionnez votre date et l'heure, choisissez le nombre de personnes, puis confirmez votre réservation.",
+            "Accédez à la page du lieu, sélectionnez votre date et l'heure, choisissez le nombre de personnes, puis confirmez votre réservation.",
     },
     {
         id: "faq-2",
@@ -367,7 +367,7 @@ export const mockNotificationSettings: NotificationSetting[] = [
         id: "1",
         type: "match",
         title: "Matchs Suivis",
-        message: "Notification 30 min avant\nNotification quand un bar proche diffuse le match",
+        message: "Notification 30 min avant\nNotification quand un lieu proche diffuse le match",
         badge: "ON/OFF",
     },
     {
@@ -381,13 +381,13 @@ export const mockNotificationSettings: NotificationSetting[] = [
         id: "3",
         type: "promo",
         title: "Promos & Happy Hour",
-        message: "Bars, restaurants et fast food\navec offres limitées / événements",
+        message: "Lieux avec offres limitées / événements",
         badge: "ON/OFF",
     },
     {
         id: "4",
         type: "venue",
-        title: "Nouveaux bars ajoutés autour de moi",
+        title: "Nouveaux lieux ajoutés autour de moi",
         message: "",
         badge: "ON/OFF",
     },

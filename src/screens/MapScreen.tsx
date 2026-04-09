@@ -300,7 +300,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                 {/* Header */}
                                 <View style={styles.venueHeader}>
                                     <Text style={[styles.venueTitle, { color: colors.text }]}>{selectedVenue.name.toUpperCase()}</Text>
-                                    <Text style={[styles.venueSubtitle, { color: colors.textSecondary }]}>Bar sportif · {selectedVenue.address || 'Paris'}</Text>
+                                    <Text style={[styles.venueSubtitle, { color: colors.textSecondary }]}>Lieu sportif · {selectedVenue.address || 'Paris'}</Text>
                                     
                                     <View style={styles.metaRow}>
                                         <View style={styles.metaItem}>

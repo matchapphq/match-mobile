@@ -321,7 +321,7 @@ const UserBookedScreen = () => {
             <MaterialIcons name="search" size={20} color={colors.textMuted} />
             <TextInput
               style={[styles.searchInput, { color: colors.text }]}
-              placeholder="Rechercher un bar ou un match..."
+              placeholder="Rechercher un lieu ou un match..."
               placeholderTextColor={colors.textMuted}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -363,7 +363,7 @@ const UserBookedScreen = () => {
             <MaterialIcons name="calendar-today" size={48} color={colors.border} />
             <Text style={[styles.emptyHeroTitle, { color: colors.textMuted }]}>Aucune réservation à venir</Text>
             <TouchableOpacity style={[styles.emptyHeroCTA, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate('Tab', { screen: 'Discover' })}>
-              <Text style={styles.emptyHeroCTAText}>Trouver un bar</Text>
+              <Text style={styles.emptyHeroCTAText}>Trouver un lieu</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -385,7 +385,7 @@ const UserBookedScreen = () => {
            onPress={() => navigation.navigate('Tab', { screen: 'Discover' })}
          >
            <MaterialIcons name="add" size={20} color={colors.primary} />
-           <Text style={[styles.findMoreText, { color: colors.textSecondary }]}>Trouver un autre bar</Text>
+           <Text style={[styles.findMoreText, { color: colors.textSecondary }]}>Trouver un autre lieu</Text>
          </TouchableOpacity>
         )}
 

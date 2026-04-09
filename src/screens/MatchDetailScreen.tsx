@@ -290,7 +290,7 @@ const MatchDetailScreen = ({
 
                 {/* 2. VENUES SECTION */}
                 <View style={styles.venuesSection}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Bars qui diffusent ce match</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Lieux qui diffusent ce match</Text>
                     
                     {/* Filters Row */}
                     <ScrollView 
@@ -389,7 +389,7 @@ const MatchDetailScreen = ({
                                     <MaterialIcons name="sports-bar" size={32} color={colors.textMuted} />
                                 </View>
                                 <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                                    {venues.length === 0 ? "Aucun bar ne diffuse encore ce match." : "Aucun bar ne correspond à vos filtres."}
+                                    {venues.length === 0 ? "Aucun lieu ne diffuse encore ce match." : "Aucun lieu ne correspond à vos filtres."}
                                 </Text>
                                 <Text style={[styles.emptySub, { color: colors.textMuted }]}>
                                     {venues.length === 0 
@@ -401,7 +401,7 @@ const MatchDetailScreen = ({
                                     onPress={() => setActiveFilter("Tout")}
                                 >
                                     <Text style={[styles.emptyBtnText, { color: colors.primary }]}>
-                                        {venues.length === 0 ? "Voir les bars populaires à proximité" : "Réinitialiser les filtres"}
+                                        {venues.length === 0 ? "Voir les lieux populaires à proximité" : "Réinitialiser les filtres"}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
@@ -465,7 +465,7 @@ const MatchDetailScreen = ({
             ]}>
                 <View style={styles.stickyContent}>
                     <View>
-                        <Text style={[styles.stickyCount, { color: colors.text }]}>{filteredVenues.length} bars</Text>
+                        <Text style={[styles.stickyCount, { color: colors.text }]}>{filteredVenues.length} lieux</Text>
                         <Text style={[styles.stickySub, { color: colors.textMuted }]}>près de toi</Text>
                     </View>
                     <TouchableOpacity style={[styles.stickyBtn, { backgroundColor: colors.primary }]}>
