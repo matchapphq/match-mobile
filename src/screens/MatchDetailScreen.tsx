@@ -114,11 +114,11 @@ const MatchDetailScreen = ({
             
             setMatch(matchData);
 
-            posthog.capture("match_details_viewed", {
+            posthog.capture("match_viewed", {
                 match_id: matchData.id,
-                home_team: matchData.home.name,
-                away_team: matchData.away.name,
+                teams: `${matchData.home.name} vs ${matchData.away.name}`,
                 league: matchData.league,
+                source: route.params?.source || "unknown",
             });
 
             // Fetch venues broadcasting this specific match

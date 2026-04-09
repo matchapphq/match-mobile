@@ -117,6 +117,12 @@ const GiveReviewScreen = ({ navigation, route }: { navigation: any, route: any }
                 photos_urls: uploadedUrls,
             });
 
+            posthog.capture("review_submitted", {
+                venue_id: venue.id,
+                rating,
+                has_comment: content.trim().length > 0,
+            });
+
             hapticFeedback.success();
             Alert.alert("Succès", "Merci pour votre avis !", [
                 { text: "OK", onPress: () => navigation.goBack() }

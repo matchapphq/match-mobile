@@ -537,6 +537,24 @@ export const useStore = create<AppState>((set, get) => ({
                 isLoading: false,
             });
 
+            // Analytics Tracking
+            const { analytics } = await import("../services/analytics");
+            const actualUser = user?.user ?? user;
+            if (actualUser?.id) {
+                analytics.identify(actualUser.id, {
+                    email: actualUser.email,
+                    first_name: actualUser.firstName || actualUser.first_name,
+                    last_name: actualUser.lastName || actualUser.last_name,
+                    user_tier: (actualUser as any).tier || "standard",
+                    is_venue_owner: actualUser.role === "owner",
+                    favorite_teams: actualUser.preferences?.fav_team_ids || [],
+                });
+                analytics.track("login_completed", { 
+                    user_id: actualUser.id,
+                    method: 'email' 
+                });
+            }
+
             // Trigger background refresh to get full profile (bio, created_at, etc)
             get().refreshUserProfile();
 
@@ -570,6 +588,24 @@ export const useStore = create<AppState>((set, get) => ({
                 isAuthenticated: true,
                 isLoading: false,
             });
+
+            // Analytics Tracking
+            const { analytics } = await import("../services/analytics");
+            const actualUser = user?.user ?? user;
+            if (actualUser?.id) {
+                analytics.identify(actualUser.id, {
+                    email: actualUser.email,
+                    first_name: actualUser.firstName || actualUser.first_name,
+                    last_name: actualUser.lastName || actualUser.last_name,
+                    user_tier: (actualUser as any).tier || "standard",
+                    is_venue_owner: actualUser.role === "owner",
+                    favorite_teams: actualUser.preferences?.fav_team_ids || [],
+                });
+                analytics.track("login_completed", { 
+                    user_id: actualUser.id,
+                    method: 'google' 
+                });
+            }
 
             get().refreshUserProfile();
 
@@ -606,6 +642,24 @@ export const useStore = create<AppState>((set, get) => ({
                 isAuthenticated: true,
                 isLoading: false,
             });
+
+            // Analytics Tracking
+            const { analytics } = await import("../services/analytics");
+            const actualUser = user?.user ?? user;
+            if (actualUser?.id) {
+                analytics.identify(actualUser.id, {
+                    email: actualUser.email,
+                    first_name: actualUser.firstName || actualUser.first_name,
+                    last_name: actualUser.lastName || actualUser.last_name,
+                    user_tier: (actualUser as any).tier || "standard",
+                    is_venue_owner: actualUser.role === "owner",
+                    favorite_teams: actualUser.preferences?.fav_team_ids || [],
+                });
+                analytics.track("login_completed", { 
+                    user_id: actualUser.id,
+                    method: 'apple' 
+                });
+            }
 
             get().refreshUserProfile();
 
@@ -661,6 +715,27 @@ export const useStore = create<AppState>((set, get) => ({
                 onboardingCompleted: true,
                 isLoading: false,
             });
+
+            // Analytics Tracking
+            const { analytics } = await import("../services/analytics");
+            const actualUser = user?.user ?? user;
+            if (actualUser?.id) {
+                analytics.identify(actualUser.id, {
+                    email: actualUser.email,
+                    first_name: actualUser.firstName || actualUser.first_name,
+                    last_name: actualUser.lastName || actualUser.last_name,
+                    user_tier: (actualUser as any).tier || "standard",
+                    is_venue_owner: actualUser.role === "owner",
+                    fav_sports: actualUser.preferences?.fav_sports || actualUser.preferences?.sports || [],
+                    favorite_teams: actualUser.preferences?.fav_team_ids || [],
+                    budget: actualUser.preferences?.budget,
+                });
+                analytics.track("sign_up_completed", { 
+                    user_id: actualUser.id,
+                    method: 'email' 
+                });
+            }
+
             return true;
         } catch (error: any) {
             console.error("Signup failed:", error);

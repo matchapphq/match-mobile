@@ -217,9 +217,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate, userLatRef.current, userLngRef.current);
 
                 if (!append) {
-                    posthog.capture("venue_searched", {
+                    posthog.capture("search_performed", {
                         query: debouncedQuery,
-                        tab: activeTab,
+                        filter_type: activeTab,
+                        results_count: data.totalMatches + data.totalVenues,
                         selected_date: selectedFilterDate ?? "",
                     });
                 }
@@ -543,7 +544,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                 key={match.id}
                                                                 style={[styles.matchCard, { backgroundColor: themeMode === 'light' ? '#fff' : colors.surfaceAlt, borderColor: colors.divider }]}
                                                                 activeOpacity={0.9}
-                                                                onPress={() => navigation.navigate("MatchDetail", { matchId: match.id })}
+                                                                onPress={() => navigation.navigate("MatchDetail", { matchId: match.id, source: 'search' })}
                                                             >
                                                                 <View style={[styles.matchCardBackdrop, { backgroundColor: "rgba(59,130,246,0.1)" }]} />
                                                                 
@@ -637,7 +638,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                 key={venue.id}
                                                                 style={[styles.venueCardNew, { backgroundColor: themeMode === 'light' ? '#fff' : colors.surfaceAlt, borderColor: colors.divider }]}
                                                                 activeOpacity={0.85}
-                                                                onPress={() => navigation.navigate('VenueProfile', { venueId: venue.id })}
+                                                                onPress={() => navigation.navigate('VenueProfile', { venueId: venue.id, source: 'search' })}
                                                             >
                                                                 <View style={[styles.venueImageContainerNew, { backgroundColor: colors.surface }]}>
                                                                     {venue.image ? (

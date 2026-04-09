@@ -566,7 +566,7 @@ export const apiService = {
     createReservation: async (
         payload: CreateReservationPayload,
     ): Promise<CreateReservationResponse> => {
-        const response = await api.post("/reservations/", payload);
+        const response = await api.post("/reservations", payload);
         return response.data;
     },
 

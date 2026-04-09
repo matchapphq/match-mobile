@@ -66,8 +66,18 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.contentHeader}>
-                        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-                        {subtitle ? <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
+                        {typeof title === "string" ? (
+                            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+                        ) : (
+                            <View>{title}</View>
+                        )}
+                        {subtitle ? (
+                            typeof subtitle === "string" ? (
+                                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
+                            ) : (
+                                <View>{subtitle}</View>
+                            )
+                        ) : null}
                         {error ? (
                             <View style={styles.errorBanner}>
                                 <MaterialIcons name="error-outline" size={20} color="#ff6b6b" />
@@ -88,7 +98,13 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                         <Text style={styles.ctaText}>{nextLabel}</Text>
                         <MaterialIcons name="arrow-forward" size={20} color="#fff" />
                     </TouchableOpacity>
-                    {footerNote ? <Text style={[styles.footerNote, { color: colors.textMuted }]}>{footerNote}</Text> : null}
+                    {footerNote ? (
+                        typeof footerNote === "string" ? (
+                            <Text style={[styles.footerNote, { color: colors.textMuted }]}>{footerNote}</Text>
+                        ) : (
+                            <View>{footerNote}</View>
+                        )
+                    ) : null}
                 </View>
             </SafeAreaView>
         </View>

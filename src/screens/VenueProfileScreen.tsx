@@ -57,7 +57,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
             const newState = !isFavourite;
             hapticFeedback.light();
             await toggleFavourite(venueId);
-            posthog?.capture(newState ? 'favourite_added' : 'favourite_removed', {
+            posthog?.capture(newState ? 'favorite_added' : 'favorite_removed', {
                 venue_id: venueId,
                 venue_name: venue?.name ?? "",
             });
@@ -80,8 +80,13 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
             setIsLoading(true);
             const data = venueId ? await mobileApi.fetchVenueById(venueId) : null;
             setVenue(data ?? null);
-            if (venueId) {
+            if (venueId && data) {
                 recordVenueView(venueId);
+                posthog?.capture("venue_viewed", {
+                    venue_id: venueId,
+                    venue_name: data.name,
+                    source: route.params?.source || "unknown",
+                });
             }
         } catch (err) {
             console.warn('Failed to load venue', err);
@@ -97,6 +102,17 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
 
     const handleBack = () => {
         navigation.goBack();
+    };
+
+    const handleCall = (phone: string) => {
+        const url = `tel:${phone}`;
+        Linking.canOpenURL(url).then(supported => {
+            if (supported) {
+                Linking.openURL(url);
+            } else {
+                console.warn('Phone call not supported on this device/simulator');
+            }
+        });
     };
 
     const openDirections = () => {
@@ -222,7 +238,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             <Text style={[styles.actionLabel, { color: colors.text }]}>Matchs</Text>
                         </TouchableOpacity>
                         <View style={[styles.actionSeparator, { backgroundColor: colors.border }]} />
-                        <TouchableOpacity style={styles.actionItem} onPress={() => Linking.openURL('tel:+33000000000')}>
+                        <TouchableOpacity style={styles.actionItem} onPress={() => handleCall('+33000000000')}>
                             <MaterialIcons name="phone" size={24} color={colors.accent} />
                             <Text style={[styles.actionLabel, { color: colors.text }]}>Appeler</Text>
                         </TouchableOpacity>
@@ -267,7 +283,7 @@ const VenueProfileScreen = ({ navigation, route }: { navigation: any; route: any
                             </ScrollView>
                         ) : (
                             <View style={[styles.emptyMatches, { borderColor: colors.border }]}>
-                                <MaterialCommunityIcons name="soccer-off" size={32} color={colors.textSecondary} />
+                                <MaterialCommunityIcons name="soccer" size={32} color={colors.textSecondary} />
                                 <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Aucun match prévu pour l'instant.</Text>
                             </View>
                         )}
