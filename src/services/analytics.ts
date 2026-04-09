@@ -1,10 +1,9 @@
 import Constants from 'expo-constants';
+import { posthogClient } from './posthogClient';
 import PostHog from 'posthog-react-native';
 import { Platform } from 'react-native';
 
-export const posthog = new PostHog(process.env.EXPO_PUBLIC_POSTHOG_API_KEY || "", {
-    host: process.env.EXPO_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-});
+export const posthog = posthogClient;
 
 class AnalyticsService {
     track(event: string, properties: Record<string, any> = {}) {

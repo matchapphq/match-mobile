@@ -35,11 +35,16 @@ import FavouritesScreen from "../screens/FavouritesScreen";
 import GiveReviewScreen from "../screens/GiveReviewScreen";
 import TeamsConfigurationScreen from "../screens/TeamsConfigurationScreen";
 import TeamDetailScreen from "../screens/TeamDetailScreen";
-import { PostHogProvider } from "posthog-react-native";
+import { PostHogProvider, usePostHog } from "posthog-react-native";
 import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
 import * as Network from "expo-network";
 import OfflineBanner from "../components/OfflineBanner";
 import * as Linking from "expo-linking";
+import {
+    loadAnalyticsConsentPreference,
+    posthogClient,
+    setAnalyticsConsentPreference,
+} from "../services/posthogClient";
 
 const prefix = Linking.createURL("/");
 
@@ -47,6 +52,71 @@ const Stack = createStackNavigator();
 
 const NotificationHandler = () => {
     useNotifications();
+    return null;
+};
+
+const AnalyticsConsentBridge = ({
+    isAuthenticated,
+}: {
+    isAuthenticated: boolean;
+}) => {
+    const posthog = usePostHog();
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const applyLocalPreference = async () => {
+            const localConsent = await loadAnalyticsConsentPreference();
+            if (!isMounted || localConsent === null) {
+                return;
+            }
+
+            if (localConsent) {
+                posthog?.optIn();
+            } else {
+                posthog?.optOut();
+            }
+        };
+
+        void applyLocalPreference();
+        return () => {
+            isMounted = false;
+        };
+    }, [posthog]);
+
+    useEffect(() => {
+        let isCancelled = false;
+
+        const syncFromServer = async () => {
+            if (!isAuthenticated) {
+                return;
+            }
+
+            try {
+                const preferences = await apiService.getPrivacyPreferences();
+                if (isCancelled) {
+                    return;
+                }
+
+                const analyticsConsent = Boolean(preferences?.analytics_consent);
+                await setAnalyticsConsentPreference(analyticsConsent);
+
+                if (analyticsConsent) {
+                    posthog?.optIn();
+                } else {
+                    posthog?.optOut();
+                }
+            } catch (error) {
+                console.warn("Failed to sync analytics consent from server", error);
+            }
+        };
+
+        void syncFromServer();
+        return () => {
+            isCancelled = true;
+        };
+    }, [isAuthenticated, posthog]);
+
     return null;
 };
 
@@ -187,14 +257,8 @@ export const AppNavigator = () => {
         >
             <NotificationHandler />
             <OfflineBanner />
-            <PostHogProvider
-                apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY}
-                options={{
-                    host:
-                        process.env.EXPO_PUBLIC_POSTHOG_HOST ||
-                        "https://us.i.posthog.com",
-                }}
-            >
+            <PostHogProvider client={posthogClient}>
+                <AnalyticsConsentBridge isAuthenticated={isAuthenticated} />
                 <Stack.Navigator
                     screenOptions={{
                         headerShown: false,
