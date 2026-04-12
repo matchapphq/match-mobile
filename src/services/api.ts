@@ -49,7 +49,6 @@ export const getImageUrl = (path: string | null | undefined): string => {
     }
     // Remove leading slash if present to avoid double slashes
     const cleanPath = path.startsWith("/") ? path.slice(1) : path;
-    console.log("This is supposed to be a clean path: " + cleanPath);
     return `${S3_PUBLIC_URL}/${cleanPath}`;
 };
 

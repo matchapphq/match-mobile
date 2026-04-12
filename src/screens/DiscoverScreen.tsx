@@ -41,7 +41,9 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         challengeLeaderboard,
         fetchChallengeStatus,
         fetchChallengeLeaderboard,
-        isChallengeLoading
+        isChallengeLoading,
+        hasSeenWelcome,
+        setHasSeenWelcome
     } = useStore();
     
     const isLightTheme = themeMode === "light";
@@ -52,11 +54,17 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
     // Animation logic
     const scrollX = useSharedValue(0);
     const scrollViewRef = useRef<Animated.ScrollView>(null);
+    const initialHasSeenWelcome = useRef(hasSeenWelcome);
 
     useEffect(() => {
         fetchDiscoveryHome();
         fetchChallengeStatus();
         fetchChallengeLeaderboard();
+
+        // Mark welcome banner as seen so it's gone on next visit
+        if (!hasSeenWelcome) {
+            setHasSeenWelcome(true);
+        }
     }, []);
 
     useFocusEffect(
@@ -119,9 +127,9 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     };
 
-    const hasTeams = discoveryHome.followed_teams?.length > 0;
-    const hasHistory = discoveryHome.recently_viewed?.length > 0;
-    const hasMatches = discoveryHome.upcoming_matches?.length > 0;
+    const hasTeams = !!(discoveryHome.followed_teams && discoveryHome.followed_teams.length > 0);
+    const hasHistory = !!(discoveryHome.recently_viewed && discoveryHome.recently_viewed.length > 0);
+    const hasMatches = !!(discoveryHome.upcoming_matches && discoveryHome.upcoming_matches.length > 0);
     const activeBanner = discoveryHome.banners?.[0];
 
     const defaultBanner = {
@@ -132,7 +140,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
         isGeneric: true
     };
 
-    const bannerToDisplay = activeBanner || defaultBanner;
+    const bannerToDisplay = activeBanner || (!initialHasSeenWelcome.current ? defaultBanner : null);
 
     const handleShareRank = async () => {
         const rank = challengeStatus?.data?.rank || 0;
@@ -191,27 +199,29 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
 
     const renderForYou = () => (
         <View style={styles.tabContent}>
-            <View style={[styles.bannerContainer, { backgroundColor: colors.surface }]}>
-                <Image source={{ uri: bannerToDisplay.image_url }} style={styles.bannerImage} />
-                <LinearGradient colors={["transparent", "rgba(0,0,0,0.85)"]} style={styles.bannerOverlay} />
-                <View style={styles.bannerContent}>
-                    <View style={[styles.bannerBadge, { backgroundColor: colors.accent }]}>
-                        <Text style={styles.bannerBadgeText}>{bannerToDisplay.isGeneric ? "À DÉCOUVRIR" : "COMPÉTITION"}</Text>
+            {bannerToDisplay && (
+                <View style={[styles.bannerContainer, { backgroundColor: colors.surface }]}>
+                    <Image source={{ uri: bannerToDisplay.image_url }} style={styles.bannerImage} />
+                    <LinearGradient colors={["transparent", "rgba(0,0,0,0.85)"]} style={styles.bannerOverlay} />
+                    <View style={styles.bannerContent}>
+                        <View style={[styles.bannerBadge, { backgroundColor: colors.accent }]}>
+                            <Text style={styles.bannerBadgeText}>{bannerToDisplay.isGeneric ? "À DÉCOUVRIR" : "COMPÉTITION"}</Text>
+                        </View>
+                        <Text style={styles.bannerTitle}>{bannerToDisplay.title}</Text>
+                        <Text style={styles.bannerSubtitle}>{bannerToDisplay.subtitle} • {bannerToDisplay.date_range_label}</Text>
+                        <TouchableOpacity 
+                            style={[styles.bannerCTA, { backgroundColor: colors.primary }]}
+                            onPress={() => (bannerToDisplay as any).tournament_id ? navigation.navigate("Search", { tournamentId: (bannerToDisplay as any).tournament_id }) : navigation.navigate("Map")}
+                        >
+                            <Text style={styles.bannerCTAText}>{bannerToDisplay.isGeneric ? "Explorer" : "Voir les lieux"}</Text>
+                            <MaterialIcons name="arrow-forward" size={14} color="white" />
+                        </TouchableOpacity>
                     </View>
-                    <Text style={styles.bannerTitle}>{bannerToDisplay.title}</Text>
-                    <Text style={styles.bannerSubtitle}>{bannerToDisplay.subtitle} • {bannerToDisplay.date_range_label}</Text>
-                    <TouchableOpacity 
-                        style={[styles.bannerCTA, { backgroundColor: colors.primary }]}
-                        onPress={() => (bannerToDisplay as any).tournament_id ? navigation.navigate("Search", { tournamentId: (bannerToDisplay as any).tournament_id }) : navigation.navigate("Map")}
-                    >
-                        <Text style={styles.bannerCTAText}>{bannerToDisplay.isGeneric ? "Explorer" : "Voir les lieux"}</Text>
-                        <MaterialIcons name="arrow-forward" size={14} color="white" />
-                    </TouchableOpacity>
                 </View>
-            </View>
+            )}
 
             {/* New Challenges Section */}
-            {discoveryHome.active_challenges?.length > 0 && (
+            {!!(discoveryHome.active_challenges && discoveryHome.active_challenges.length > 0) && (
                 <View style={styles.challengesWrapper}>
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Défis en cours</Text>
@@ -226,14 +236,14 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                                     <MaterialCommunityIcons name={(challenge.iconKey as any) || "medal"} size={24} color={challenge.color || colors.accent} />
                                 </View>
                                 <View style={styles.challengeInfoContainer}>
-                                    <Text style={[styles.challengeNameText, { color: colors.text }]} numberOfLines={1}>{challenge.name}</Text>
+                                    <Text style={[styles.challengeNameText, { color: colors.text }]} numberOfLines={1}>{challenge.name || ""}</Text>
                                     <View style={styles.challengeProgressRow}>
                                         <View style={[styles.challengeProgressBarBase, { backgroundColor: colors.border }]}>
-                                            <View style={[styles.challengeProgressBarFill, { width: `${challenge.progressPercentage}%`, backgroundColor: challenge.color || colors.accent }]} />
+                                            <View style={[styles.challengeProgressBarFill, { width: `${challenge.progressPercentage || 0}%`, backgroundColor: challenge.color || colors.accent }]} />
                                         </View>
-                                        <Text style={[styles.challengeProgressText, { color: colors.textMuted }]}>{challenge.progressCount}/{challenge.targetCount}</Text>
+                                        <Text style={[styles.challengeProgressText, { color: colors.textMuted }]}>{challenge.progressCount || 0}/{challenge.targetCount || 0}</Text>
                                     </View>
-                                    <Text style={[styles.challengeRewardText, { color: colors.accent }]}>+{challenge.rewardPoints} pts</Text>
+                                    <Text style={[styles.challengeRewardText, { color: colors.accent }]}>+{challenge.rewardPoints || 0} pts</Text>
                                 </View>
                             </TouchableOpacity>
                         ))}
@@ -314,7 +324,11 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
 
             <View style={styles.sectionHeader}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Récemment vus</Text>
-                {hasHistory && <TouchableOpacity onPress={clearDiscoveryHistory}><Text style={[styles.clearText, { color: colors.textMuted }]}>Effacer</Text></TouchableOpacity>}
+                {hasHistory ? (
+                    <TouchableOpacity onPress={clearDiscoveryHistory}>
+                        <Text style={[styles.clearText, { color: colors.textMuted }]}>Effacer</Text>
+                    </TouchableOpacity>
+                ) : null}
             </View>
             {hasHistory ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.recentContent}>

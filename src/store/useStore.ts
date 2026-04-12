@@ -59,6 +59,7 @@ interface AppState {
     user: User | null;
     isAuthenticated: boolean;
     onboardingCompleted: boolean;
+    hasSeenWelcome: boolean;
 
     // Theme
     themeMode: 'light' | 'dark' | 'system';
@@ -129,6 +130,7 @@ interface AppState {
     // Actions
     setUser: (user: User | null) => void;
     setOnboardingCompleted: (completed: boolean) => void;
+    setHasSeenWelcome: (seen: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
     updateUser: (updates: Partial<User>) => Promise<void>;
     completeOAuthProfile: (payload: {
@@ -234,6 +236,7 @@ export const useStore = create<AppState>((set, get) => ({
     user: null,
     isAuthenticated: false,
     onboardingCompleted: false,
+    hasSeenWelcome: false,
     themeMode: 'dark', // Default to dark initially
     computedTheme: 'dark',
     colors: DARK_THEME,
@@ -768,6 +771,11 @@ export const useStore = create<AppState>((set, get) => ({
             "onboardingCompleted",
             JSON.stringify(completed),
         );
+    },
+
+    setHasSeenWelcome: async (seen) => {
+        set({ hasSeenWelcome: seen });
+        await AsyncStorage.setItem("hasSeenWelcome", JSON.stringify(seen));
     },
 
     setThemeMode: (mode) => {
@@ -1349,6 +1357,7 @@ export const initializeStore = async () => {
         const values = await AsyncStorage.multiGet([
             "user",
             "onboardingCompleted",
+            "hasSeenWelcome",
             "reservations",
             "themeMode",
             "pushNotificationsEnabled",
@@ -1360,6 +1369,8 @@ export const initializeStore = async () => {
         const userStr = values.find(([key]) => key === "user")?.[1] || null;
         const onboardingStr =
             values.find(([key]) => key === "onboardingCompleted")?.[1] || null;
+        const hasSeenWelcomeStr =
+            values.find(([key]) => key === "hasSeenWelcome")?.[1] || null;
         const reservationsStr =
             values.find(([key]) => key === "reservations")?.[1] || null;
         // const token = values.find(([key]) => key === "authToken")?.[1] || null; // Handled above
@@ -1381,6 +1392,7 @@ export const initializeStore = async () => {
 
         const user = userStr ? JSON.parse(userStr) : null;
         const onboarding = onboardingStr ? JSON.parse(onboardingStr) : false;
+        const hasSeenWelcome = hasSeenWelcomeStr ? JSON.parse(hasSeenWelcomeStr) : false;
         const reservations = reservationsStr ? JSON.parse(reservationsStr) : [];
         const pushEnabled = JSON.parse(pushEnabledStr);
         const hapticsEnabled = JSON.parse(hapticsEnabledStr);
@@ -1395,6 +1407,7 @@ export const initializeStore = async () => {
             user,
             isAuthenticated: !!token && !!user,
             onboardingCompleted: onboarding,
+            hasSeenWelcome,
             reservations: parsedReservations,
             themeMode: themeMode as 'light' | 'dark' | 'system',
             computedTheme,
