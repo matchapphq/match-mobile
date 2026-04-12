@@ -3,7 +3,7 @@
     "name": "Match",
     "slug": "match",
     "scheme": "com.matchapps.match",
-    "version": "0.9.7",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/logo_app.png",
     "userInterfaceStyle": "automatic",
@@ -43,7 +43,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiBase": "https://ser.matchapp.fr/api",
+      "apiBase": "https://api.matchapp.fr/api",
       "eas": {
         "projectId": "b0afe468-de21-49eb-b749-5e26c466e72f"
       }
