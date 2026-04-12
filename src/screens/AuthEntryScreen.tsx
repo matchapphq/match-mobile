@@ -19,6 +19,7 @@ import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { useAppleAuth } from "../hooks/useAppleAuth";
 import { PRIVACY_URL, TERMS_URL } from "../constants/legalUrls";
 import { COLORS } from "../constants/colors";
+import { analytics } from "../services/analytics";
 
 const HERO_IMAGE =
     "https://images.unsplash.com/photo-1572116469696-958721b7d6ca?q=80&w=2574&auto=format&fit=crop";
@@ -31,6 +32,7 @@ const AuthEntryScreen = () => {
     const { signInWithApple, isAppleLoading, isAppleAvailable } = useAppleAuth();
 
     const handleRegister = () => {
+        analytics.track('sign_up_started', { method: 'email' });
         navigation.navigate("Onboarding");
     };
 
@@ -39,6 +41,7 @@ const AuthEntryScreen = () => {
     };
 
     const handleSocial = async (provider: string) => {
+        analytics.track('sign_up_started', { method: provider.toLowerCase() });
         if (provider === "Google") {
             const result = await signInWithGoogle();
             if (!result.success && result.error) {

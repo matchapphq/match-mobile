@@ -26,7 +26,7 @@ const FAQ_ITEMS = [
     id: 'faq-1',
     question: 'Comment réserver une table ?',
     answer:
-      "Pour réserver, accédez à la page du bar, sélectionnez votre date et l'heure, choisissez le nombre de personnes, puis confirmez votre réservation. Vous recevrez un e-mail de confirmation.",
+      "Pour réserver, accédez à la page du lieu, sélectionnez votre date et l'heure, choisissez le nombre de personnes, puis confirmez votre réservation. Vous recevrez un e-mail de confirmation.",
   },
   {
     id: 'faq-2',

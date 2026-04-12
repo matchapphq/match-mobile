@@ -150,7 +150,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                                 <TouchableOpacity 
                                     key={match.id} 
                                     style={[styles.matchCard, { backgroundColor: colors.surface }]}
-                                    onPress={() => navigation.navigate('MatchDetail', { matchId: match.id })}
+                                    onPress={() => navigation.navigate('MatchDetail', { matchId: match.id, source: 'venue_agenda' })}
                                 >
                                     <View style={styles.cardHeader}>
                                         <Image source={{ uri: match.team1Logo }} style={styles.leagueIcon} contentFit="contain" />
@@ -174,7 +174,7 @@ const VenueMatchesScreen = ({ navigation, route }: { navigation: any; route: any
                     ))
                 ) : (
                     <View style={styles.emptyContainer}>
-                        <MaterialCommunityIcons name="filter-variant-remove" size={64} color={colors.surface} />
+                        <MaterialCommunityIcons name="filter-off-outline" size={64} color={colors.surface} />
                         <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun match trouvé</Text>
                         <TouchableOpacity onPress={() => setActiveFilter('all')} style={styles.resetBtn}>
                             <Text style={[styles.resetText, { color: colors.accent }]}>Réinitialiser les filtres</Text>

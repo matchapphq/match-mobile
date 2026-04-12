@@ -8,17 +8,17 @@ Ce document définit les étapes clés pour faire évoluer l'application Match d
 *Objectif : Améliorer le ressenti utilisateur et stabiliser les parcours existants.*
 
 ### 🎨 Expérience Utilisateur (UX)
-- [x] **Skeleton Screens** : Remplacer les indicateurs de chargement circulaires par des chargements fantômes sur la liste des bars et la recherche.
+- [x] **Skeleton Screens** : Remplacer les indicateurs de chargement circulaires par des chargements fantômes sur la liste des lieux et la recherche.
 - [x] **Haptic Feedback** : Ajouter des micro-vibrations (Expo Haptics) sur les actions clés : validation de réservation, ajout aux favoris, et erreurs de formulaire.
 - [x] **Empty States Illustrés** : Améliorer les écrans "Aucun résultat" avec des visuels plus engageants.
 
 ### 🛠️ Stabilité Technique
-- [x] **Gestion du Mode Hors-ligne** : Afficher une bannière de déconnexion et permettre la consultation des bars mis en cache via `AsyncStorage`.
-- [x] **Deep Linking** : Configurer les schémas d'URL (`matchapp://`) pour ouvrir l'app directement sur un bar ou un match spécifique.
+- [x] **Gestion du Mode Hors-ligne** : Afficher une bannière de déconnexion et permettre la consultation des lieux mis en cache via `AsyncStorage`.
+- [x] **Deep Linking** : Configurer les schémas d'URL (`matchapp://`) pour ouvrir l'app directement sur un lieu ou un match spécifique.
 - [x] **Optimisation Image** : Utiliser `expo-image` for a better cache and smooth transitions on venue photos.
 
 ### 📢 Partage
-- [x] **Partage Social** : Bouton de partage sur les fiches bars/matchs générant un lien propre et un texte d'invitation.
+- [x] **Partage Social** : Bouton de partage sur les fiches lieux/matchs générant un lien propre et un texte d'invitation.
 
 ---
 
@@ -33,11 +33,11 @@ Ce document définit les étapes clés pour faire évoluer l'application Match d
 ### 💳 Monétisation & Fidélité
 - [ ] **Paiement Stripe (Caution)** : Implémenter le blocage de caution de 10€ pour les groupes de plus de 8 personnes.
 - [ ] **Portefeuille & Coupons** : Rendre fonctionnelle la section "Mon Portefeuille" et permettre l'application de codes promos lors de la réservation.
-- [ ] **Geofencing Check-in** : Valider automatiquement une réservation quand l'utilisateur arrive au bar pour lui attribuer des points de fidélité.
+- [ ] **Geofencing Check-in** : Valider automatiquement une réservation quand l'utilisateur arrive au lieu pour lui attribuer des points de fidélité.
 
 ### 🔔 Intelligence Notifications
 - [ ] **Push Contextuelles** : Rappel automatique 1h avant le coup d'envoi pour les réservations confirmées.
-- [ ] **Alertes Matchs** : Notification lorsqu'un bar favori annonce la diffusion d'un match d'une équipe suivie.
+- [ ] **Alertes Matchs** : Notification lorsqu'un lieu favori annonce la diffusion d'un match d'une équipe suivie.
 
 ---
 

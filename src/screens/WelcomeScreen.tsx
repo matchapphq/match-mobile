@@ -30,7 +30,7 @@ const HERO_SLIDES: HeroSlide[] = [
         id: "discover",
         image: require("../../assets/onboarding/discover.png"),
         headline: "Trouve ton spot, vis le match.",
-        subtitle: "Les meilleurs bars sportifs autour de toi, en quelques secondes.",
+        subtitle: "Les meilleurs lieux autour de toi, en quelques secondes.",
     },
     {
         id: "reserve",

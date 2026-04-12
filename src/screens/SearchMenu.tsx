@@ -217,9 +217,10 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                 const data = await mobileApi.searchPaginated(debouncedQuery, activeTab, page, PAGE_SIZE, selectedFilterDate, userLatRef.current, userLngRef.current);
 
                 if (!append) {
-                    posthog.capture("venue_searched", {
+                    posthog.capture("search_performed", {
                         query: debouncedQuery,
-                        tab: activeTab,
+                        filter_type: activeTab,
+                        results_count: data.totalMatches + data.totalVenues,
                         selected_date: selectedFilterDate ?? "",
                     });
                 }
@@ -543,7 +544,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                 key={match.id}
                                                                 style={[styles.matchCard, { backgroundColor: themeMode === 'light' ? '#fff' : colors.surfaceAlt, borderColor: colors.divider }]}
                                                                 activeOpacity={0.9}
-                                                                onPress={() => navigation.navigate("MatchDetail", { matchId: match.id })}
+                                                                onPress={() => navigation.navigate("MatchDetail", { matchId: match.id, source: 'search' })}
                                                             >
                                                                 <View style={[styles.matchCardBackdrop, { backgroundColor: "rgba(59,130,246,0.1)" }]} />
                                                                 
@@ -614,7 +615,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                         <>
                                             {activeTab === "all" && (
                                                 <View style={[styles.sectionHeaderRow, { marginTop: 32 }]}>
-                                                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Lieux & Bars</Text>
+                                                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Lieux</Text>
                                                     {venueResults.length > 2 && (
                                                         <TouchableOpacity onPress={() => setActiveTab("venues")}>
                                                             <Text style={[styles.sectionAction, { color: colors.accent }]}>Voir tout</Text>
@@ -637,7 +638,7 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                                 key={venue.id}
                                                                 style={[styles.venueCardNew, { backgroundColor: themeMode === 'light' ? '#fff' : colors.surfaceAlt, borderColor: colors.divider }]}
                                                                 activeOpacity={0.85}
-                                                                onPress={() => navigation.navigate('VenueProfile', { venueId: venue.id })}
+                                                                onPress={() => navigation.navigate('VenueProfile', { venueId: venue.id, source: 'search' })}
                                                             >
                                                                 <View style={[styles.venueImageContainerNew, { backgroundColor: colors.surface }]}>
                                                                     {venue.image ? (
@@ -691,8 +692,8 @@ const SearchMenu = ({ navigation }: { navigation: any }) => {
                                                 ) : (
                                                     <EmptyState
                                                         icon="storefront"
-                                                        title="Aucun bar trouvé"
-                                                        description="Nous n'avons pas trouvé de bar correspondant à ta recherche."
+                                                        title="Aucun lieu trouvé"
+                                                        description="Nous n'avons pas trouvé de lieu correspondant à ta recherche."
                                                         style={{ paddingVertical: 40 }}
                                                     />
                                                 )}

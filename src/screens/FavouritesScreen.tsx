@@ -135,7 +135,7 @@ const FavouritesScreen = () => {
         return (
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Bars & Restos</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Top lieux & restos</Text>
                     <TouchableOpacity onPress={() => navigation.navigate('Map')}>
                         <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
                     </TouchableOpacity>
@@ -283,7 +283,7 @@ const FavouritesScreen = () => {
                     <MaterialIcons name="favorite-border" size={64} color={colors.textMuted} />
                     <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun favori</Text>
                     <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                        Ajoute des bars, des équipes ou des ligues à tes favoris pour les retrouver ici.
+                        Ajoute des lieux, des équipes ou des ligues à tes favoris pour les retrouver ici.
                     </Text>
                     <TouchableOpacity 
                         style={[styles.emptyCTA, { backgroundColor: colors.primary }]}

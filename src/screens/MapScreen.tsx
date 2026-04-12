@@ -114,7 +114,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
     };
 
     const handleMarkerPress = async (venue: Venue) => {
-        posthog?.capture("map_marker_selected", { venue_id: venue.id, venue_name: venue.name });
+        posthog?.capture("venue_viewed", { venue_id: venue.id, venue_name: venue.name, source: 'map' });
         setSelectedVenue(venue);
         animateTo(SNAPS.HALF);
 
@@ -193,6 +193,12 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                 onRegionChangeComplete={(region) => {
                     setCurrentRegion(region);
                     setHasSearchedArea(false);
+                    posthog?.capture("map_interacted", {
+                        lat: region.latitude,
+                        lng: region.longitude,
+                        latitudeDelta: region.latitudeDelta,
+                        longitudeDelta: region.longitudeDelta,
+                    });
                 }}
                 initialRegion={{
                     latitude: 48.8566,
@@ -294,7 +300,7 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                 {/* Header */}
                                 <View style={styles.venueHeader}>
                                     <Text style={[styles.venueTitle, { color: colors.text }]}>{selectedVenue.name.toUpperCase()}</Text>
-                                    <Text style={[styles.venueSubtitle, { color: colors.textSecondary }]}>Bar sportif · {selectedVenue.address || 'Paris'}</Text>
+                                    <Text style={[styles.venueSubtitle, { color: colors.textSecondary }]}>Lieu sportif · {selectedVenue.address || 'Paris'}</Text>
                                     
                                     <View style={styles.metaRow}>
                                         <View style={styles.metaItem}>
@@ -313,10 +319,9 @@ const MapScreen = ({ navigation, route }: { navigation: any; route: any }) => {
                                     {/* Action Row */}
                                     <View style={styles.actionRow}>
                                         <TouchableOpacity 
-                                            style={[styles.btnFilled, { backgroundColor: colors.accent }]}
-                                            onPress={() => navigation.navigate('VenueProfile', { venueId: selectedVenue.id })}
-                                        >
-                                            <Text style={[styles.btnFilledText, { color: themeMode === 'dark' ? '#000' : '#fff' }]}>Réserver</Text>
+                                           style={[styles.btnFilled, { backgroundColor: colors.accent }]}
+                                           onPress={() => navigation.navigate('VenueProfile', { venueId: selectedVenue.id, source: 'map' })}
+                                        >                                            <Text style={[styles.btnFilledText, { color: themeMode === 'dark' ? '#000' : '#fff' }]}>Réserver</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity 
                                             style={[styles.btnOutline, { borderColor: colors.border }]} 

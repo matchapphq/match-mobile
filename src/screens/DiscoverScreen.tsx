@@ -203,7 +203,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                         style={[styles.bannerCTA, { backgroundColor: colors.primary }]}
                         onPress={() => (bannerToDisplay as any).tournament_id ? navigation.navigate("Search", { tournamentId: (bannerToDisplay as any).tournament_id }) : navigation.navigate("Map")}
                     >
-                        <Text style={styles.bannerCTAText}>{bannerToDisplay.isGeneric ? "Explorer" : "Voir les bars"}</Text>
+                        <Text style={styles.bannerCTAText}>{bannerToDisplay.isGeneric ? "Explorer" : "Voir les lieux"}</Text>
                         <MaterialIcons name="arrow-forward" size={14} color="white" />
                     </TouchableOpacity>
                 </View>
@@ -302,7 +302,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 <View style={styles.emptyHistoryContainer}>
                     <LinearGradient colors={[isLightTheme ? "#f1f5f9" : "#1c1c21", colors.background]} style={[styles.emptyHistoryCard, { borderColor: colors.border, borderStyle: 'dashed', borderWidth: 1.5 }]}>
                         <MaterialIcons name="explore" size={40} color={colors.textMuted} />
-                        <Text style={[styles.emptyHistoryTitle, { color: colors.text }]}>Aucun bar consulté</Text>
+                        <Text style={[styles.emptyHistoryTitle, { color: colors.text }]}>Aucun lieu consulté</Text>
                         <TouchableOpacity style={[styles.emptyHistoryAction, { backgroundColor: colors.primary }]} onPress={() => navigation.navigate("Map")}><Text style={styles.emptyHistoryActionText}>Lancer la recherche</Text></TouchableOpacity>
                     </LinearGradient>
                 </View>
@@ -345,7 +345,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                     <MaterialCommunityIcons name="auto-fix" size={40} color="white" />
                 </LinearGradient>
                 <Text style={[styles.comingSoonTitle, { color: colors.text }]}>Le Feed arrive bientôt !</Text>
-                <Text style={[styles.comingSoonSubtitle, { color: colors.textMuted }]}>Découvre toute l'actualité de tes bars et équipes favoris.</Text>
+                <Text style={[styles.comingSoonSubtitle, { color: colors.textMuted }]}>Découvre toute l'actualité de tes lieux et équipes favoris.</Text>
                 <TouchableOpacity style={[styles.notifyButton, { backgroundColor: colors.primary }]} onPress={() => handleTabPress("for_you")}>
                     <Text style={styles.notifyButtonText}>Retourner à l'accueil</Text>
                 </TouchableOpacity>
@@ -452,7 +452,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                     <View style={styles.searchContainer}>
                         <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                             <MaterialIcons name="search" size={22} color={colors.textMuted} style={styles.searchIcon} />
-                            <TextInput placeholder="Rechercher un bar, un plat..." placeholderTextColor={colors.textMuted} style={[styles.searchInput, { color: colors.text }]} onFocus={() => navigation.navigate("Search")} />
+                            <TextInput placeholder="Rechercher un lieu, un plat..." placeholderTextColor={colors.textMuted} style={[styles.searchInput, { color: colors.text }]} onFocus={() => navigation.navigate("Search")} />
                         </View>
                         <TouchableOpacity style={styles.mapButton} onPress={() => navigation.navigate("Map")}><MaterialIcons name="map" size={24} color={colors.text} /></TouchableOpacity>
                     </View>
