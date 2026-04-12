@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { getImageUrl } from '../../services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -91,7 +92,7 @@ const ChallengeBetaCard: React.FC<ChallengeBetaCardProps> = ({
                                 <View key={player.id} style={styles.leaderboardRow}>
                                     <View style={styles.miniAvatar}>
                                         {player.avatar_url ? (
-                                            <Image source={{ uri: player.avatar_url }} style={styles.avatarImg} />
+                                            <Image source={{ uri: getImageUrl(player.avatar_url) }} style={styles.avatarImg} />
                                         ) : (
                                             <View style={styles.avatarInitial}><Text style={styles.initialText}>{player.name[0]}</Text></View>
                                         )}

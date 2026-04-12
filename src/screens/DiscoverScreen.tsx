@@ -25,6 +25,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { useStore } from "../store/useStore";
 import { useFocusEffect } from "@react-navigation/native";
+import { getImageUrl } from "../services/api";
 
 const { width } = Dimensions.get("window");
 
@@ -175,7 +176,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                         {leaderboardData.map((item: any, idx: number) => (
                             <View key={idx} style={[styles.leaderboardRow, { borderBottomColor: colors.border }, item.isUser && { backgroundColor: colors.accent10, borderRadius: 16 }]}>
                                 <Text style={[styles.modalRank, { color: item.rank <= 3 ? colors.accent : colors.textMuted }]}>#{item.rank}</Text>
-                                <Image source={{ uri: item.avatar || 'https://i.pravatar.cc/150?u=' + item.userId }} style={styles.modalAvatar} />
+                                <Image source={{ uri: item.avatar ? getImageUrl(item.avatar) : 'https://i.pravatar.cc/150?u=' + item.userId }} style={styles.modalAvatar} />
                                 <View style={{ flex: 1 }}>
                                     <Text style={{ color: colors.text, fontWeight: '700' }}>{item.name} {item.isUser ? '(Toi)' : ''}</Text>
                                     <Text style={{ color: colors.textMuted, fontSize: 12 }}>{item.visites || 0} visites • {item.buts} buts</Text>
@@ -418,7 +419,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                 <View style={styles.leaderboardListCompact}>
                     {leaderboardData.map((player: any, idx: number) => (
                         <TouchableOpacity key={idx} style={[styles.playerRowCompact, { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1 }, player.isUser && { borderColor: colors.accent, backgroundColor: colors.accent05 }]}>
-                            <Image source={{ uri: player.avatar || 'https://i.pravatar.cc/150?u=' + player.userId }} style={styles.playerAvatarCompact} />
+                            <Image source={{ uri: player.avatar ? getImageUrl(player.avatar) : 'https://i.pravatar.cc/150?u=' + player.userId }} style={styles.playerAvatarCompact} />
                             <View style={{ flex: 1 }}>
                                 <Text style={[styles.playerNameCompact, { color: colors.text }]}>{player.name} {player.isUser ? '(Toi)' : ''}</Text>
                                 <Text style={[styles.playerVisitsCompact, { color: colors.textMuted }]}>{player.visites || 0} visites</Text>
@@ -467,7 +468,7 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                         </TouchableOpacity>
                         <TouchableOpacity style={[styles.tabItem, styles.feedTabItem]} onPress={() => handleTabPress("feed")}>
                             <Text style={[styles.tabText, { color: activeTab === "feed" ? colors.text : colors.textMuted }]}>Feed</Text>
-                            <View style={styles.newBadge}><Text style={styles.newBadgeText}>New</Text></View>
+                            <View style={styles.newBadge}><Text style={styles.newBadgeText}>Soon</Text></View>
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.tabItem} onPress={() => handleTabPress("challenge")}>
                             <Text style={[styles.tabText, { color: activeTab === "challenge" ? colors.text : colors.textMuted }]}>Challenge</Text>
