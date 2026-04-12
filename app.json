@@ -43,7 +43,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiBase": "https://api.matchapp.fr/api",
+      "apiBase": "https://ser.matchapp.fr/api",
       "eas": {
         "projectId": "b0afe468-de21-49eb-b749-5e26c466e72f"
       }
