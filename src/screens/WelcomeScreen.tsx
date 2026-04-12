@@ -181,7 +181,7 @@ const WelcomeScreen = () => {
                         <ImageBackground
                             source={item.image}
                             style={styles.background}
-                            resizeMode="cover"
+                            contentFit="cover"
                         >
                             <LinearGradient
                                 colors={[

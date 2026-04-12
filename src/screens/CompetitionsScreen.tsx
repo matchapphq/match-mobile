@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
     pharesLogo: {
         width: 50,
         height: 50,
-        resizeMode: "contain",
+        contentFit: "contain",
     },
     pharesName: {
         fontSize: 13,
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     leagueLogo: {
         width: 32,
         height: 32,
-        resizeMode: "contain",
+        contentFit: "contain",
     },
     leagueInfo: {
         flex: 1,

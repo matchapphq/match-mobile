@@ -75,7 +75,7 @@ const AuthEntryScreen = () => {
             <ImageBackground
                 source={{ uri: HERO_IMAGE }}
                 style={styles.background}
-                resizeMode="cover"
+                contentFit="cover"
             >
                 <LinearGradient
                     colors={["rgba(11,11,15,0.95)", "rgba(11,11,15,0.9)", "rgba(11,11,15,0.8)"]}

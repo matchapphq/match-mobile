@@ -123,6 +123,7 @@ interface AppState {
         popular_competitions: any[];
         recently_viewed: any[];
         upcoming_matches: any[];
+        active_challenges: any[];
     };
 
     // Actions
@@ -276,6 +277,7 @@ export const useStore = create<AppState>((set, get) => ({
         popular_competitions: [],
         recently_viewed: [],
         upcoming_matches: [],
+        active_challenges: [],
     },
 
     // Loading state actions
