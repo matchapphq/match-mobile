@@ -37,7 +37,7 @@ const initialData: OnboardingFormData = {
     fav_sports: ["football", "rugby"],
     fav_team_ids: [],
     ambiances: ["ultra"],
-    venue_types: ["bar"],
+    venue_types: [],
     budget: "standard",
     home_lat: DEFAULT_COORDINATES.lat,
     home_lng: DEFAULT_COORDINATES.lng,

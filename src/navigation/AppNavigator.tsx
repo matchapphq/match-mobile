@@ -35,13 +35,18 @@ import FavouritesScreen from "../screens/FavouritesScreen";
 import GiveReviewScreen from "../screens/GiveReviewScreen";
 import TeamsConfigurationScreen from "../screens/TeamsConfigurationScreen";
 import TeamDetailScreen from "../screens/TeamDetailScreen";
-import { PostHogProvider } from 'posthog-react-native';
+import { PostHogProvider, usePostHog } from "posthog-react-native";
 import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
-import * as Network from 'expo-network';
+import * as Network from "expo-network";
 import OfflineBanner from "../components/OfflineBanner";
-import * as Linking from 'expo-linking';
+import * as Linking from "expo-linking";
+import {
+    loadAnalyticsConsentPreference,
+    posthogClient,
+    setAnalyticsConsentPreference,
+} from "../services/posthogClient";
 
-const prefix = Linking.createURL('/');
+const prefix = Linking.createURL("/");
 
 const Stack = createStackNavigator();
 
@@ -50,8 +55,74 @@ const NotificationHandler = () => {
     return null;
 };
 
+const AnalyticsConsentBridge = ({
+    isAuthenticated,
+}: {
+    isAuthenticated: boolean;
+}) => {
+    const posthog = usePostHog();
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const applyLocalPreference = async () => {
+            const localConsent = await loadAnalyticsConsentPreference();
+            if (!isMounted || localConsent === null) {
+                return;
+            }
+
+            if (localConsent) {
+                posthog?.optIn();
+            } else {
+                posthog?.optOut();
+            }
+        };
+
+        void applyLocalPreference();
+        return () => {
+            isMounted = false;
+        };
+    }, [posthog]);
+
+    useEffect(() => {
+        let isCancelled = false;
+
+        const syncFromServer = async () => {
+            if (!isAuthenticated) {
+                return;
+            }
+
+            try {
+                const preferences = await apiService.getPrivacyPreferences();
+                if (isCancelled) {
+                    return;
+                }
+
+                const analyticsConsent = Boolean(preferences?.analytics_consent);
+                await setAnalyticsConsentPreference(analyticsConsent);
+
+                if (analyticsConsent) {
+                    posthog?.optIn();
+                } else {
+                    posthog?.optOut();
+                }
+            } catch (error) {
+                console.warn("Failed to sync analytics consent from server", error);
+            }
+        };
+
+        void syncFromServer();
+        return () => {
+            isCancelled = true;
+        };
+    }, [isAuthenticated, posthog]);
+
+    return null;
+};
+
 export const AppNavigator = () => {
-    const { isAuthenticated, colors, updateComputedTheme, setOffline } = useStore();
+    const { isAuthenticated, colors, updateComputedTheme, setOffline } =
+        useStore();
     const [isLoading, setIsLoading] = React.useState(true);
     const navigationRef = React.useRef<any>(null);
     const routeNameRef = React.useRef<string | undefined>(undefined);
@@ -78,7 +149,7 @@ export const AppNavigator = () => {
                 heartbeatInFlightRef.current = false;
             }
         },
-        [isAuthenticated]
+        [isAuthenticated],
     );
 
     useEffect(() => {
@@ -132,7 +203,7 @@ export const AppNavigator = () => {
         };
 
         checkNetwork();
-        
+
         // Poll every 10 seconds for connectivity changes
         const interval = setInterval(checkNetwork, 10000);
         return () => clearInterval(interval);
@@ -143,19 +214,19 @@ export const AppNavigator = () => {
     }
 
     const linking = {
-        prefixes: [prefix, 'com.matchapps.match://'],
+        prefixes: [prefix, "com.matchapps.match://"],
         config: {
             screens: {
-                VenueProfile: 'venue/:venueId',
-                MatchDetail: 'match/:matchId',
+                VenueProfile: "venue/:venueId",
+                MatchDetail: "match/:matchId",
                 Tab: {
                     screens: {
-                        Map: 'map',
-                        Search: 'search',
-                        Reservations: 'reservations',
-                        Profile: 'profile',
-                    }
-                }
+                        Map: "map",
+                        Search: "search",
+                        Reservations: "reservations",
+                        Profile: "profile",
+                    },
+                },
             },
         },
     };
@@ -165,13 +236,18 @@ export const AppNavigator = () => {
             ref={navigationRef}
             linking={linking}
             onReady={() => {
-                routeNameRef.current = navigationRef.current?.getCurrentRoute()?.name;
+                routeNameRef.current =
+                    navigationRef.current?.getCurrentRoute()?.name;
             }}
             onStateChange={() => {
                 const previousRouteName = routeNameRef.current;
-                const currentRouteName = navigationRef.current?.getCurrentRoute()?.name;
+                const currentRouteName =
+                    navigationRef.current?.getCurrentRoute()?.name;
 
-                if (previousRouteName !== currentRouteName && currentRouteName) {
+                if (
+                    previousRouteName !== currentRouteName &&
+                    currentRouteName
+                ) {
                     // Using posthog directly here if analytics service failed to create
                     // but I'll assume we want to keep the hook-like style or direct provider access
                     void sendSessionHeartbeat();
@@ -181,12 +257,8 @@ export const AppNavigator = () => {
         >
             <NotificationHandler />
             <OfflineBanner />
-            <PostHogProvider 
-                apiKey={process.env.EXPO_PUBLIC_POSTHOG_API_KEY} 
-                options={{
-                    host: process.env.EXPO_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-                }}
-            >
+            <PostHogProvider client={posthogClient}>
+                <AnalyticsConsentBridge isAuthenticated={isAuthenticated} />
                 <Stack.Navigator
                     screenOptions={{
                         headerShown: false,
@@ -195,36 +267,111 @@ export const AppNavigator = () => {
                 >
                     {!isAuthenticated ? (
                         <>
-                            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-                            <Stack.Screen name="AuthEntry" component={AuthEntryScreen} />
-                            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-                            <Stack.Screen name="Login" component={LoginScreen} />
-                            <Stack.Screen name="DeleteAccountSuccess" component={DeleteAccountSuccessScreen} />
+                            <Stack.Screen
+                                name="Welcome"
+                                component={WelcomeScreen}
+                            />
+                            <Stack.Screen
+                                name="AuthEntry"
+                                component={AuthEntryScreen}
+                            />
+                            <Stack.Screen
+                                name="Onboarding"
+                                component={OnboardingScreen}
+                            />
+                            <Stack.Screen
+                                name="Login"
+                                component={LoginScreen}
+                            />
+                            <Stack.Screen
+                                name="DeleteAccountSuccess"
+                                component={DeleteAccountSuccessScreen}
+                            />
                         </>
                     ) : (
                         <>
                             <Stack.Screen name="Tab" component={TabNavigator} />
-                            <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-                            <Stack.Screen name="DeleteAccountWarning" component={DeleteAccountWarningScreen} />
-                            <Stack.Screen name="DeleteAccountConfirm" component={DeleteAccountConfirmScreen} />
-                            <Stack.Screen name="DeleteAccountFinal" component={DeleteAccountFinalScreen} />
-                            <Stack.Screen name="VenueProfile" component={VenueProfileScreen} />
-                            <Stack.Screen name="VenueMatches" component={VenueMatchesScreen} />
-                            <Stack.Screen name="VenueReviews" component={VenueReviewsScreen} />
-                            <Stack.Screen name="ReservationsScreen" component={ReservationsScreen} />
-                            <Stack.Screen name="ReservationSuccess" component={ReservationSuccessScreen} />
-                            <Stack.Screen name="MatchDetail" component={MatchDetailScreen} />
-                            <Stack.Screen name="CompetitionDetails" component={CompetitionDetailsScreen} />
-                            <Stack.Screen name="Competitions" component={CompetitionsScreen} />
-                            <Stack.Screen name="FaqSupport" component={FaqSupport} />
+                            <Stack.Screen
+                                name="EditProfile"
+                                component={EditProfileScreen}
+                            />
+                            <Stack.Screen
+                                name="DeleteAccountWarning"
+                                component={DeleteAccountWarningScreen}
+                            />
+                            <Stack.Screen
+                                name="DeleteAccountConfirm"
+                                component={DeleteAccountConfirmScreen}
+                            />
+                            <Stack.Screen
+                                name="DeleteAccountFinal"
+                                component={DeleteAccountFinalScreen}
+                            />
+                            <Stack.Screen
+                                name="VenueProfile"
+                                component={VenueProfileScreen}
+                            />
+                            <Stack.Screen
+                                name="VenueMatches"
+                                component={VenueMatchesScreen}
+                            />
+                            <Stack.Screen
+                                name="VenueReviews"
+                                component={VenueReviewsScreen}
+                            />
+                            <Stack.Screen
+                                name="ReservationsScreen"
+                                component={ReservationsScreen}
+                            />
+                            <Stack.Screen
+                                name="ReservationSuccess"
+                                component={ReservationSuccessScreen}
+                            />
+                            <Stack.Screen
+                                name="MatchDetail"
+                                component={MatchDetailScreen}
+                            />
+                            <Stack.Screen
+                                name="CompetitionDetails"
+                                component={CompetitionDetailsScreen}
+                            />
+                            <Stack.Screen
+                                name="Competitions"
+                                component={CompetitionsScreen}
+                            />
+                            <Stack.Screen
+                                name="FaqSupport"
+                                component={FaqSupport}
+                            />
                             {/* LanguageSelection temporarily disabled: app is French-only for now. */}
-                            <Stack.Screen name="ThemeSelection" component={ThemeSelectionScreen} />
-                            <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-                            <Stack.Screen name="DataPrivacy" component={DataPrivacyScreen} />
-                            <Stack.Screen name="Favourites" component={FavouritesScreen} />
-                            <Stack.Screen name="GiveReview" component={GiveReviewScreen} />
-                            <Stack.Screen name="TeamsConfiguration" component={TeamsConfigurationScreen} />
-                            <Stack.Screen name="TeamDetail" component={TeamDetailScreen} />
+                            <Stack.Screen
+                                name="ThemeSelection"
+                                component={ThemeSelectionScreen}
+                            />
+                            <Stack.Screen
+                                name="ChangePassword"
+                                component={ChangePasswordScreen}
+                            />
+                            <Stack.Screen
+                                name="DataPrivacy"
+                                component={DataPrivacyScreen}
+                            />
+                            <Stack.Screen
+                                name="Favourites"
+                                component={FavouritesScreen}
+                            />
+                            <Stack.Screen
+                                name="GiveReview"
+                                component={GiveReviewScreen}
+                            />
+                            <Stack.Screen
+                                name="TeamsConfiguration"
+                                component={TeamsConfigurationScreen}
+                            />
+                            <Stack.Screen
+                                name="TeamDetail"
+                                component={TeamDetailScreen}
+                            />
                         </>
                     )}
                 </Stack.Navigator>

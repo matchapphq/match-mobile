@@ -133,9 +133,9 @@ const NameStepScreen: React.FC<StepScreenProps<"OnboardingName">> = ({
         <OnboardingLayout
             step={1}
             title={
-                <>
+                <Text style={{ fontSize: 32, fontWeight: "700" }}>
                     Parlons de <Text style={accent}>toi</Text>
-                </>
+                </Text>
             }
             subtitle="Dis-nous comment tu t'appelles pour personnaliser ton expérience sur Match."
             canContinue={canContinue}
@@ -521,12 +521,12 @@ const SportsStepScreen: React.FC<StepScreenProps<"OnboardingSports">> = ({
         <OnboardingLayout
             step={5}
             title={
-                <>
+                <Text style={{ fontSize: 32, fontWeight: "700" }}>
                     Quels sports {"\n"}
                     <Text style={accent}>t'intéressent ?</Text>
-                </>
+                </Text>
             }
-            subtitle="Sélectionne tes favoris pour personnaliser ton flux et trouver les meilleurs bars."
+            subtitle="Sélectionne tes favoris pour personnaliser ton flux et trouver les meilleurs lieux."
             canContinue={canContinue}
             onNext={() => {
                 posthog.capture("onboarding_step_completed", { step_name: "sports" });
@@ -686,10 +686,10 @@ const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
         <OnboardingLayout
             step={7}
             title={
-                <>
+                <Text style={{ fontSize: 32, fontWeight: "700" }}>
                     Quel est votre {"\n"}
                     <Text style={accent}>style ?</Text>
-                </>
+                </Text>
             }
             subtitle="Choisis l'ambiance qui correspond à ton envie du moment."
             canContinue={canContinue}
@@ -768,8 +768,9 @@ const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
     );
 };
 
-const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
+const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget"> & { onboardingStartTime: number }> = ({
     navigation,
+    onboardingStartTime,
 }) => {
     const { colors } = useStore();
     const styles = getOnboardingStyles(colors);
@@ -789,20 +790,11 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
         const payload = buildRequestPayload();
         const success = await signup(payload);
         if (success) {
-            // Identify user in PostHog after successful signup with HASHED ID
-            const newUser = useStore.getState().user;
-            const userData = newUser?.user ?? newUser;
-            if (userData?.id) {
-                const anonymousId = await hashId(userData.id);
-                posthog?.identify(anonymousId, {
-                    fav_sports: data.fav_sports,
-                    budget: data.budget,
-                    is_authenticated: true,
-                });
-                analytics.capture("signup_success");
-                hapticFeedback.success();
-            }
-            
+            const duration = Math.floor((Date.now() - onboardingStartTime) / 1000);
+            analytics.track("onboarding_completed", {
+                duration_seconds: duration,
+            });
+            hapticFeedback.success();
             reset();
             // Navigation is handled automatically by AppNavigator's conditional rendering
         } else {
@@ -818,8 +810,12 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
     return (
         <OnboardingLayout
             step={8}
-            title={<>Quel est {"\n"}votre budget ?</>}
-            subtitle="Nous trouverons les bars qui correspondent à tes attentes."
+            title={
+                <Text style={{ fontSize: 32, fontWeight: "700" }}>
+                    Quel est {"\n"}votre budget ?
+                </Text>
+            }
+            subtitle="Nous trouverons les lieux qui correspondent à tes attentes."
             canContinue={Boolean(data.budget) && !isLoading}
             nextLabel={isLoading ? "Connexion..." : "Terminer"}
             error={submissionError}
@@ -866,6 +862,12 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget">> = ({
 };
 
 const OnboardingScreen = () => {
+    const startTime = React.useRef(Date.now());
+
+    useEffect(() => {
+        analytics.track('onboarding_started');
+    }, []);
+
     return (
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen
@@ -898,8 +900,9 @@ const OnboardingScreen = () => {
             />
             <Stack.Screen
                 name="OnboardingBudget"
-                component={BudgetStepScreen}
-            />
+            >
+                {(props) => <BudgetStepScreen {...props} onboardingStartTime={startTime.current} />}
+            </Stack.Screen>
         </Stack.Navigator>
     );
 };

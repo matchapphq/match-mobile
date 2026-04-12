@@ -12,8 +12,8 @@ import {
 import Constants from "expo-constants";
 import { cacheService } from "./cache";
 import { tokenStorage } from "../utils/tokenStorage";
-import PostHog from 'posthog-react-native';
 import { useStore } from "../store/useStore";
+import { posthogClient } from "./posthogClient";
 
 const getApiBaseUrl = () => {
     if (process.env.EXPO_PUBLIC_API_URL) {
@@ -36,6 +36,22 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
+export const S3_PUBLIC_URL = process.env.EXPO_PUBLIC_S3_PUBLIC_URL || "https://pub-8b9a1473188544d6a19f074d22223838.r2.dev";
+
+/**
+ * Ensures an image URL is absolute. 
+ * If it doesn't start with http/https, it prefixes it with S3_PUBLIC_URL.
+ */
+export const getImageUrl = (path: string | null | undefined): string => {
+    if (!path) return "";
+    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:")) {
+        return path;
+    }
+    // Remove leading slash if present to avoid double slashes
+    const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+    return `${S3_PUBLIC_URL}/${cleanPath}`;
+};
+
 type AuthFailureReason = "refresh_failed" | "missing_refresh_token";
 type AuthFailureHandler = (reason: AuthFailureReason) => void | Promise<void>;
 
@@ -53,10 +69,8 @@ const api = axios.create({
     },
 });
 
-// PostHog instance for background/service tracking
-const posthog = new PostHog(process.env.EXPO_PUBLIC_POSTHOG_API_KEY || "", {
-    host: process.env.EXPO_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-});
+// Shared PostHog instance for background/service tracking
+const posthog = posthogClient;
 
 // Add auth token to requests
 api.interceptors.request.use(async (config) => {
@@ -568,7 +582,7 @@ export const apiService = {
     createReservation: async (
         payload: CreateReservationPayload,
     ): Promise<CreateReservationResponse> => {
-        const response = await api.post("/reservations/", payload);
+        const response = await api.post("/reservations", payload);
         return response.data;
     },
 
@@ -812,6 +826,14 @@ export const apiService = {
             "/users/me/session-heartbeat",
             hasLocation ? { location: payload?.location } : undefined
         );
+    },
+
+    /**
+     * Generic GET request
+     */
+    get: async (url: string, config?: any) => {
+        const response = await api.get(url, config);
+        return response.data;
     },
 
     /**

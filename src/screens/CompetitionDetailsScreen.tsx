@@ -180,7 +180,7 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                                 <View style={styles.ctaInner}>
                                     <MaterialIcons name={isFollowed ? "check" : "add"} size={20} color={isFollowed ? colors.accent : "white"} style={{ marginRight: 8 }} />
                                     <Text style={[styles.mainCTAText, { color: isFollowed ? colors.accent : "white" }]}>
-                                        {isFollowed ? "Suivi" : "Suivre & Voir les Bars"}
+                                        {isFollowed ? "Suivi" : "Suivre & Voir les lieux"}
                                     </Text>
                                 </View>
                             )}
@@ -204,7 +204,7 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                             </View>
                         </View>
                         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Bars à proximité</Text>
+                            <Text style={[styles.statLabel, { color: colors.textMuted }]}>Lieux à proximité</Text>
                             <View style={styles.statValueRow}>
                                 <Text style={[styles.statValue, { color: colors.accent }]}>{stats.partner_bars}</Text>
                                 <Text style={[styles.statUnit, { color: colors.textMuted }]}>PARTENAIRES</Text>
@@ -285,7 +285,7 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                                         style={[styles.findVenueButton, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
                                         onPress={() => navigation.navigate("MatchDetail", { matchId: match.id })}
                                     >
-                                        <Text style={[styles.findVenueText, { color: colors.text }]}>Trouver un bar</Text>
+                                        <Text style={[styles.findVenueText, { color: colors.text }]}>Trouver un lieu</Text>
                                     </TouchableOpacity>
                                 </View>
                             ))
@@ -298,11 +298,11 @@ const CompetitionDetailsScreen = ({ route, navigation }: { route: any, navigatio
                     </View>
                 </View>
 
-                {/* Best Bars */}
+                {/* Best Venues */}
                 <View style={styles.barsSection}>
                     <View style={styles.sectionHeader}>
                         <View>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Meilleurs Bars</Text>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>Meilleurs lieux</Text>
                             <Text style={[styles.sectionSubtitle, { color: colors.textMuted }]}>Atmosphère garantie.</Text>
                         </View>
                     </View>
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     matchTeamsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
     teamInfo: { alignItems: 'center', gap: 12, width: 80 },
     teamLogoBg: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center', padding: 12 },
-    teamLogo: { width: '100%', height: '100%', resizeMode: 'contain' },
+    teamLogo: { width: '100%', height: '100%', contentFit: 'contain' },
     teamName: { fontSize: 11, fontWeight: 'bold', textTransform: 'uppercase', textAlign: 'center' },
     vsContainer: { alignItems: 'center' },
     vsText: { fontSize: 20, fontWeight: '900', fontStyle: 'italic' },
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     barsCarousel: { paddingHorizontal: 20, gap: 16, paddingBottom: 20 },
     barCard: { width: 260, borderRadius: 24, overflow: 'hidden', borderWidth: 1 },
     barImageContainer: { height: 150, width: '100%', position: 'relative' },
-    barImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+    barImage: { width: '100%', height: '100%', contentFit: 'cover' },
     ratingBadge: { position: 'absolute', top: 12, right: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: 4 },
     ratingText: { fontSize: 10, fontWeight: 'bold' },
     barInfo: { padding: 16 },

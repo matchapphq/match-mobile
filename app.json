@@ -19,10 +19,11 @@
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSLocationWhenInUseUsageDescription": "Match utilise votre position pour trouver les bars diffusant des matchs près de vous.",
+        "NSLocationWhenInUseUsageDescription": "Match utilise votre position pour trouver les lieux diffusant des matchs près de vous.",
         "NSPhotoLibraryUsageDescription": "Match a besoin d'accéder à vos photos pour vous permettre de personnaliser votre profil.",
         "NSCameraUsageDescription": "Match a besoin d'accéder à votre appareil photo pour vous permettre de prendre une photo de profil."
-      }
+      },
+      "appleTeamId": "JSQ6M97N79"
     },
     "android": {
       "adaptiveIcon": {
@@ -42,7 +43,7 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "apiBase": "https://api.matchapp.fr/api",
+      "apiBase": "https://ser.matchapp.fr/api",
       "eas": {
         "projectId": "b0afe468-de21-49eb-b749-5e26c466e72f"
       }

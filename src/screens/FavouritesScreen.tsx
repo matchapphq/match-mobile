@@ -135,7 +135,7 @@ const FavouritesScreen = () => {
         return (
             <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Top Bars & Restos</Text>
+                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Top lieux & restos</Text>
                     <TouchableOpacity onPress={() => navigation.navigate('Map')}>
                         <Text style={[styles.seeAllText, { color: colors.primary }]}>Voir tout</Text>
                     </TouchableOpacity>
@@ -283,7 +283,7 @@ const FavouritesScreen = () => {
                     <MaterialIcons name="favorite-border" size={64} color={colors.textMuted} />
                     <Text style={[styles.emptyTitle, { color: colors.text }]}>Aucun favori</Text>
                     <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>
-                        Ajoute des bars, des équipes ou des ligues à tes favoris pour les retrouver ici.
+                        Ajoute des lieux, des équipes ou des ligues à tes favoris pour les retrouver ici.
                     </Text>
                     <TouchableOpacity 
                         style={[styles.emptyCTA, { backgroundColor: colors.primary }]}
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     horizontalScroll: { paddingHorizontal: 20, gap: 15 },
     venueCard: { width: 280, borderRadius: 20, overflow: 'hidden', borderWidth: 1 },
     venueImageContainer: { height: 160, width: '100%', position: 'relative' },
-    venueImage: { width: '100%', height: '100%', resizeMode: 'cover' },
+    venueImage: { width: '100%', height: '100%', contentFit: 'cover' },
     favButton: { position: 'absolute', top: 12, right: 12, width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
     venueInfo: { padding: 15 },
     venueTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
@@ -341,14 +341,14 @@ const styles = StyleSheet.create({
     teamsList: { paddingHorizontal: 20, gap: 12 },
     teamItem: { flexDirection: 'row', alignItems: 'center', gap: 15, padding: 12, borderRadius: 16, borderWidth: 1 },
     teamLogoContainer: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', padding: 10 },
-    teamLogo: { width: '100%', height: '100%', resizeMode: 'contain' },
+    teamLogo: { width: '100%', height: '100%', contentFit: 'contain' },
     teamInfo: { flex: 1 },
     teamName: { fontSize: 15, fontWeight: 'bold' },
     teamLeague: { fontSize: 12 },
     leaguesGrid: { paddingHorizontal: 20, flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
     leagueCard: { width: (width - 52) / 2, padding: 15, borderRadius: 20, alignItems: 'center', gap: 10, borderWidth: 1 },
     leagueLogoContainer: { width: 64, height: 64, borderRadius: 12, alignItems: 'center', justifyContent: 'center', padding: 12 },
-    leagueLogo: { width: '100%', height: '100%', resizeMode: 'contain' },
+    leagueLogo: { width: '100%', height: '100%', contentFit: 'contain' },
     leagueNameText: { fontSize: 14, fontWeight: 'bold', textAlign: 'center' },
     detailsButton: { width: '100%', paddingVertical: 8, borderRadius: 10, borderWidth: 1, alignItems: 'center' },
     detailsButtonText: { fontSize: 12, fontWeight: 'bold' },

@@ -1,6 +1,6 @@
 # Match Mobile App
 
-A React Native Expo app for finding the best sports bars and venues to watch matches in real-time.
+A React Native Expo app for finding the best venues to watch matches in real-time.
 
 ## 🚀 Features
 

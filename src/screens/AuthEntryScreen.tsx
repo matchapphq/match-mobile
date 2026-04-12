@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
+import Svg, { Polygon, Path } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import * as WebBrowser from "expo-web-browser";
 import { useNavigation } from "@react-navigation/native";
@@ -18,6 +19,7 @@ import { useGoogleAuth } from "../hooks/useGoogleAuth";
 import { useAppleAuth } from "../hooks/useAppleAuth";
 import { PRIVACY_URL, TERMS_URL } from "../constants/legalUrls";
 import { COLORS } from "../constants/colors";
+import { analytics } from "../services/analytics";
 
 const HERO_IMAGE =
     "https://images.unsplash.com/photo-1572116469696-958721b7d6ca?q=80&w=2574&auto=format&fit=crop";
@@ -30,6 +32,7 @@ const AuthEntryScreen = () => {
     const { signInWithApple, isAppleLoading, isAppleAvailable } = useAppleAuth();
 
     const handleRegister = () => {
+        analytics.track('sign_up_started', { method: 'email' });
         navigation.navigate("Onboarding");
     };
 
@@ -38,6 +41,7 @@ const AuthEntryScreen = () => {
     };
 
     const handleSocial = async (provider: string) => {
+        analytics.track('sign_up_started', { method: provider.toLowerCase() });
         if (provider === "Google") {
             const result = await signInWithGoogle();
             if (!result.success && result.error) {
@@ -71,7 +75,7 @@ const AuthEntryScreen = () => {
             <ImageBackground
                 source={{ uri: HERO_IMAGE }}
                 style={styles.background}
-                resizeMode="cover"
+                contentFit="cover"
             >
                 <LinearGradient
                     colors={["rgba(11,11,15,0.95)", "rgba(11,11,15,0.9)", "rgba(11,11,15,0.8)"]}
@@ -79,7 +83,16 @@ const AuthEntryScreen = () => {
                 />
                 <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
                     <View style={styles.header}>
-                        <MaterialIcons name="sports-bar" size={30} color={colors.accent} />
+                        <Svg width={42} height={42} viewBox="0 0 1080 1080">
+                            <Polygon 
+                                fill={colors.accent}
+                                points="717.7 279.9 567.1 452.6 525.9 281 414.1 472.4 504.4 451.1 257.5 743.7 382.4 743.7 443 557.2 521.7 686.6 714.2 470.6 640.6 743.2 800.2 743.7 898.1 279.9 717.7 279.9" 
+                            />
+                            <Path 
+                                fill={colors.accent}
+                                d="M295.4,558.2l207.3-277.4-168.5-.9-2,6.2h0c-2.1,5.6-4.7,15.7-6,19.9-33.4,108.3-63.5,218-94.8,326.9l-39,131.5c-.3,1-.6,2-.9,3.1l-.2.7-9.4,31.8,210.3-273.5-96.8,31.6h0Z" 
+                            />
+                        </Svg>
                         <Text style={styles.brand}>MATCH</Text>
                     </View>
                     <Text style={styles.tagline}>Trouve ton spot, vis le match.</Text>

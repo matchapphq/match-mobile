@@ -12,6 +12,7 @@ import {
 } from "../types";
 import { apiService, ApiReservation, setAuthFailureHandler } from "../services/api";
 import { tokenStorage } from "../utils/tokenStorage";
+import { setAnalyticsConsentPreference } from "../services/posthogClient";
 
 // Transform API reservation to mobile Reservation type
 export const transformApiReservation = (
@@ -58,6 +59,7 @@ interface AppState {
     user: User | null;
     isAuthenticated: boolean;
     onboardingCompleted: boolean;
+    hasSeenWelcome: boolean;
 
     // Theme
     themeMode: 'light' | 'dark' | 'system';
@@ -90,6 +92,20 @@ interface AppState {
     hapticsEnabled: boolean;
     isOffline: boolean;
 
+    // Challenge Bêta
+    challengeStatus: {
+        rank: number;
+        totalButs: number;
+        streakDays: number;
+        nextMilestone: {
+            target: number;
+            progress: number;
+            label: string;
+        };
+    } | null;
+    challengeLeaderboard: any[];
+    isChallengeLoading: boolean;
+
     // Filters
     filters: {
         sports: string[];
@@ -108,11 +124,13 @@ interface AppState {
         popular_competitions: any[];
         recently_viewed: any[];
         upcoming_matches: any[];
+        active_challenges: any[];
     };
 
     // Actions
     setUser: (user: User | null) => void;
     setOnboardingCompleted: (completed: boolean) => void;
+    setHasSeenWelcome: (seen: boolean) => void;
     updateUserPreferences: (preferences: UserPreferences) => void;
     updateUser: (updates: Partial<User>) => Promise<void>;
     completeOAuthProfile: (payload: {
@@ -197,6 +215,13 @@ interface AppState {
     signup: (data: any) => Promise<boolean>;
     refreshReservations: () => Promise<void>;
 
+    // Challenge Actions
+    fetchChallengeStatus: () => Promise<void>;
+    fetchChallengeLeaderboard: () => Promise<void>;
+    submitScan: (venueId: string, location?: { latitude: number, longitude: number }) => Promise<{ success: boolean, message: string }>;
+    submitBugReport: (data: any) => Promise<void>;
+    submitVenueSuggestion: (data: any) => Promise<void>;
+
     // Loading states
     isLoading: boolean;
     error: string | null;
@@ -211,6 +236,7 @@ export const useStore = create<AppState>((set, get) => ({
     user: null,
     isAuthenticated: false,
     onboardingCompleted: false,
+    hasSeenWelcome: false,
     themeMode: 'dark', // Default to dark initially
     computedTheme: 'dark',
     colors: DARK_THEME,
@@ -230,6 +256,12 @@ export const useStore = create<AppState>((set, get) => ({
     pushNotificationsEnabled: false,
     hapticsEnabled: true,
     isOffline: false,
+
+    // Challenge Bêta initial state
+    challengeStatus: null,
+    challengeLeaderboard: [],
+    isChallengeLoading: false,
+
     filters: {
         sports: [],
         ambiance: [],
@@ -248,6 +280,7 @@ export const useStore = create<AppState>((set, get) => ({
         popular_competitions: [],
         recently_viewed: [],
         upcoming_matches: [],
+        active_challenges: [],
     },
 
     // Loading state actions
@@ -509,6 +542,24 @@ export const useStore = create<AppState>((set, get) => ({
                 isLoading: false,
             });
 
+            // Analytics Tracking
+            const { analytics } = await import("../services/analytics");
+            const actualUser = user?.user ?? user;
+            if (actualUser?.id) {
+                analytics.identify(actualUser.id, {
+                    email: actualUser.email,
+                    first_name: actualUser.firstName || actualUser.first_name,
+                    last_name: actualUser.lastName || actualUser.last_name,
+                    user_tier: (actualUser as any).tier || "standard",
+                    is_venue_owner: actualUser.role === "owner",
+                    favorite_teams: actualUser.preferences?.fav_team_ids || [],
+                });
+                analytics.track("login_completed", { 
+                    user_id: actualUser.id,
+                    method: 'email' 
+                });
+            }
+
             // Trigger background refresh to get full profile (bio, created_at, etc)
             get().refreshUserProfile();
 
@@ -542,6 +593,24 @@ export const useStore = create<AppState>((set, get) => ({
                 isAuthenticated: true,
                 isLoading: false,
             });
+
+            // Analytics Tracking
+            const { analytics } = await import("../services/analytics");
+            const actualUser = user?.user ?? user;
+            if (actualUser?.id) {
+                analytics.identify(actualUser.id, {
+                    email: actualUser.email,
+                    first_name: actualUser.firstName || actualUser.first_name,
+                    last_name: actualUser.lastName || actualUser.last_name,
+                    user_tier: (actualUser as any).tier || "standard",
+                    is_venue_owner: actualUser.role === "owner",
+                    favorite_teams: actualUser.preferences?.fav_team_ids || [],
+                });
+                analytics.track("login_completed", { 
+                    user_id: actualUser.id,
+                    method: 'google' 
+                });
+            }
 
             get().refreshUserProfile();
 
@@ -578,6 +647,24 @@ export const useStore = create<AppState>((set, get) => ({
                 isAuthenticated: true,
                 isLoading: false,
             });
+
+            // Analytics Tracking
+            const { analytics } = await import("../services/analytics");
+            const actualUser = user?.user ?? user;
+            if (actualUser?.id) {
+                analytics.identify(actualUser.id, {
+                    email: actualUser.email,
+                    first_name: actualUser.firstName || actualUser.first_name,
+                    last_name: actualUser.lastName || actualUser.last_name,
+                    user_tier: (actualUser as any).tier || "standard",
+                    is_venue_owner: actualUser.role === "owner",
+                    favorite_teams: actualUser.preferences?.fav_team_ids || [],
+                });
+                analytics.track("login_completed", { 
+                    user_id: actualUser.id,
+                    method: 'apple' 
+                });
+            }
 
             get().refreshUserProfile();
 
@@ -633,6 +720,27 @@ export const useStore = create<AppState>((set, get) => ({
                 onboardingCompleted: true,
                 isLoading: false,
             });
+
+            // Analytics Tracking
+            const { analytics } = await import("../services/analytics");
+            const actualUser = user?.user ?? user;
+            if (actualUser?.id) {
+                analytics.identify(actualUser.id, {
+                    email: actualUser.email,
+                    first_name: actualUser.firstName || actualUser.first_name,
+                    last_name: actualUser.lastName || actualUser.last_name,
+                    user_tier: (actualUser as any).tier || "standard",
+                    is_venue_owner: actualUser.role === "owner",
+                    fav_sports: actualUser.preferences?.fav_sports || actualUser.preferences?.sports || [],
+                    favorite_teams: actualUser.preferences?.fav_team_ids || [],
+                    budget: actualUser.preferences?.budget,
+                });
+                analytics.track("sign_up_completed", { 
+                    user_id: actualUser.id,
+                    method: 'email' 
+                });
+            }
+
             return true;
         } catch (error: any) {
             console.error("Signup failed:", error);
@@ -663,6 +771,11 @@ export const useStore = create<AppState>((set, get) => ({
             "onboardingCompleted",
             JSON.stringify(completed),
         );
+    },
+
+    setHasSeenWelcome: async (seen) => {
+        set({ hasSeenWelcome: seen });
+        await AsyncStorage.setItem("hasSeenWelcome", JSON.stringify(seen));
     },
 
     setThemeMode: (mode) => {
@@ -1110,6 +1223,47 @@ export const useStore = create<AppState>((set, get) => ({
         set({ notifications: [], unreadNotificationCount: 0 });
     },
 
+    // Challenge Actions Implementation
+    fetchChallengeStatus: async () => {
+        try {
+            const response = await apiService.get("/challenge/status");
+            set({ challengeStatus: response });
+        } catch (error) {
+            console.error("Failed to fetch challenge status:", error);
+        }
+    },
+
+    fetchChallengeLeaderboard: async () => {
+        try {
+            const response = await apiService.get("/challenge/leaderboard");
+            set({ challengeLeaderboard: response });
+        } catch (error) {
+            console.error("Failed to fetch challenge leaderboard:", error);
+        }
+    },
+
+    submitScan: async (venueId, location) => {
+        try {
+            const response = await apiService.post("/challenge/scan", {
+                venueId,
+                latitude: location?.latitude?.toString(),
+                longitude: location?.longitude?.toString()
+            });
+            await get().fetchChallengeStatus();
+            return { success: true, message: response.message || "Scan réussi" };
+        } catch (error: any) {
+            return { success: false, message: error.response?.data?.message || "Échec du scan" };
+        }
+    },
+
+    submitBugReport: async (data) => {
+        await apiService.post("/challenge/bug-report", data);
+    },
+
+    submitVenueSuggestion: async (data) => {
+        await apiService.post("/challenge/venue-suggestion", data);
+    },
+
     logout: async () => {
         const { posthog } = await import("../services/analytics");
         try {
@@ -1118,6 +1272,7 @@ export const useStore = create<AppState>((set, get) => ({
             console.error("Logout API error:", error);
         }
 
+        await setAnalyticsConsentPreference(false);
         posthog?.reset();
 
         set({
@@ -1160,6 +1315,7 @@ export const useStore = create<AppState>((set, get) => ({
 const clearClientAuthState = async () => {
     const { posthog } = await import("../services/analytics");
 
+    await setAnalyticsConsentPreference(false);
     posthog?.reset();
 
     useStore.setState({
@@ -1201,6 +1357,7 @@ export const initializeStore = async () => {
         const values = await AsyncStorage.multiGet([
             "user",
             "onboardingCompleted",
+            "hasSeenWelcome",
             "reservations",
             "themeMode",
             "pushNotificationsEnabled",
@@ -1212,6 +1369,8 @@ export const initializeStore = async () => {
         const userStr = values.find(([key]) => key === "user")?.[1] || null;
         const onboardingStr =
             values.find(([key]) => key === "onboardingCompleted")?.[1] || null;
+        const hasSeenWelcomeStr =
+            values.find(([key]) => key === "hasSeenWelcome")?.[1] || null;
         const reservationsStr =
             values.find(([key]) => key === "reservations")?.[1] || null;
         // const token = values.find(([key]) => key === "authToken")?.[1] || null; // Handled above
@@ -1233,6 +1392,7 @@ export const initializeStore = async () => {
 
         const user = userStr ? JSON.parse(userStr) : null;
         const onboarding = onboardingStr ? JSON.parse(onboardingStr) : false;
+        const hasSeenWelcome = hasSeenWelcomeStr ? JSON.parse(hasSeenWelcomeStr) : false;
         const reservations = reservationsStr ? JSON.parse(reservationsStr) : [];
         const pushEnabled = JSON.parse(pushEnabledStr);
         const hapticsEnabled = JSON.parse(hapticsEnabledStr);
@@ -1247,6 +1407,7 @@ export const initializeStore = async () => {
             user,
             isAuthenticated: !!token && !!user,
             onboardingCompleted: onboarding,
+            hasSeenWelcome,
             reservations: parsedReservations,
             themeMode: themeMode as 'light' | 'dark' | 'system',
             computedTheme,

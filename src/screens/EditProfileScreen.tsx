@@ -18,6 +18,7 @@ import { useStore } from "../store/useStore";
 import { usePostHog } from "posthog-react-native";
 import { hapticFeedback } from "../utils/haptics";
 import { COLORS } from "../constants/colors";
+import { getImageUrl } from "../services/api";
 
 const MAX_BIO = 150;
 const AVATAR_PLACEHOLDER = "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400";
@@ -118,7 +119,7 @@ const EditProfileScreen = () => {
 
                 <View style={styles.avatarSection}>
                     <View style={styles.avatarWrapper}>
-                        <ImageBackground source={{ uri: avatar }} style={styles.avatar} imageStyle={styles.avatarImage} />
+                        <ImageBackground source={{ uri: getImageUrl(avatar) }} style={styles.avatar} imageStyle={styles.avatarImage} />
                         <TouchableOpacity
                             style={[styles.avatarBadge, { backgroundColor: colors.accent, borderColor: colors.background }]}
                             activeOpacity={0.9}

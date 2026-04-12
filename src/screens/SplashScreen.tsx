@@ -1,136 +1,128 @@
-import React, { useEffect, useMemo, useRef } from "react";
-import { View, Text, StyleSheet, Animated, Dimensions } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, StyleSheet, Animated, Dimensions, StatusBar, Text, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import * as SplashScreenNative from "expo-splash-screen";
+import Svg, { Path, G, Polygon, RadialGradient, Defs, Stop, Rect } from "react-native-svg";
 import { MaterialIcons } from "@expo/vector-icons";
-import { theme } from "../constants/theme";
-import { COLORS } from "../constants/colors";
 
-const { width, height } = Dimensions.get("window");
-const BRAND_PRIMARY = COLORS.primary;
-const DOT_COUNT = 3;
-const PATTERN_COLUMNS = 6;
-const PATTERN_ROWS = 14;
+const { width } = Dimensions.get("window");
+
+// Brand Constants (Updated to match Brand Guidelines PDF)
+const BRAND_VIOLET = "#6D00FF";
+const DEEP_NAVY = "#000025";
+const BRAND_GREEN = "#9CFF00";
 
 const SplashScreen = () => {
-    const iconScale = useRef(new Animated.Value(0.7)).current;
-    const contentOpacity = useRef(new Animated.Value(0)).current;
-    const dotAnimations = useRef([...Array(DOT_COUNT)].map(() => new Animated.Value(0))).current;
-
-    const patternDots = useMemo(() => {
-        const dots = [];
-        for (let row = 0; row < PATTERN_ROWS; row++) {
-            for (let col = 0; col < PATTERN_COLUMNS; col++) {
-                dots.push({ row, col, key: `${row}-${col}` });
-            }
-        }
-        return dots;
-    }, []);
+    // Snappy animations for instant recognition
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const scaleAnim = useRef(new Animated.Value(0.95)).current;
+    const glowAnim = useRef(new Animated.Value(0.2)).current;
+    const taglineFadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
+        // Hide native splash screen
+        SplashScreenNative.hideAsync().catch(() => {});
+
+        // Snappy, modern entrance
         Animated.parallel([
-            Animated.spring(iconScale, {
-                toValue: 1,
-                friction: 8,
-                useNativeDriver: true,
+            Animated.timing(fadeAnim, { 
+                toValue: 1, 
+                duration: 700, 
+                useNativeDriver: true 
             }),
-            Animated.timing(contentOpacity, {
-                toValue: 1,
-                duration: 600,
-                useNativeDriver: true,
+            Animated.spring(scaleAnim, { 
+                toValue: 1, 
+                friction: 8, 
+                tension: 30,
+                useNativeDriver: true 
             }),
-        ]).start();
-
-        dotAnimations.forEach((anim, index) => {
-            const animateDot = () => {
+            Animated.timing(taglineFadeAnim, {
+                toValue: 1,
+                duration: 800,
+                delay: 400,
+                useNativeDriver: true
+            }),
+            Animated.loop(
                 Animated.sequence([
-                    Animated.delay(index * 160),
-                    Animated.timing(anim, {
-                        toValue: 1,
-                        duration: 320,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(anim, {
-                        toValue: 0.3,
-                        duration: 320,
-                        useNativeDriver: true,
-                    }),
-                    Animated.delay((DOT_COUNT - index) * 120),
-                ]).start(animateDot);
-            };
-
-            animateDot();
-        });
-    }, [contentOpacity, dotAnimations, iconScale]);
+                    Animated.timing(glowAnim, { toValue: 0.4, duration: 2500, useNativeDriver: true }),
+                    Animated.timing(glowAnim, { toValue: 0.2, duration: 2500, useNativeDriver: true }),
+                ])
+            ).start(),
+        ]).start();
+    }, [fadeAnim, scaleAnim, glowAnim, taglineFadeAnim]);
 
     return (
         <View style={styles.container}>
+            <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+            
+            {/* 1. Brand Gradient Background (Updated Colors) */}
             <LinearGradient
-                colors={["#050506", "#0b0b0f", "#0f0f18"]}
-                style={StyleSheet.absoluteFillObject}
-                locations={[0, 0.4, 1]}
+                colors={[BRAND_VIOLET, DEEP_NAVY]}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0.5, y: 0 }}
+                end={{ x: 0.5, y: 1 }}
             />
 
-            <LinearGradient
-                colors={[`${BRAND_PRIMARY}15`, `${BRAND_PRIMARY}05`, "transparent"]}
-                style={[styles.glow, styles.glowTop]}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 0.8, y: 1 }}
-            />
-            <LinearGradient
-                colors={["transparent", `${BRAND_PRIMARY}08`, `${BRAND_PRIMARY}20`]}
-                style={[styles.glow, styles.glowBottom]}
-                start={{ x: 0.2, y: 0 }}
-                end={{ x: 1, y: 0.8 }}
-            />
-
-            <View style={styles.pattern} pointerEvents="none">
-                {patternDots.map(({ key, row, col }) => (
-                    <View
-                        key={key}
-                        style={[
-                            styles.patternDot,
-                            {
-                                top: row * 32,
-                                left: col * 32,
-                                opacity: row % 2 === 0 ? 0.05 : 0.08,
-                            },
-                        ]}
-                    />
-                ))}
-            </View>
-
-            <Animated.View style={[styles.content, { opacity: contentOpacity, transform: [{ scale: iconScale }] }]}>
-                <View style={styles.iconWrapper}>
-                    <MaterialIcons name="sports-bar" size={60} color={BRAND_PRIMARY} />
-                    <View style={styles.iconBorder} />
-                </View>
-                <Text style={styles.title}>MATCH</Text>
-                <Text style={styles.subtitle}>Les meilleurs plans matchs qui te laisseront sans voix</Text>
+            {/* 2. Subtle Stadium Atmosphere Glow */}
+            <Animated.View style={[StyleSheet.absoluteFill, { opacity: glowAnim }]}>
+                <Svg height="100%" width="100%">
+                    <Defs>
+                        <RadialGradient id="stadiumGlow" cx="50%" cy="50%" r="50%">
+                            <Stop offset="0%" stopColor={BRAND_VIOLET} stopOpacity="0.4" />
+                            <Stop offset="100%" stopColor={DEEP_NAVY} stopOpacity="0" />
+                        </RadialGradient>
+                    </Defs>
+                    <Rect width="100%" height="100%" fill="url(#stadiumGlow)" />
+                </Svg>
             </Animated.View>
 
-            <View style={styles.loader}>
-                <View style={styles.dotRow}>
-                    {dotAnimations.map((anim, idx) => (
-                        <Animated.View
-                            key={`loader-dot-${idx}`}
-                            style={[
-                                styles.dot,
-                                {
-                                    opacity: anim,
-                                    transform: [
-                                        {
-                                            translateY: anim.interpolate({
-                                                inputRange: [0.3, 1],
-                                                outputRange: [0, -4],
-                                            }),
-                                        },
-                                    ],
-                                },
-                            ]}
+            {/* 3. MATCH Wordmark (Iconic Green M + Square-Geometric ATCH) */}
+            <Animated.View style={[
+                styles.contentWrapper,
+                { 
+                    opacity: fadeAnim, 
+                    transform: [{ scale: scaleAnim }],
+                }
+            ]}>
+                <Svg width={width * 0.85} height={100} viewBox="0 0 550 100">
+                    {/* Iconic M: Original Green Paths */}
+                    <G transform="translate(-10, -45) scale(0.18)" fill={BRAND_GREEN}>
+                        <Polygon
+                            points="717.7 279.9 567.1 452.6 525.9 281 414.1 472.4 504.4 451.1 257.5 743.7 382.4 743.7 443 557.2 521.7 686.6 714.2 470.6 640.6 743.2 800.2 743.7 898.1 279.9 717.7 279.9"
                         />
-                    ))}
-                </View>
-                <Text style={styles.loaderLabel}>CHARGEMENT</Text>
+                        <Path
+                            d="M295.4,558.2l207.3-277.4-168.5-.9-2,6.2h0c-2.1,5.6-4.7,15.7-6,19.9-33.4,108.3-63.5,218-94.8,326.9l-39,131.5c-.3,1-.6,2-.9,3.1l-.2.7-9.4,31.8,210.3-273.5-96.8,31.6h0Z"
+                        />
+                    </G>
+
+                    {/* ATCH: Square-Geometric Bold White Paths (Sporty / Tech Style) */}
+                    <G fill="#FFFFFF" transform="translate(155, 0)">
+                        {/* A: Blocky with flat top */}
+                        <Path d="M0 85 L20 10 H60 L80 85 H60 L55 65 H25 L20 85 H0 Z" />
+                        <Path d="M28 50 H52 L54 58 H26 Z" />
+
+                        {/* T: Wide and Robust */}
+                        <Path d="M90 10 H170 V25 H143 V85 H117 V25 H90 V10 Z" />
+
+                        {/* C: Squarish Tech Curve */}
+                        <Path d="M185 25 V70 C185 80 190 85 200 85 H250 V70 H205 V25 H250 V10 H200 C190 10 185 15 185 25 Z" />
+
+                        {/* H: Wide Pillars */}
+                        <Path d="M265 10 H285 V40 H330 V10 H350 V85 H330 V55 H285 V85 H265 V10 Z" />
+                    </G>
+                </Svg>
+
+                {/* 4. Tagline (from Page 10 of Brand Guidelines) */}
+                <Animated.View style={[styles.taglineWrapper, { opacity: taglineFadeAnim }]}>
+                    <Text style={styles.taglineText}>
+                        Trouve en 30 secondes les meilleurs spots pour regarder tes matchs
+                    </Text>
+                </Animated.View>
+            </Animated.View>
+
+            {/* 5. Settings Access */}
+            <View style={styles.settingsContainer}>
+                <MaterialIcons name="settings" size={24} color="rgba(255,255,255,0.4)" />
             </View>
         </View>
     );
@@ -141,101 +133,35 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#050506",
+        backgroundColor: DEEP_NAVY,
     },
-    glow: {
-        position: "absolute",
-        width: width * 0.8,
-        height: width * 0.8,
-        borderRadius: width * 0.4,
-        opacity: 0.7,
-    },
-    glowTop: {
-        top: height * 0.1,
-        left: -width * 0.1,
-    },
-    glowBottom: {
-        bottom: height * 0.05,
-        right: -width * 0.15,
-    },
-    pattern: {
-        position: "absolute",
-        opacity: 0.05,
-        flexDirection: "row",
-        flexWrap: "wrap",
-        width: width * 0.8,
-        height: height * 0.8,
-    },
-    patternDot: {
-        position: "absolute",
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        backgroundColor: "#ffffff",
-    },
-    content: {
+    contentWrapper: {
         alignItems: "center",
         justifyContent: "center",
+    },
+    taglineWrapper: {
+        marginTop: 20,
         paddingHorizontal: 40,
-        gap: 16,
     },
-    iconWrapper: {
-        width: 110,
-        height: 110,
-        borderRadius: 32,
-        backgroundColor: "#1c1c21",
-        justifyContent: "center",
-        alignItems: "center",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-        position: "relative",
-        shadowColor: BRAND_PRIMARY,
-        shadowOpacity: 0.3,
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: 12 },
-        elevation: 10,
-    },
-    iconBorder: {
-        position: "absolute",
-        inset: 6,
-        borderRadius: 26,
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.08)",
-    },
-    title: {
-        fontSize: 56,
-        fontWeight: "800",
-        letterSpacing: 8,
-        color: theme.colors.text,
-    },
-    subtitle: {
-        color: "#a1a1aa",
-        fontSize: 18,
+    taglineText: {
+        color: BRAND_GREEN,
+        fontSize: 14,
         textAlign: "center",
-        lineHeight: 26,
+        fontWeight: "700",
+        fontFamily: Platform.select({
+            ios: "AvenirNext-Bold",
+            android: "sans-serif-condensed",
+            default: "System",
+        }),
+        letterSpacing: 1.2,
+        textTransform: "uppercase",
+        opacity: 0.9,
     },
-    loader: {
+    settingsContainer: {
         position: "absolute",
         bottom: 60,
-        alignItems: "center",
-        gap: 10,
-    },
-    dotRow: {
-        flexDirection: "row",
-        gap: 6,
-    },
-    dot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
-        backgroundColor: BRAND_PRIMARY,
-    },
-    loaderLabel: {
-        marginTop: 8,
-        fontSize: 12,
-        letterSpacing: 4,
-        color: "rgba(161,161,170,0.6)",
-    },
+        right: 35,
+    }
 });
 
 export default SplashScreen;
