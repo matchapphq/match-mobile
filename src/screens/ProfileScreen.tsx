@@ -24,6 +24,7 @@ import { useStore } from '../store/useStore';
 import { usePostHog } from 'posthog-react-native';
 import type { UserProfile } from '../services/mobileApi';
 import { openLiveChatFallback, openSupportEmail } from '../utils/supportEmail';
+import { getImageUrl } from '../services/api';
 
 type SectionRow = {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -296,7 +297,7 @@ const ProfileScreen = () => {
           <View style={styles.avatarWrapper}>
             <ImageBackground
               source={{
-                uri: profile.avatar,
+                uri: getImageUrl(profile.avatar),
               }}
               style={styles.avatar}
               imageStyle={{ borderRadius: 64 }}

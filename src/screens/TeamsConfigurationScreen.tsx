@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
     teamLogo: {
         width: "100%",
         height: "100%",
-        resizeMode: "contain",
+        contentFit: "contain",
     },
     teamInfo: {
         flex: 1,

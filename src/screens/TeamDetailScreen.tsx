@@ -354,7 +354,7 @@ const styles = StyleSheet.create({
     teamLogoLarge: {
         width: "100%",
         height: "100%",
-        resizeMode: "contain",
+        contentFit: "contain",
     },
     teamNameLarge: {
         fontSize: 32,
@@ -485,7 +485,7 @@ const styles = StyleSheet.create({
     barImage: {
         width: "100%",
         height: 140,
-        resizeMode: "cover",
+        contentFit: "cover",
     },
     barInfo: {
         padding: 16,

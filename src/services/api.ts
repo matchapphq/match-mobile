@@ -36,6 +36,22 @@ const getApiBaseUrl = () => {
 
 export const API_BASE_URL = getApiBaseUrl();
 
+export const S3_PUBLIC_URL = process.env.EXPO_PUBLIC_S3_PUBLIC_URL || "https://pub-8b9a1473188544d6a19f074d22223838.r2.dev";
+
+/**
+ * Ensures an image URL is absolute. 
+ * If it doesn't start with http/https, it prefixes it with S3_PUBLIC_URL.
+ */
+export const getImageUrl = (path: string | null | undefined): string => {
+    if (!path) return "";
+    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("data:")) {
+        return path;
+    }
+    // Remove leading slash if present to avoid double slashes
+    const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+    return `${S3_PUBLIC_URL}/${cleanPath}`;
+};
+
 type AuthFailureReason = "refresh_failed" | "missing_refresh_token";
 type AuthFailureHandler = (reason: AuthFailureReason) => void | Promise<void>;
 
