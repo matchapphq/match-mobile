@@ -3,43 +3,45 @@ import {
     View,
     Text,
     TouchableOpacity,
-    ScrollView,
     StyleSheet,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { LinearGradient } from "expo-linear-gradient";
 import { MaterialIcons } from "@expo/vector-icons";
-import { BG_DARK, BRAND_PRIMARY, SURFACE_DARK, width, height } from "./styles";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import { width, height } from "./styles";
 import { ONBOARDING_TOTAL_STEPS } from "../../store/useOnboardingForm";
 import { useStore } from "../../store/useStore";
 
 export type OnboardingLayoutProps = {
-    step: number;
-    title: ReactNode;
-    subtitle?: ReactNode;
+    currentStepIndex: number;
+    scrollX: Animated.SharedValue<number>;
     nextLabel?: string;
     canContinue?: boolean;
     footerNote?: ReactNode;
-    error?: string | null;
     onNext: () => void;
     onBack: () => void;
     children: ReactNode;
 };
 
 export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
-    step,
-    title,
-    subtitle,
+    currentStepIndex,
+    scrollX,
     nextLabel = "Continuer",
     canContinue = true,
     footerNote,
-    error,
     onNext,
     onBack,
     children,
 }) => {
     const { colors } = useStore();
-    const progressWidth = `${(step / ONBOARDING_TOTAL_STEPS) * 100}%`;
+
+    const animatedProgressStyle = useAnimatedStyle(() => {
+        const step = (scrollX.value / width) + 1;
+        const progress = (step / ONBOARDING_TOTAL_STEPS) * 100;
+        return {
+            width: `${Math.max(0, Math.min(100, progress))}%`,
+        };
+    });
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -51,42 +53,17 @@ export const OnboardingLayout: React.FC<OnboardingLayoutProps> = ({
                     <TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surfaceGlass, borderColor: colors.border }]} onPress={onBack}>
                         <MaterialIcons name="arrow-back-ios-new" size={18} color={colors.text} />
                     </TouchableOpacity>
-                    <Text style={[styles.stepIndicator, { color: colors.textMuted }]}>Étape {step} sur {ONBOARDING_TOTAL_STEPS}</Text>
+                    <Text style={[styles.stepIndicator, { color: colors.textMuted }]}>Étape {currentStepIndex + 1} sur {ONBOARDING_TOTAL_STEPS}</Text>
                     <View style={{ width: 40 }} />
                 </View>
 
                 <View style={[styles.progressBar, { backgroundColor: colors.surfaceAlt }]}>
-                    <View style={[styles.progressFill, { width: progressWidth as any, backgroundColor: colors.accent, shadowColor: colors.accent }]} />
+                    <Animated.View style={[styles.progressFill, { backgroundColor: colors.accent, shadowColor: colors.accent }, animatedProgressStyle]} />
                 </View>
 
-                <ScrollView
-                    style={styles.scrollView}
-                    contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
-                >
-                    <View style={styles.contentHeader}>
-                        {typeof title === "string" ? (
-                            <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-                        ) : (
-                            <View>{title}</View>
-                        )}
-                        {subtitle ? (
-                            typeof subtitle === "string" ? (
-                                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
-                            ) : (
-                                <View>{subtitle}</View>
-                            )
-                        ) : null}
-                        {error ? (
-                            <View style={styles.errorBanner}>
-                                <MaterialIcons name="error-outline" size={20} color="#ff6b6b" />
-                                <Text style={styles.errorText}>{error}</Text>
-                            </View>
-                        ) : null}
-                    </View>
+                <View style={styles.contentContainer}>
                     {children}
-                </ScrollView>
+                </View>
 
                 <View style={[styles.footer, { backgroundColor: colors.background }]}>
                     <TouchableOpacity
@@ -172,43 +149,8 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         shadowOffset: { width: 0, height: 0 },
     },
-    scrollView: {
+    contentContainer: {
         flex: 1,
-    },
-    scrollContent: {
-        paddingHorizontal: 24,
-        paddingBottom: 24,
-    },
-    contentHeader: {
-        gap: 12,
-        marginBottom: 12,
-    },
-    errorBanner: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "rgba(255, 107, 107, 0.1)",
-        padding: 12,
-        borderRadius: 12,
-        gap: 8,
-        marginTop: 8,
-        borderWidth: 1,
-        borderColor: "rgba(255, 107, 107, 0.2)",
-    },
-    errorText: {
-        color: "#ff6b6b",
-        fontSize: 14,
-        fontWeight: "500",
-        flex: 1,
-    },
-    title: {
-        fontSize: 32,
-        fontWeight: "700",
-        letterSpacing: -0.5,
-    },
-    subtitle: {
-        fontSize: 16,
-        lineHeight: 24,
-        fontWeight: "300",
     },
     footer: {
         paddingHorizontal: 24,
