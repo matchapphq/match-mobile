@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     View,
     Text,
@@ -133,7 +133,7 @@ const NameStepScreen: React.FC<StepScreenProps<"OnboardingName">> = ({
         <OnboardingLayout
             step={1}
             title={
-                <Text style={{ fontSize: 32, fontWeight: "700" }}>
+                <Text style={{ fontSize: 32, fontWeight: "700", color: colors.text }}>
                     Parlons de <Text style={accent}>toi</Text>
                 </Text>
             }
@@ -521,7 +521,7 @@ const SportsStepScreen: React.FC<StepScreenProps<"OnboardingSports">> = ({
         <OnboardingLayout
             step={5}
             title={
-                <Text style={{ fontSize: 32, fontWeight: "700" }}>
+                <Text style={{ fontSize: 32, fontWeight: "700", color: colors.text }}>
                     Quels sports {"\n"}
                     <Text style={accent}>t'intéressent ?</Text>
                 </Text>
@@ -643,8 +643,8 @@ const MoodStepScreen: React.FC<StepScreenProps<"OnboardingMood">> = ({
                                 size={48}
                                 color={
                                     isSelected
-                                        ? colors.accent
-                                        : colors.textMuted
+                                        ? colors.white
+                                        : colors.accent
                                 }
                             />
                             <Text
@@ -656,7 +656,13 @@ const MoodStepScreen: React.FC<StepScreenProps<"OnboardingMood">> = ({
                             >
                                 {mood.label}
                             </Text>
-                            <Text style={styles.moodSubtitle}>
+                            <Text
+                                style={[
+                                    styles.moodSubtitle,
+                                    isSelected &&
+                                        styles.moodSubtitleSelected,
+                                ]}
+                            >
                                 {mood.subtitle}
                             </Text>
                         </TouchableOpacity>
@@ -686,7 +692,7 @@ const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
         <OnboardingLayout
             step={7}
             title={
-                <Text style={{ fontSize: 32, fontWeight: "700" }}>
+                <Text style={{ fontSize: 32, fontWeight: "700", color: colors.text }}>
                     Quel est votre {"\n"}
                     <Text style={accent}>style ?</Text>
                 </Text>
@@ -740,7 +746,13 @@ const VenueStepScreen: React.FC<StepScreenProps<"OnboardingVenue">> = ({
                                     >
                                         {venue.label}
                                     </Text>
-                                    <Text style={styles.venueSubtitle}>
+                                    <Text
+                                        style={[
+                                            styles.venueSubtitle,
+                                            isSelected &&
+                                                styles.venueSubtitleSelected,
+                                        ]}
+                                    >
                                         {venue.subtitle}
                                     </Text>
                                 </View>
@@ -811,7 +823,7 @@ const BudgetStepScreen: React.FC<StepScreenProps<"OnboardingBudget"> & { onboard
         <OnboardingLayout
             step={8}
             title={
-                <Text style={{ fontSize: 32, fontWeight: "700" }}>
+                <Text style={{ fontSize: 32, fontWeight: "700", color: colors.text }}>
                     Quel est {"\n"}votre budget ?
                 </Text>
             }
