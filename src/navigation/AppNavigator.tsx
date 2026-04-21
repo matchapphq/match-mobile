@@ -11,6 +11,9 @@ import { apiService } from "../services/api";
 import SplashScreen from "../screens/SplashScreen";
 import WelcomeScreen from "../screens/WelcomeScreen";
 import AuthEntryScreen from "../screens/AuthEntryScreen";
+import AuthEntryPremiumMinimal from "../screens/auth-redesign/AuthEntryPremiumMinimal";
+import AuthEntryBottomSheet from "../screens/auth-redesign/AuthEntryBottomSheet";
+import AuthEntryEditorial from "../screens/auth-redesign/AuthEntryEditorial";
 import OnboardingScreen from "../screens/OnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
 import TabNavigator from "./TabNavigator";
@@ -274,6 +277,18 @@ export const AppNavigator = () => {
                             <Stack.Screen
                                 name="AuthEntry"
                                 component={AuthEntryScreen}
+                            />
+                            <Stack.Screen
+                                name="AuthEntryPremium"
+                                component={AuthEntryPremiumMinimal}
+                            />
+                            <Stack.Screen
+                                name="AuthEntrySheet"
+                                component={AuthEntryBottomSheet}
+                            />
+                            <Stack.Screen
+                                name="AuthEntryEditorial"
+                                component={AuthEntryEditorial}
                             />
                             <Stack.Screen
                                 name="Onboarding"

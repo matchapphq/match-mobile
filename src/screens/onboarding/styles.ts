@@ -144,7 +144,7 @@ export const getOnboardingStyles = (colors: ThemeColors) => StyleSheet.create({
     },
     suggestionText: {
         fontSize: 14,
-        color: colors.textSecondary,
+        color: colors.text,
     },
     optionsList: {
         gap: 12,
@@ -183,7 +183,7 @@ export const getOnboardingStyles = (colors: ThemeColors) => StyleSheet.create({
     sportLabel: {
         fontSize: 18,
         fontWeight: "600",
-        color: colors.textSecondary,
+        color: colors.text,
     },
     sportLabelSelected: {
         color: "#fff",
@@ -212,7 +212,7 @@ export const getOnboardingStyles = (colors: ThemeColors) => StyleSheet.create({
     },
     moodCardSelected: {
         borderColor: colors.accent,
-        backgroundColor: colors.accent10,
+        backgroundColor: colors.accent,
     },
     moodLabel: {
         fontSize: 18,
@@ -220,11 +220,14 @@ export const getOnboardingStyles = (colors: ThemeColors) => StyleSheet.create({
         color: colors.text,
     },
     moodLabelSelected: {
-        color: colors.accent,
+        color: colors.white,
     },
     moodSubtitle: {
         fontSize: 14,
         color: colors.textMuted,
+    },
+    moodSubtitleSelected: {
+        color: "rgba(255,255,255,0.8)",
     },
     venueOption: {
         flexDirection: "row",
@@ -237,7 +240,7 @@ export const getOnboardingStyles = (colors: ThemeColors) => StyleSheet.create({
         borderColor: colors.border,
     },
     venueOptionSelected: {
-        backgroundColor: colors.surface,
+        backgroundColor: colors.accent,
         borderColor: colors.accent,
     },
     venueLeft: {
@@ -255,7 +258,7 @@ export const getOnboardingStyles = (colors: ThemeColors) => StyleSheet.create({
         justifyContent: "center",
     },
     venueIconSelected: {
-        backgroundColor: colors.accent,
+        backgroundColor: "rgba(255,255,255,0.2)",
     },
     venueTexts: {
         flex: 1,
@@ -267,11 +270,14 @@ export const getOnboardingStyles = (colors: ThemeColors) => StyleSheet.create({
         marginBottom: 4,
     },
     venueLabelSelected: {
-        color: colors.text,
+        color: colors.white,
     },
     venueSubtitle: {
         fontSize: 14,
         color: colors.textMuted,
+    },
+    venueSubtitleSelected: {
+        color: "rgba(255,255,255,0.8)",
     },
     radioCircle: {
         width: 24,
