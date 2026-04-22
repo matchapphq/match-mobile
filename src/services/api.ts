@@ -12,7 +12,6 @@ import {
 import Constants from "expo-constants";
 import { cacheService } from "./cache";
 import { tokenStorage } from "../utils/tokenStorage";
-import { useStore } from "../store/useStore";
 import { posthogClient } from "./posthogClient";
 
 const getApiBaseUrl = () => {
@@ -75,11 +74,17 @@ const posthog = posthogClient;
 // Add auth token to requests
 api.interceptors.request.use(async (config) => {
     // Check if offline
-    if (useStore.getState().isOffline) {
-        // We use a custom error that can be caught as a network error
-        const error = new Error("Network Error");
-        (error as any).isOffline = true;
-        throw error;
+    try {
+        const { useStore } = await import("../store/useStore");
+        if (useStore.getState().isOffline) {
+            // We use a custom error that can be caught as a network error
+            const error = new Error("Network Error");
+            (error as any).isOffline = true;
+            throw error;
+        }
+    } catch (e) {
+        if ((e as any).isOffline) throw e;
+        // ignore other import errors for now
     }
 
     try {
@@ -397,6 +402,15 @@ export const apiService = {
         account_deletion_grace_days: number;
     }> => {
         const response = await api.get("/users/me/privacy-preferences");
+        return response.data;
+    },
+
+    updatePrivacyPreferences: async (updates: {
+        analytics_consent?: boolean;
+        marketing_consent?: boolean;
+        legal_updates_email?: boolean;
+    }) => {
+        const response = await api.put("/users/me/privacy-preferences", updates);
         return response.data;
     },
 
