@@ -273,7 +273,7 @@ export const AppNavigator = () => {
         >
             <NotificationHandler />
             <OfflineBanner />
-            <PostHogProvider client={posthogClient} debug={true}>
+            <PostHogProvider client={posthogClient} debug={process.env.EXPO_PUBLIC_POSTHOG_DEBUG}>
                 <AnalyticsConsentBridge isAuthenticated={isAuthenticated} />
                 <Stack.Navigator
                     screenOptions={{
