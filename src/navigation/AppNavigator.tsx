@@ -11,6 +11,9 @@ import { apiService } from "../services/api";
 import SplashScreen from "../screens/SplashScreen";
 import WelcomeScreen from "../screens/WelcomeScreen";
 import AuthEntryScreen from "../screens/AuthEntryScreen";
+import AuthEntryPremiumMinimal from "../screens/auth-redesign/AuthEntryPremiumMinimal";
+import AuthEntryBottomSheet from "../screens/auth-redesign/AuthEntryBottomSheet";
+import AuthEntryEditorial from "../screens/auth-redesign/AuthEntryEditorial";
 import OnboardingScreen from "../screens/OnboardingScreen";
 import LoginScreen from "../screens/LoginScreen";
 import TabNavigator from "./TabNavigator";
@@ -35,7 +38,7 @@ import FavouritesScreen from "../screens/FavouritesScreen";
 import GiveReviewScreen from "../screens/GiveReviewScreen";
 import TeamsConfigurationScreen from "../screens/TeamsConfigurationScreen";
 import TeamDetailScreen from "../screens/TeamDetailScreen";
-import { PostHogProvider, usePostHog } from "posthog-react-native";
+import { PostHogProvider } from "posthog-react-native";
 import OAuthProfileCompletionModal from "../components/OAuthProfileCompletionModal";
 import * as Network from "expo-network";
 import OfflineBanner from "../components/OfflineBanner";
@@ -60,21 +63,24 @@ const AnalyticsConsentBridge = ({
 }: {
     isAuthenticated: boolean;
 }) => {
-    const posthog = usePostHog();
+    const setAnalyticsConsent = useStore(state => state.setAnalyticsConsent);
+    const analyticsConsent = useStore(state => state.analyticsConsent);
 
     useEffect(() => {
         let isMounted = true;
 
         const applyLocalPreference = async () => {
             const localConsent = await loadAnalyticsConsentPreference();
-            if (!isMounted || localConsent === null) {
-                return;
-            }
+            if (!isMounted) return;
 
-            if (localConsent) {
-                posthog?.optIn();
+            // If we have a saved preference, apply it
+            if (localConsent === true) {
+                posthogClient?.optIn();
+            } else if (localConsent === false) {
+                posthogClient?.optOut();
             } else {
-                posthog?.optOut();
+                // First time ever: force optIn to be sure events like onboarding_started are sent
+                posthogClient?.optIn();
             }
         };
 
@@ -82,40 +88,50 @@ const AnalyticsConsentBridge = ({
         return () => {
             isMounted = false;
         };
-    }, [posthog]);
+    }, []);
 
     useEffect(() => {
         let isCancelled = false;
 
-        const syncFromServer = async () => {
+        const syncWithServer = async () => {
             if (!isAuthenticated) {
                 return;
             }
 
             try {
+                // Fetch preferences from server
                 const preferences = await apiService.getPrivacyPreferences();
-                if (isCancelled) {
-                    return;
-                }
+                if (isCancelled) return;
 
-                const analyticsConsent = Boolean(preferences?.analytics_consent);
-                await setAnalyticsConsentPreference(analyticsConsent);
+                const serverConsent = Boolean(preferences?.analytics_consent);
+                const { analyticsConsent: localConsent, hasSeenConsentPopup } = useStore.getState();
 
-                if (analyticsConsent) {
-                    posthog?.optIn();
-                } else {
-                    posthog?.optOut();
+                // If local consent is set but differs from server, and user has seen popup,
+                // we might want to push local to server. But for now, let's just ensure 
+                // we don't disable it if it was just enabled.
+
+                if (localConsent !== null && localConsent !== serverConsent && hasSeenConsentPopup) {
+                    // Local state is more recent/explicit from the popup
+                    try {
+                        await apiService.updatePrivacyPreferences({ analytics_consent: localConsent });
+                    } catch (e) {
+                        console.warn("Failed to push local consent to server", e);
+                    }
+                } else if (localConsent === null || (localConsent !== serverConsent && !hasSeenConsentPopup)) {
+                    // Trust server if local is unknown or if we haven't shown popup yet
+                    await setAnalyticsConsent(serverConsent);
                 }
             } catch (error) {
-                console.warn("Failed to sync analytics consent from server", error);
+                console.warn("Failed to sync analytics consent with server", error);
             }
         };
 
-        void syncFromServer();
+        void syncWithServer();
         return () => {
             isCancelled = true;
         };
-    }, [isAuthenticated, posthog]);
+    }, [isAuthenticated, setAnalyticsConsent]);
+
 
     return null;
 };
@@ -257,7 +273,7 @@ export const AppNavigator = () => {
         >
             <NotificationHandler />
             <OfflineBanner />
-            <PostHogProvider client={posthogClient}>
+            <PostHogProvider client={posthogClient} debug={true}>
                 <AnalyticsConsentBridge isAuthenticated={isAuthenticated} />
                 <Stack.Navigator
                     screenOptions={{
@@ -274,6 +290,18 @@ export const AppNavigator = () => {
                             <Stack.Screen
                                 name="AuthEntry"
                                 component={AuthEntryScreen}
+                            />
+                            <Stack.Screen
+                                name="AuthEntryPremium"
+                                component={AuthEntryPremiumMinimal}
+                            />
+                            <Stack.Screen
+                                name="AuthEntrySheet"
+                                component={AuthEntryBottomSheet}
+                            />
+                            <Stack.Screen
+                                name="AuthEntryEditorial"
+                                component={AuthEntryEditorial}
                             />
                             <Stack.Screen
                                 name="Onboarding"

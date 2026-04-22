@@ -17,6 +17,8 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { usePostHog } from "posthog-react-native";
 import { useStore } from "../store/useStore";
+import AnalyticsConsentModal from "../components/Privacy/AnalyticsConsentModal";
+import { ImageSourcePropType } from "react-native";
 
 type HeroSlide = {
     id: string;
@@ -69,7 +71,7 @@ import { COLORS } from "../constants/colors";
 const { height, width } = Dimensions.get("window");
 
 const WelcomeScreen = () => {
-    const { colors } = useStore();
+    const { colors, analyticsConsent, setAnalyticsConsent, hasSeenConsentPopup, setHasSeenConsentPopup } = useStore();
     const contentOpacity = useRef(new Animated.Value(0)).current;
     const contentTranslate = useRef(new Animated.Value(40)).current;
     const carouselRef = useRef<FlatList<HeroSlide>>(null);
@@ -77,6 +79,7 @@ const WelcomeScreen = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loopIndex, setLoopIndex] = useState(1);
     const [autoScrollResetToken, setAutoScrollResetToken] = useState(0);
+    const [showConsentModal, setShowConsentModal] = useState(false);
     const navigation = useNavigation<any>();
     const posthog = usePostHog();
 
@@ -167,11 +170,26 @@ const WelcomeScreen = () => {
     }, [loopIndex, autoScrollResetToken]);
 
     const handleStart = () => {
+        if (!hasSeenConsentPopup) {
+            setShowConsentModal(true);
+        } else {
+            navigation.navigate("AuthEntry");
+        }
+    };
+
+    const handleConfirmConsent = async (consent: boolean) => {
+        await setAnalyticsConsent(consent);
+        await setHasSeenConsentPopup(true);
+        setShowConsentModal(false);
         navigation.navigate("AuthEntry");
     };
 
     return (
         <View style={styles.container}>
+            <AnalyticsConsentModal
+                visible={showConsentModal}
+                onConfirm={handleConfirmConsent}
+            />
             <FlatList
                 ref={carouselRef}
                 data={LOOP_SLIDES}
