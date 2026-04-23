@@ -188,7 +188,7 @@ const DataPrivacyScreen = () => {
                         style={styles.dangerButton}
                         activeOpacity={0.9}
                         onPress={() =>
-                            navigation.navigate("DeleteAccountWarning", {
+                            navigation.navigate("DeleteAccount", {
                                 accountDeletionGraceDays: accountDeletionGraceDays ?? undefined,
                             })
                         }
