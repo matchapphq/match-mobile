@@ -8,11 +8,13 @@ export interface User {
         avatar?: string;
         bio?: string;
         phone?: string;
+        role?: "user" | "venue_owner" | "admin";
         auth_provider?: "email" | "google" | "apple" | null;
         created_at?: string;
         preferences?: UserPreferences;
     };
     id: string;
+    role?: "user" | "venue_owner" | "admin";
     first_name?: string;
     last_name?: string;
     username?: string;

@@ -33,7 +33,7 @@ const DeleteAccountFinalScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
     const route = useRoute<RouteProp<RouteParams, "DeleteAccountFinal">>();
-    const { colors, computedTheme: themeMode, logout } = useStore();
+    const { colors, computedTheme: themeMode, logout, user } = useStore();
     const posthog = usePostHog();
 
     const [password, setPassword] = useState("");
@@ -43,8 +43,19 @@ const DeleteAccountFinalScreen = () => {
     const { reason, details, accountDeletionGraceDays } = route.params || {};
     const graceDaysLabel = formatGraceDaysLabel(accountDeletionGraceDays);
 
+    // Identify if we should bypass password (only for 'user' role with social auth)
+    const actualUser = user?.user ?? user;
+    const isUserRole = actualUser?.role === "user";
+    const isSocialAuth = actualUser?.auth_provider === "google" || actualUser?.auth_provider === "apple";
+    const isBypassActive = isUserRole && isSocialAuth;
+
     React.useEffect(() => {
-        posthog?.capture("delete_account_final_step_reached", { reason });
+        posthog?.capture("delete_account_final_step_reached", { 
+            reason,
+            is_social_auth: isSocialAuth,
+            is_user_role: isUserRole,
+            is_bypass_active: isBypassActive
+        });
     }, []);
 
     const handleBack = () => {
@@ -58,19 +69,23 @@ const DeleteAccountFinalScreen = () => {
     };
 
     const handleDelete = async () => {
-        if (!password.trim()) {
+        if (!isBypassActive && !password.trim()) {
             Alert.alert("Mot de passe requis", "Saisis ton mot de passe pour confirmer.");
             return;
         }
 
         setIsDeleting(true);
-        posthog?.capture("delete_account_execution_attempt", { reason });
+        posthog?.capture("delete_account_execution_attempt", { 
+            reason,
+            is_social_auth: isSocialAuth,
+            is_bypass_active: isBypassActive
+        });
         
         try {
             await apiService.deleteAccount({
                 reason: reason || "Non spécifié",
                 details: details,
-                password: password,
+                password: isBypassActive ? "" : password,
             });
             
             posthog?.capture("delete_account_execution_success", { reason });
@@ -88,7 +103,7 @@ const DeleteAccountFinalScreen = () => {
             const rawMessage =
                 error?.response?.data?.error ||
                 error?.response?.data?.message ||
-                "Mot de passe incorrect ou erreur serveur.";
+                "Une erreur est survenue lors de la désactivation.";
             const normalized = String(rawMessage).trim().toLowerCase();
             const errorMessage =
                 normalized === "invalid password"
@@ -134,50 +149,65 @@ const DeleteAccountFinalScreen = () => {
 
             {/* Main Content */}
             <View style={styles.mainContent}>
-                {/* Lock Icon with Glow */}
+                {/* Icon with Glow */}
                 <View style={styles.iconContainer}>
                     <View style={styles.iconGlow} />
                     <View style={[styles.iconCircle, { backgroundColor: colors.surface }]}>
-                        <MaterialIcons name="lock-open" size={40} color="#ef4444" />
+                        <MaterialIcons 
+                            name={isBypassActive ? "no-accounts" : "lock-open"} 
+                            size={40} 
+                            color="#ef4444" 
+                        />
                     </View>
                 </View>
 
                 <Text style={[styles.title, { color: colors.text }]}>Confirmer la désactivation</Text>
-                <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-                    {`Saisis ton mot de passe pour confirmer. Tu pourras réactiver le compte en te reconnectant sous ${graceDaysLabel}.`}
-                </Text>
+                
+                {isBypassActive ? (
+                    <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                        {`Puisque tu utilises la connexion sociale, aucune vérification supplémentaire n'est requise. Tu pourras réactiver ton compte en te reconnectant sous ${graceDaysLabel}.`}
+                    </Text>
+                ) : (
+                    <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+                        {`Saisis ton mot de passe pour confirmer. Tu pourras réactiver le compte en te reconnectant sous ${graceDaysLabel}.`}
+                    </Text>
+                )}
 
-                {/* Password Input */}
-                <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                    <View style={styles.inputIconLeft}>
-                        <MaterialIcons name="lock" size={22} color={colors.textMuted} />
-                    </View>
-                    <TextInput
-                        style={[styles.input, { color: colors.text }]}
-                        placeholder="Mot de passe"
-                        placeholderTextColor={colors.textMuted}
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry={!showPassword}
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                    />
-                    <TouchableOpacity
-                        style={styles.inputIconRight}
-                        onPress={() => setShowPassword(!showPassword)}
-                        activeOpacity={0.7}
-                    >
-                        <MaterialIcons
-                            name={showPassword ? "visibility-off" : "visibility"}
-                            size={20}
-                            color={colors.textMuted}
-                        />
-                    </TouchableOpacity>
-                </View>
+                {/* Password Input - Hidden if bypass active */}
+                {!isBypassActive && (
+                    <>
+                        <View style={[styles.inputContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                            <View style={styles.inputIconLeft}>
+                                <MaterialIcons name="lock" size={22} color={colors.textMuted} />
+                            </View>
+                            <TextInput
+                                style={[styles.input, { color: colors.text }]}
+                                placeholder="Mot de passe"
+                                placeholderTextColor={colors.textMuted}
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry={!showPassword}
+                                autoCapitalize="none"
+                                autoCorrect={false}
+                            />
+                            <TouchableOpacity
+                                style={styles.inputIconRight}
+                                onPress={() => setShowPassword(!showPassword)}
+                                activeOpacity={0.7}
+                            >
+                                <MaterialIcons
+                                    name={showPassword ? "visibility-off" : "visibility"}
+                                    size={20}
+                                    color={colors.textMuted}
+                                />
+                            </TouchableOpacity>
+                        </View>
 
-                <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.7}>
-                    <Text style={[styles.forgotPasswordText, { color: colors.textMuted }]}>Mot de passe oublié ?</Text>
-                </TouchableOpacity>
+                        <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.7}>
+                            <Text style={[styles.forgotPasswordText, { color: colors.textMuted }]}>Mot de passe oublié ?</Text>
+                        </TouchableOpacity>
+                    </>
+                )}
             </View>
 
             {/* Footer */}
@@ -192,8 +222,14 @@ const DeleteAccountFinalScreen = () => {
                         <ActivityIndicator color="#fff" />
                     ) : (
                         <>
-                            <MaterialIcons name="delete-forever" size={22} color="#fff" />
-                            <Text style={styles.deleteButtonText}>DÉSACTIVER MON COMPTE</Text>
+                            <MaterialIcons 
+                                name={isBypassActive ? "check-circle" : "delete-forever"} 
+                                size={22} 
+                                color="#fff" 
+                            />
+                            <Text style={styles.deleteButtonText}>
+                                {isBypassActive ? "CONFIRMER LA DÉSACTIVATION" : "DÉSACTIVER MON COMPTE"}
+                            </Text>
                         </>
                     )}
                 </TouchableOpacity>
