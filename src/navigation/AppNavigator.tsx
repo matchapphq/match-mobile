@@ -28,9 +28,7 @@ import ThemeSelectionScreen from "../screens/ThemeSelectionScreen";
 import EditProfileScreen from "../screens/EditProfileScreen";
 import CompetitionDetailsScreen from "../screens/CompetitionDetailsScreen";
 import CompetitionsScreen from "../screens/CompetitionsScreen";
-import DeleteAccountWarningScreen from "../screens/DeleteAccountWarningScreen";
-import DeleteAccountConfirmScreen from "../screens/DeleteAccountConfirmScreen";
-import DeleteAccountFinalScreen from "../screens/DeleteAccountFinalScreen";
+import DeleteAccountScreen from "../screens/DeleteAccountScreen";
 import DeleteAccountSuccessScreen from "../screens/DeleteAccountSuccessScreen";
 import ChangePasswordScreen from "../screens/ChangePasswordScreen";
 import DataPrivacyScreen from "../screens/DataPrivacyScreen";
@@ -324,16 +322,8 @@ export const AppNavigator = () => {
                                 component={EditProfileScreen}
                             />
                             <Stack.Screen
-                                name="DeleteAccountWarning"
-                                component={DeleteAccountWarningScreen}
-                            />
-                            <Stack.Screen
-                                name="DeleteAccountConfirm"
-                                component={DeleteAccountConfirmScreen}
-                            />
-                            <Stack.Screen
-                                name="DeleteAccountFinal"
-                                component={DeleteAccountFinalScreen}
+                                name="DeleteAccount"
+                                component={DeleteAccountScreen}
                             />
                             <Stack.Screen
                                 name="VenueProfile"
