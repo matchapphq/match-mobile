@@ -12,6 +12,7 @@ import {
     Platform,
     Alert,
     ActivityIndicator,
+    Switch,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -29,7 +30,7 @@ const formatGraceDaysLabel = (days: number | null) =>
 const DataPrivacyScreen = () => {
     const insets = useSafeAreaInsets();
     const navigation = useNavigation<any>();
-    const { colors, computedTheme: themeMode } = useStore();
+    const { colors, computedTheme: themeMode, analyticsConsent, setAnalyticsConsent } = useStore();
     const posthog = usePostHog();
 
     const [exportModalVisible, setExportModalVisible] = useState(false);
@@ -136,6 +137,26 @@ const DataPrivacyScreen = () => {
 
                 <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={styles.cardHeader}>
+                        <View style={[styles.iconBox, { backgroundColor: "rgba(16, 185, 129, 0.12)" }]}>
+                            <MaterialIcons name="analytics" size={20} color="#10b981" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={[styles.cardTitle, { color: colors.text }]}>Analyse et Performance</Text>
+                        </View>
+                        <Switch
+                            value={!!analyticsConsent}
+                            onValueChange={setAnalyticsConsent}
+                            trackColor={{ false: colors.border, true: colors.primary }}
+                            thumbColor={Platform.OS === 'ios' ? undefined : (analyticsConsent ? colors.accent : '#f4f3f4')}
+                        />
+                    </View>
+                    <Text style={[styles.cardDescription, { color: colors.textMuted }]}>
+                        Nous utilisons des outils d'analyse anonymes pour améliorer l'application. Vous pouvez désactiver ce suivi à tout moment.
+                    </Text>
+                </View>
+
+                <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                    <View style={styles.cardHeader}>
                         <View style={[styles.iconBox, { backgroundColor: "rgba(59,130,246,0.12)" }]}>
                             <MaterialIcons name="download" size={20} color="#60a5fa" />
                         </View>
@@ -167,7 +188,7 @@ const DataPrivacyScreen = () => {
                         style={styles.dangerButton}
                         activeOpacity={0.9}
                         onPress={() =>
-                            navigation.navigate("DeleteAccountWarning", {
+                            navigation.navigate("DeleteAccount", {
                                 accountDeletionGraceDays: accountDeletionGraceDays ?? undefined,
                             })
                         }

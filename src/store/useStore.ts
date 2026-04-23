@@ -12,7 +12,12 @@ import {
 } from "../types";
 import { apiService, ApiReservation, setAuthFailureHandler } from "../services/api";
 import { tokenStorage } from "../utils/tokenStorage";
-import { setAnalyticsConsentPreference } from "../services/posthogClient";
+import {
+    setAnalyticsConsentPreference,
+    loadAnalyticsConsentPreference,
+    loadHasSeenConsentPopup,
+    setHasSeenConsentPopupPreference,
+} from "../services/posthogClient";
 
 // Transform API reservation to mobile Reservation type
 export const transformApiReservation = (
@@ -91,6 +96,12 @@ interface AppState {
     pushNotificationsEnabled: boolean;
     hapticsEnabled: boolean;
     isOffline: boolean;
+    analyticsConsent: boolean | null;
+    hasSeenConsentPopup: boolean;
+
+    // Actions
+    setAnalyticsConsent: (consent: boolean) => Promise<void>;
+    setHasSeenConsentPopup: (hasSeen: boolean) => Promise<void>;
 
     // Challenge Bêta
     challengeStatus: {
@@ -256,6 +267,25 @@ export const useStore = create<AppState>((set, get) => ({
     pushNotificationsEnabled: false,
     hapticsEnabled: true,
     isOffline: false,
+    analyticsConsent: null,
+    hasSeenConsentPopup: false,
+
+    // Actions
+    setAnalyticsConsent: async (consent: boolean) => {
+        const { posthog } = await import("../services/analytics");
+        await setAnalyticsConsentPreference(consent);
+        set({ analyticsConsent: consent });
+        if (consent) {
+            posthog?.optIn();
+        } else {
+            posthog?.optOut();
+        }
+    },
+
+    setHasSeenConsentPopup: async (hasSeen: boolean) => {
+        await setHasSeenConsentPopupPreference(hasSeen);
+        set({ hasSeenConsentPopup: hasSeen });
+    },
 
     // Challenge Bêta initial state
     challengeStatus: null,
@@ -682,10 +712,10 @@ export const useStore = create<AppState>((set, get) => ({
             return { success: false, reason, status };
         }
     },
-
-    signup: async (data) => {
+    signup: async (data: any) => {
         set({ isLoading: true, error: null });
         try {
+            const { analyticsConsent } = get();
             const payload = {
                 email: data.email,
                 firstName: data.firstName,
@@ -694,7 +724,8 @@ export const useStore = create<AppState>((set, get) => ({
                 password: data.password,
                 role: data.role ?? "user",
                 referralCode: data.referralCode?.trim() || undefined,
-                phone: data.phone || data.phoneNumber || undefined,
+                analytics_consent: analyticsConsent ?? true,
+                marketing_consent: true,
                 fav_sports: data.fav_sports ?? data.sports ?? [],
                 fav_team_ids: data.fav_team_ids ?? data.favoriteTeams ?? [],
                 ambiances: data.ambiances ?? data.ambiance ?? [],
@@ -1272,7 +1303,6 @@ export const useStore = create<AppState>((set, get) => ({
             console.error("Logout API error:", error);
         }
 
-        await setAnalyticsConsentPreference(false);
         posthog?.reset();
 
         set({
@@ -1315,7 +1345,6 @@ export const useStore = create<AppState>((set, get) => ({
 const clearClientAuthState = async () => {
     const { posthog } = await import("../services/analytics");
 
-    await setAnalyticsConsentPreference(false);
     posthog?.reset();
 
     useStore.setState({
@@ -1354,6 +1383,8 @@ setAuthFailureHandler(async () => {
 // Initialize store from AsyncStorage
 export const initializeStore = async () => {
     try {
+        const analyticsConsent = await loadAnalyticsConsentPreference();
+        const hasSeenConsentPopup = await loadHasSeenConsentPopup();
         const values = await AsyncStorage.multiGet([
             "user",
             "onboardingCompleted",
@@ -1414,6 +1445,8 @@ export const initializeStore = async () => {
             colors,
             pushNotificationsEnabled: pushEnabled,
             hapticsEnabled,
+            analyticsConsent,
+            hasSeenConsentPopup,
         });
 
         // Trigger background refresh if we have a token

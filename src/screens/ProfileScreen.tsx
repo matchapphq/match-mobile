@@ -415,7 +415,7 @@ const ProfileScreen = () => {
                               handleLogout();
                               return;
                           case 'Supprimer le compte':
-                              navigation.navigate('DeleteAccountWarning');
+                              navigation.navigate('DeleteAccount');
                               return;
                           case 'Langue':
                               // French-only for now: language picker is temporarily disabled.

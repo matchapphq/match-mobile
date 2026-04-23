@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import Svg, { Polygon, Path } from "react-native-svg";
 import * as WebBrowser from "expo-web-browser";
 import { PRIVACY_URL, TERMS_URL } from "../constants/legalUrls";
 import { useStore } from "../store/useStore";
@@ -105,12 +106,17 @@ const LoginScreen = () => {
                     </TouchableOpacity>
 
                     <View style={styles.logoContainer}>
-                        <View style={[styles.iconCircle, { backgroundColor: colors.surfaceGlass }]}>
-                            <Ionicons
-                                name="beer"
-                                size={28}
-                                color={colors.accent}
-                            />
+                        <View style={styles.iconCircle}>
+                            <Svg width={42} height={42} viewBox="0 0 1080 1080">
+                                <Polygon 
+                                    fill={colors.accent}
+                                    points="717.7 279.9 567.1 452.6 525.9 281 414.1 472.4 504.4 451.1 257.5 743.7 382.4 743.7 443 557.2 521.7 686.6 714.2 470.6 640.6 743.2 800.2 743.7 898.1 279.9 717.7 279.9" 
+                                />
+                                <Path 
+                                    fill={colors.accent}
+                                    d="M295.4,558.2l207.3-277.4-168.5-.9-2,6.2h0c-2.1,5.6-4.7,15.7-6,19.9-33.4,108.3-63.5,218-94.8,326.9l-39,131.5c-.3,1-.6,2-.9,3.1l-.2.7-9.4,31.8,210.3-273.5-96.8,31.6h0Z" 
+                                />
+                            </Svg>
                         </View>
                         <Text style={[styles.logoText, { color: colors.text }]}>MATCH</Text>
                     </View>
@@ -281,7 +287,6 @@ const styles = StyleSheet.create({
     iconCircle: {
         width: 64,
         height: 64,
-        borderRadius: 32,
         justifyContent: "center",
         alignItems: "center",
         marginBottom: 12,

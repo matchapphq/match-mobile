@@ -3,7 +3,7 @@
     "name": "Match",
     "slug": "match",
     "scheme": "com.matchapps.match",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/logo_app.png",
     "userInterfaceStyle": "automatic",
